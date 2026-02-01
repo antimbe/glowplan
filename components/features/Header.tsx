@@ -7,10 +7,10 @@ import { cn } from "@/lib/utils/cn";
 import { AnimatePresence } from "framer-motion";
 
 const navigationLinks = [
-  { label: "Accueil", href: "#" },
-  { label: "Qui sommes-nous", href: "#about" },
-  { label: "Pour les pros", href: "#pros" },
-  { label: "Contact", href: "#contact" },
+  { label: "Accueil", href: "/" },
+  { label: "Qui sommes-nous", href: "/about" },
+  { label: "Pour les pros", href: "/coming-soon" },
+  { label: "Contact", href: "/contact" },
 ];
 
 export default function Header() {
@@ -81,14 +81,16 @@ export default function Header() {
             animate={{ opacity: 1, x: 0 }}
             className="hidden md:block"
           >
-            <Button 
-              variant="white" 
-              size="sm" 
-              className="gap-2.5 font-bold shadow-xl shadow-black/10 hover:scale-105 transition-transform"
-            >
-              <User size={18} strokeWidth={2.5} />
-              <Text variant="small" as="span">Mon compte</Text>
-            </Button>
+            <Link href="/coming-soon">
+              <Button 
+                variant="white" 
+                size="sm" 
+                className="gap-2.5 font-bold shadow-xl shadow-black/10 hover:scale-105 transition-transform"
+              >
+                <User size={18} strokeWidth={2.5} />
+                <Text variant="small" as="span">Mon compte</Text>
+              </Button>
+            </Link>
           </MotionBox>
 
           {/* Mobile Menu Button */}
@@ -135,10 +137,12 @@ export default function Header() {
                   </Link>
                 ))}
                 <Box className="pt-6 border-t border-white/10">
-                  <Button variant="white" fullWidth size="lg" className="gap-3 font-bold">
-                    <User size={20} strokeWidth={2.5} />
-                    <Text as="span">Mon compte</Text>
-                  </Button>
+                  <Link href="/coming-soon" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="white" fullWidth size="lg" className="gap-3 font-bold">
+                      <User size={20} strokeWidth={2.5} />
+                      <Text as="span">Mon compte</Text>
+                    </Button>
+                  </Link>
                 </Box>
               </Flex>
             </MotionBox>

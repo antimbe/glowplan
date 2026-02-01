@@ -14,3 +14,4 @@ export { default as Stack } from "./Stack";
 export { default as List, ListItem } from "./List";
 export { default as Separator } from "./Separator";
 export { default as MotionBox } from "./MotionBox";
+export { default as Textarea } from "./Textarea";

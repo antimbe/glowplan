@@ -16,10 +16,10 @@ const footerSections = [
   {
     title: "Société",
     links: [
-      { label: "À propos", href: "#about" },
+      { label: "À propos", href: "/about" },
       { label: "Blog", href: "#" },
       { label: "Carrières", href: "#" },
-      { label: "Contact", href: "#contact" },
+      { label: "Contact", href: "/contact" },
     ],
   },
   {
