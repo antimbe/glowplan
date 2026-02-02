@@ -1,13 +1,59 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 import { Container, Section, Heading, Text, Box, Stack, Flex, MotionBox, Button, Card, Logo, Input } from "@/components/ui";
-import { ArrowLeft, Briefcase } from "lucide-react";
+import { ArrowLeft, Briefcase, Loader2 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
 export default function ProLoginPage() {
+  const router = useRouter();
   const [isLogin, setIsLogin] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const supabase = createClient();
+
+  const handleAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    try {
+      if (isLogin) {
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        if (error) throw error;
+        router.push("/dashboard"); // Redirection après connexion
+      } else {
+        if (password !== confirmPassword) {
+          throw new Error("Les mots de passe ne correspondent pas");
+        }
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: `${location.origin}/auth/callback`,
+          },
+        });
+        if (error) throw error;
+        alert("Vérifiez votre email pour confirmer votre inscription !");
+        setIsLogin(true);
+      }
+    } catch (err: any) {
+      setError(err.message || "Une erreur est survenue");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <Section spacing="none" className="min-h-[100dvh] relative overflow-x-hidden bg-[#2a3626] flex flex-col items-center justify-center">
@@ -48,12 +94,7 @@ export default function ProLoginPage() {
           </MotionBox>
 
           {/* Main Card */}
-          <MotionBox
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8, delay: 0.1 }}
-            className="w-full"
-          >
+          <Box className="w-full">
             <Card className="bg-white border-none shadow-[0_40px_100px_-20px_rgba(0,0,0,0.4)] w-full overflow-hidden" padding="lg">
               <Stack space={8} align="center" className="w-full">
                 {/* Title Section */}
@@ -73,56 +114,17 @@ export default function ProLoginPage() {
                   </Stack>
                 </Stack>
 
-                <form onSubmit={(e) => e.preventDefault()} className="w-full">
+                <form onSubmit={handleAuth} className="w-full">
                   <Stack space={6} align="center" className="w-full">
-                    {!isLogin && (
-                      <Stack space={6} align="center" className="w-full">
-                        <Box className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
-                          <Stack space={3} align="center" className="w-full text-center">
-                            <Text className="text-[10px] font-bold text-[#2a3626]/40 uppercase tracking-[0.2em]">Prénom</Text>
-                            <Input 
-                              placeholder="Votre prénom" 
-                              fullWidth 
-                              className="bg-gray-50/50 border-gray-100 rounded-xl h-14 px-5 focus:bg-white focus:ring-2 focus:ring-[#2a3626]/5 transition-all text-base font-medium text-center"
-                            />
-                          </Stack>
-                          <Stack space={3} align="center" className="w-full text-center">
-                            <Text className="text-[10px] font-bold text-[#2a3626]/40 uppercase tracking-[0.2em]">Nom</Text>
-                            <Input 
-                              placeholder="Votre nom" 
-                              fullWidth 
-                              className="bg-gray-50/50 border-gray-100 rounded-xl h-14 px-5 focus:bg-white focus:ring-2 focus:ring-[#2a3626]/5 transition-all text-base font-medium text-center"
-                            />
-                          </Stack>
-                        </Box>
-
-                        <Stack space={3} align="center" className="w-full text-center">
-                          <Text className="text-[10px] font-bold text-[#2a3626]/40 uppercase tracking-[0.2em]">Nom de l'établissement</Text>
-                          <Input 
-                            placeholder="Salon, Institut, Cabinet..." 
-                            fullWidth 
-                            className="bg-gray-50/50 border-gray-100 rounded-xl h-14 px-5 focus:bg-white focus:ring-2 focus:ring-[#2a3626]/5 transition-all text-base font-medium text-center"
-                          />
-                        </Stack>
-
-                        <Stack space={3} align="center" className="w-full text-center">
-                          <Text className="text-[10px] font-bold text-[#2a3626]/40 uppercase tracking-[0.2em]">Téléphone</Text>
-                          <Input 
-                            type="tel"
-                            placeholder="+33 6 12 34 56 78" 
-                            fullWidth 
-                            className="bg-gray-50/50 border-gray-100 rounded-xl h-14 px-5 focus:bg-white focus:ring-2 focus:ring-[#2a3626]/5 transition-all text-base font-medium text-center"
-                          />
-                        </Stack>
-                      </Stack>
-                    )}
-
                     <Stack space={3} align="center" className="w-full text-center">
                       <Text className="text-[10px] font-bold text-[#2a3626]/40 uppercase tracking-[0.2em]">Email professionnel</Text>
                       <Input 
                         type="email"
                         placeholder="votre@email.com" 
                         fullWidth 
+                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
                         className="bg-gray-50/50 border-gray-100 rounded-xl h-14 px-5 focus:bg-white focus:ring-2 focus:ring-[#2a3626]/5 transition-all text-base font-medium text-center"
                       />
                     </Stack>
@@ -133,9 +135,31 @@ export default function ProLoginPage() {
                         type="password"
                         placeholder="••••••••" 
                         fullWidth 
+                        required
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
                         className="bg-gray-50/50 border-gray-100 rounded-xl h-14 px-5 focus:bg-white focus:ring-2 focus:ring-[#2a3626]/5 transition-all text-base font-medium text-center"
                       />
                     </Stack>
+
+                    {!isLogin && (
+                      <Stack space={3} align="center" className="w-full text-center">
+                        <Text className="text-[10px] font-bold text-[#2a3626]/40 uppercase tracking-[0.2em]">Confirmer le mot de passe</Text>
+                        <Input 
+                          type="password"
+                          placeholder="••••••••" 
+                          fullWidth 
+                          required
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          className="bg-gray-50/50 border-gray-100 rounded-xl h-14 px-5 focus:bg-white focus:ring-2 focus:ring-[#2a3626]/5 transition-all text-base font-medium text-center"
+                        />
+                      </Stack>
+                    )}
+
+                    {error && (
+                      <Text className="text-red-500 text-sm font-medium text-center">{error}</Text>
+                    )}
 
                     {isLogin && (
                       <Flex justify="center" className="w-full">
@@ -150,9 +174,17 @@ export default function ProLoginPage() {
                       variant="primary" 
                       size="xl" 
                       fullWidth
-                      className="bg-[#2a3626] hover:bg-[#1a2318] rounded-xl font-bold h-14 text-sm shadow-2xl shadow-[#2a3626]/20 transition-all duration-500 hover:scale-[1.02] active:scale-[0.98] mt-2"
+                      disabled={loading}
+                      className="bg-[#2a3626] hover:bg-[#1a2318] rounded-xl font-bold h-14 text-sm shadow-2xl shadow-[#2a3626]/20 transition-all duration-500 hover:scale-[1.02] active:scale-[0.98] mt-2 disabled:opacity-70 disabled:cursor-not-allowed"
                     >
-                      {isLogin ? "Se connecter au dashboard" : "Créer mon compte professionnel"}
+                      {loading ? (
+                        <Flex align="center" gap={2}>
+                          <Loader2 className="animate-spin" size={20} />
+                          <span>Traitement en cours...</span>
+                        </Flex>
+                      ) : (
+                        isLogin ? "Se connecter au dashboard" : "Créer mon compte professionnel"
+                      )}
                     </Button>
                   </Stack>
                 </form>
@@ -173,7 +205,7 @@ export default function ProLoginPage() {
                 </Box>
               </Stack>
             </Card>
-          </MotionBox>
+          </Box>
 
           {/* Footer Terms */}
           <MotionBox
