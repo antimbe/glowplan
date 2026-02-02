@@ -81,7 +81,7 @@ export default function Header() {
             animate={{ opacity: 1, x: 0 }}
             className="hidden md:block"
           >
-            <Link href="/coming-soon">
+            <Link href="/auth/select-space">
               <Button 
                 variant="white" 
                 size="sm" 
@@ -137,7 +137,7 @@ export default function Header() {
                   </Link>
                 ))}
                 <Box className="pt-6 border-t border-white/10">
-                  <Link href="/coming-soon" onClick={() => setMobileMenuOpen(false)}>
+                  <Link href="/auth/select-space" onClick={() => setMobileMenuOpen(false)}>
                     <Button variant="white" fullWidth size="lg" className="gap-3 font-bold">
                       <User size={20} strokeWidth={2.5} />
                       <Text as="span">Mon compte</Text>

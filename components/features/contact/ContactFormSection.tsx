@@ -83,49 +83,49 @@ export default function ContactFormSection() {
               padding="xl"
             >
               <form onSubmit={(e) => e.preventDefault()} className="h-full">
-                <Stack space={12} className="h-full">
-                  <Stack space={10}>
-                    <Box className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                      <Box className="space-y-3">
-                        <Text className="text-[10px] font-bold text-primary/40 uppercase tracking-[0.3em] ml-1">Prénom</Text>
-                        <Input placeholder="Joé" fullWidth className="bg-gray-50/30 border-gray-100 border-b-2 border-x-0 border-t-0 rounded-none px-0 h-14 focus:bg-transparent focus:border-primary transition-all text-xl font-medium" />
-                      </Box>
-                      <Box className="space-y-3">
-                        <Text className="text-[10px] font-bold text-primary/40 uppercase tracking-[0.3em] ml-1">Nom</Text>
-                        <Input placeholder="Joé" fullWidth className="bg-gray-50/30 border-gray-100 border-b-2 border-x-0 border-t-0 rounded-none px-0 h-14 focus:bg-transparent focus:border-primary transition-all text-xl font-medium" />
-                      </Box>
-                    </Box>
-                    
-                    <Box className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                      <Box className="space-y-3">
-                        <Text className="text-[10px] font-bold text-primary/40 uppercase tracking-[0.3em] ml-1">Email</Text>
-                        <Input type="email" placeholder="" fullWidth className="bg-gray-50/30 border-gray-100 border-b-2 border-x-0 border-t-0 rounded-none px-0 h-14 focus:bg-transparent focus:border-primary transition-all text-xl font-medium" />
-                      </Box>
-                      <Box className="space-y-3">
-                        <Text className="text-[10px] font-bold text-primary/40 uppercase tracking-[0.3em] ml-1">Numéro de téléphone</Text>
-                        <Input placeholder="+33 6 12 56 34 12" fullWidth className="bg-gray-50/30 border-gray-100 border-b-2 border-x-0 border-t-0 rounded-none px-0 h-14 focus:bg-transparent focus:border-primary transition-all text-xl font-medium" />
-                      </Box>
-                    </Box>
+          <Stack space={12} className="h-full" align="stretch">
+            <Stack space={10} align="stretch">
+              <Box className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                <Box className="space-y-3">
+                  <Text className="text-[10px] font-bold text-primary/40 uppercase tracking-[0.3em] ml-1">Prénom</Text>
+                  <Input placeholder="Joé" fullWidth className="bg-gray-50/30 border-gray-100 border-b-2 border-x-0 border-t-0 rounded-none px-0 h-14 focus:bg-transparent focus:border-primary transition-all text-xl font-medium" />
+                </Box>
+                <Box className="space-y-3">
+                  <Text className="text-[10px] font-bold text-primary/40 uppercase tracking-[0.3em] ml-1">Nom</Text>
+                  <Input placeholder="Joé" fullWidth className="bg-gray-50/30 border-gray-100 border-b-2 border-x-0 border-t-0 rounded-none px-0 h-14 focus:bg-transparent focus:border-primary transition-all text-xl font-medium" />
+                </Box>
+              </Box>
+              
+              <Box className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                <Box className="space-y-3">
+                  <Text className="text-[10px] font-bold text-primary/40 uppercase tracking-[0.3em] ml-1">Email</Text>
+                  <Input type="email" placeholder="" fullWidth className="bg-gray-50/30 border-gray-100 border-b-2 border-x-0 border-t-0 rounded-none px-0 h-14 focus:bg-transparent focus:border-primary transition-all text-xl font-medium" />
+                </Box>
+                <Box className="space-y-3">
+                  <Text className="text-[10px] font-bold text-primary/40 uppercase tracking-[0.3em] ml-1">Numéro de téléphone</Text>
+                  <Input placeholder="+33 6 12 56 34 12" fullWidth className="bg-gray-50/30 border-gray-100 border-b-2 border-x-0 border-t-0 rounded-none px-0 h-14 focus:bg-transparent focus:border-primary transition-all text-xl font-medium" />
+                </Box>
+              </Box>
 
-                    <Stack space={6}>
-                      <Text className="text-[10px] font-bold text-primary/40 uppercase tracking-[0.3em] ml-1">Sélectionner un sujet</Text>
-                      <Box className="group cursor-pointer flex items-center gap-6 py-6 px-10 rounded-[2rem] bg-[#2a3626]/5 border-2 border-transparent hover:border-[#2a3626] hover:bg-white transition-all duration-500 shadow-sm hover:shadow-xl w-fit">
-                        <Box className="w-4 h-4 rounded-full border-2 border-[#2a3626] flex items-center justify-center p-0.5">
-                          <Box className="w-full h-full rounded-full bg-[#2a3626]" />
-                        </Box>
-                        <Text className="text-lg font-bold text-[#2a3626]">Booker un appel pour une démo</Text>
-                      </Box>
-                    </Stack>
+              <Stack space={6} align="stretch">
+                <Text className="text-[10px] font-bold text-primary/40 uppercase tracking-[0.3em] ml-1">Sélectionner un sujet</Text>
+                <Box className="group cursor-pointer flex items-center gap-6 py-6 px-10 rounded-[2rem] bg-[#2a3626]/5 border-2 border-transparent hover:border-[#2a3626] hover:bg-white transition-all duration-500 shadow-sm hover:shadow-xl w-full">
+                  <Box className="w-4 h-4 rounded-full border-2 border-[#2a3626] flex items-center justify-center p-0.5">
+                    <Box className="w-full h-full rounded-full bg-[#2a3626]" />
+                  </Box>
+                  <Text className="text-lg font-bold text-[#2a3626]">Booker un appel pour une démo</Text>
+                </Box>
+              </Stack>
 
-                    <Box className="w-full">
-                      <Textarea 
-                        label="Message" 
-                        placeholder="Écrivez votre message..." 
-                        fullWidth 
-                        className="bg-gray-50/50 border-gray-100 rounded-[2rem] min-h-[200px] p-8 focus:bg-white transition-all text-lg font-medium resize-none w-full" 
-                      />
-                    </Box>
-                  </Stack>
+              <Box className="w-full">
+                <Textarea 
+                  label="Message" 
+                  placeholder="Écrivez votre message..." 
+                  fullWidth 
+                  className="bg-gray-50/50 border-gray-100 rounded-[2rem] min-h-[200px] p-8 focus:bg-white transition-all text-lg font-medium resize-none w-full" 
+                />
+              </Box>
+            </Stack>
 
                   <Flex justify="end">
                     <Button 
