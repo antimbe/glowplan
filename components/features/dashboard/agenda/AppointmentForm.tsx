@@ -131,153 +131,173 @@ export default function AppointmentForm({
   const isValid = formData.client_name && date && startTime && endTime;
 
   return (
-    <div className="bg-white rounded-xl lg:rounded-2xl border border-gray-200 p-4 lg:p-6 shadow-lg max-w-lg w-full max-h-[90vh] overflow-y-auto mx-2 lg:mx-0">
-      <div className="flex items-center justify-between mb-4 lg:mb-6">
-        <h3 className="text-primary text-base lg:text-lg font-bold">
-          {appointment ? "Modifier le RDV" : "Nouveau RDV"}
-        </h3>
-        <button
-          onClick={onCancel}
-          className="w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
-        >
-          <X size={18} />
-        </button>
+    <div className="bg-white rounded-2xl lg:rounded-3xl border border-gray-100 shadow-2xl max-w-lg w-full max-h-[90vh] overflow-hidden mx-2 lg:mx-0">
+      {/* Header avec gradient */}
+      <div className="bg-gradient-to-r from-primary to-primary/80 p-4 lg:p-5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+              <User className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h3 className="text-white text-base lg:text-lg font-bold">
+                {appointment ? "Modifier le RDV" : "Nouveau rendez-vous"}
+              </h3>
+              <p className="text-white/70 text-xs lg:text-sm">Remplissez les informations client</p>
+            </div>
+          </div>
+          <button
+            onClick={onCancel}
+            className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors cursor-pointer"
+          >
+            <X size={18} />
+          </button>
+        </div>
       </div>
 
-      <div className="flex flex-col gap-3 lg:gap-4">
-        {/* Client */}
-        <div className="flex flex-col gap-1.5 lg:gap-2">
-          <label className="text-[10px] lg:text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-1.5 lg:gap-2">
-            <User size={12} className="lg:w-3.5 lg:h-3.5" />
-            Nom du client *
-          </label>
-          <input
-            type="text"
-            value={formData.client_name}
-            onChange={(e) => setFormData(prev => ({ ...prev, client_name: e.target.value }))}
-            placeholder="Nom complet"
-            className="h-10 lg:h-12 px-3 lg:px-4 rounded-lg lg:rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all text-sm lg:text-base"
-          />
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4">
-          <div className="flex flex-col gap-1.5 lg:gap-2">
-            <label className="text-[10px] lg:text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-1.5 lg:gap-2">
-              <Mail size={12} className="lg:w-3.5 lg:h-3.5" />
-              Email
+      <div className="p-4 lg:p-6 overflow-y-auto max-h-[calc(90vh-100px)]">
+        <div className="flex flex-col gap-4 lg:gap-5">
+          {/* Client */}
+          <div className="flex flex-col gap-2">
+            <label className="text-xs font-semibold text-gray-600 flex items-center gap-2">
+              <User size={14} className="text-primary" />
+              Nom du client <span className="text-red-400">*</span>
             </label>
             <input
-              type="email"
-              value={formData.client_email || ""}
-              onChange={(e) => setFormData(prev => ({ ...prev, client_email: e.target.value }))}
-              placeholder="email@exemple.com"
-              className="h-10 lg:h-12 px-3 lg:px-4 rounded-lg lg:rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all text-sm lg:text-base"
+              type="text"
+              value={formData.client_name}
+              onChange={(e) => setFormData(prev => ({ ...prev, client_name: e.target.value }))}
+              placeholder="Nom complet du client"
+              className="h-11 lg:h-12 px-4 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all text-sm lg:text-base placeholder:text-gray-400"
             />
           </div>
-          <div className="flex flex-col gap-1.5 lg:gap-2">
-            <label className="text-[10px] lg:text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-1.5 lg:gap-2">
-              <Phone size={12} className="lg:w-3.5 lg:h-3.5" />
-              Téléphone
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-semibold text-gray-600 flex items-center gap-2">
+                <Mail size={14} className="text-primary" />
+                Email
+              </label>
+              <input
+                type="email"
+                value={formData.client_email || ""}
+                onChange={(e) => setFormData(prev => ({ ...prev, client_email: e.target.value }))}
+                placeholder="email@exemple.com"
+                className="h-11 lg:h-12 px-4 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all text-sm lg:text-base placeholder:text-gray-400"
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-semibold text-gray-600 flex items-center gap-2">
+                <Phone size={14} className="text-primary" />
+                Téléphone
+              </label>
+              <input
+                type="tel"
+                value={formData.client_phone || ""}
+                onChange={(e) => setFormData(prev => ({ ...prev, client_phone: e.target.value }))}
+                placeholder="06 12 34 56 78"
+                className="h-11 lg:h-12 px-4 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all text-sm lg:text-base placeholder:text-gray-400"
+              />
+            </div>
+          </div>
+
+          {/* Service */}
+          {services.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-semibold text-gray-600">
+                Prestation
+              </label>
+              <select
+                value={formData.service_id || ""}
+                onChange={(e) => handleServiceChange(e.target.value)}
+                className="h-11 lg:h-12 px-4 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all text-sm lg:text-base bg-white cursor-pointer"
+              >
+                <option value="">Sélectionner une prestation</option>
+                {services.map((service) => (
+                  <option key={service.id} value={service.id}>
+                    {service.name} - {service.price}€ ({service.duration} min)
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Date et heure */}
+          <div className="bg-gray-50 rounded-xl p-4">
+            <label className="text-xs font-semibold text-gray-600 flex items-center gap-2 mb-3">
+              <Clock size={14} className="text-primary" />
+              Date et horaires <span className="text-red-400">*</span>
             </label>
-            <input
-              type="tel"
-              value={formData.client_phone || ""}
-              onChange={(e) => setFormData(prev => ({ ...prev, client_phone: e.target.value }))}
-              placeholder="06 12 34 56 78"
-              className="h-10 lg:h-12 px-3 lg:px-4 rounded-lg lg:rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all text-sm lg:text-base"
-            />
+            <div className="grid grid-cols-3 gap-2">
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="h-11 px-3 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all text-sm bg-white"
+              />
+              <div className="flex flex-col">
+                <span className="text-[10px] text-gray-400 mb-1">Début</span>
+                <select
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                  className="h-11 px-3 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all text-sm bg-white cursor-pointer"
+                >
+                  {TIME_OPTIONS.map((time) => (
+                    <option key={time} value={time}>{time}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[10px] text-gray-400 mb-1">Fin</span>
+                <select
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                  className="h-11 px-3 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all text-sm bg-white cursor-pointer"
+                >
+                  {TIME_OPTIONS.map((time) => (
+                    <option key={time} value={time}>{time}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
           </div>
-        </div>
 
-        {/* Service */}
-        {services.length > 0 && (
-          <div className="flex flex-col gap-1.5 lg:gap-2">
-            <label className="text-[10px] lg:text-xs font-semibold text-gray-500 uppercase tracking-wider">
-              Prestation
+          {/* Notes */}
+          <div className="flex flex-col gap-2">
+            <label className="text-xs font-semibold text-gray-600 flex items-center gap-2">
+              <FileText size={14} className="text-primary" />
+              Notes (optionnel)
             </label>
-            <select
-              value={formData.service_id || ""}
-              onChange={(e) => handleServiceChange(e.target.value)}
-              className="h-10 lg:h-12 px-3 lg:px-4 rounded-lg lg:rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all text-sm lg:text-base bg-white cursor-pointer"
-            >
-              <option value="">Aucune prestation</option>
-              {services.map((service) => (
-                <option key={service.id} value={service.id}>
-                  {service.name} - {service.price}€ ({service.duration} min)
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        {/* Date et heure */}
-        <div className="flex flex-col gap-1.5 lg:gap-2">
-          <label className="text-[10px] lg:text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-1.5 lg:gap-2">
-            <Clock size={12} className="lg:w-3.5 lg:h-3.5" />
-            Date et heure *
-          </label>
-          <div className="grid grid-cols-3 gap-1.5 lg:gap-2">
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="h-10 lg:h-12 px-2 lg:px-4 rounded-lg lg:rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all text-sm lg:text-base"
+            <textarea
+              value={formData.notes || ""}
+              onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+              placeholder="Informations complémentaires sur le rendez-vous..."
+              rows={2}
+              className="px-4 py-3 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all text-sm resize-none placeholder:text-gray-400"
             />
-            <select
-              value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
-              className="h-10 lg:h-12 px-2 lg:px-4 rounded-lg lg:rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all text-sm lg:text-base bg-white cursor-pointer"
-            >
-              {TIME_OPTIONS.map((time) => (
-                <option key={time} value={time}>{time}</option>
-              ))}
-            </select>
-            <select
-              value={endTime}
-              onChange={(e) => setEndTime(e.target.value)}
-              className="h-10 lg:h-12 px-2 lg:px-4 rounded-lg lg:rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all text-sm lg:text-base bg-white cursor-pointer"
-            >
-              {TIME_OPTIONS.map((time) => (
-                <option key={time} value={time}>{time}</option>
-              ))}
-            </select>
           </div>
         </div>
+      </div>
 
-        {/* Notes */}
-        <div className="flex flex-col gap-1.5 lg:gap-2">
-          <label className="text-[10px] lg:text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-1.5 lg:gap-2">
-            <FileText size={12} className="lg:w-3.5 lg:h-3.5" />
-            Notes
-          </label>
-          <textarea
-            value={formData.notes || ""}
-            onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-            placeholder="Notes supplémentaires..."
-            rows={2}
-            className="px-3 lg:px-4 py-2 lg:py-3 rounded-lg lg:rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all text-sm lg:text-base resize-none"
-          />
-        </div>
-
-        {/* Actions */}
-        <div className="flex justify-end gap-2 lg:gap-3 pt-3 lg:pt-4 border-t border-gray-100">
-          <Button variant="outline" onClick={onCancel} size="sm" className="px-4 lg:px-6">
+      {/* Footer avec actions */}
+      <div className="border-t border-gray-100 p-4 lg:p-5 bg-gray-50/50">
+        <div className="flex justify-end gap-3">
+          <Button variant="outline" onClick={onCancel} className="px-5">
             Annuler
           </Button>
           <Button
             variant="primary"
-            size="sm"
             onClick={handleSubmit}
             disabled={!isValid || saving}
-            className="px-4 lg:px-6 bg-primary hover:bg-primary-dark"
+            className="px-6 bg-gradient-to-r from-primary to-primary/80 hover:from-primary-dark hover:to-primary shadow-lg hover:shadow-xl transition-all"
           >
             {saving ? (
               <div className="flex items-center gap-2">
-                <Loader2 size={14} className="animate-spin" />
-                <span className="text-sm">Enregistrement...</span>
+                <Loader2 size={16} className="animate-spin" />
+                <span>Enregistrement...</span>
               </div>
             ) : (
-              <span>{appointment ? "Modifier" : "Créer"}</span>
+              <span>{appointment ? "Modifier" : "Créer le RDV"}</span>
             )}
           </Button>
         </div>

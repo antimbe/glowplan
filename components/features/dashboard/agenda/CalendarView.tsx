@@ -127,14 +127,17 @@ export default function CalendarView({
 
   const renderEvent = (event: CalendarEvent, compact = false) => {
     const isAppointment = event.type === "appointment";
-    const bgColor = isAppointment ? "bg-primary" : "bg-red-500";
     
     if (compact) {
       return (
         <div
           key={event.id}
           onClick={(e) => { e.stopPropagation(); onEventClick(event); }}
-          className={`${bgColor} text-white text-xs px-1.5 py-0.5 rounded truncate cursor-pointer hover:opacity-80`}
+          className={`${
+            isAppointment 
+              ? "bg-gradient-to-r from-primary to-primary/80 border-l-2 border-primary-dark" 
+              : "bg-gradient-to-r from-red-500 to-red-400 border-l-2 border-red-600"
+          } text-white text-[10px] lg:text-xs px-1.5 py-0.5 rounded-md truncate cursor-pointer hover:shadow-md transition-all`}
         >
           {event.title}
         </div>
@@ -148,10 +151,18 @@ export default function CalendarView({
       <div
         key={event.id}
         onClick={(e) => { e.stopPropagation(); onEventClick(event); }}
-        className={`${bgColor} text-white text-xs px-2 py-1 rounded-lg cursor-pointer hover:opacity-80 mb-1`}
+        className={`${
+          isAppointment 
+            ? "bg-gradient-to-r from-primary to-primary/80 border-l-3 border-primary-dark" 
+            : "bg-gradient-to-r from-red-500 to-red-400 border-l-3 border-red-600"
+        } text-white text-xs px-2.5 py-1.5 rounded-lg cursor-pointer hover:shadow-lg hover:scale-[1.02] transition-all mb-1`}
       >
-        <div className="font-medium truncate">{event.title}</div>
-        <div className="opacity-80">
+        <div className="font-semibold truncate flex items-center gap-1">
+          {isAppointment ? <User size={10} /> : <Ban size={10} />}
+          {event.title}
+        </div>
+        <div className="opacity-90 flex items-center gap-1 mt-0.5">
+          <Clock size={10} />
           {start.getHours().toString().padStart(2, "0")}:{start.getMinutes().toString().padStart(2, "0")} - 
           {end.getHours().toString().padStart(2, "0")}:{end.getMinutes().toString().padStart(2, "0")}
         </div>
@@ -162,30 +173,34 @@ export default function CalendarView({
   // Vue Jour
   const renderDayView = () => (
     <div className="flex flex-col h-full">
-      <div className="grid grid-cols-[60px_1fr] border-b border-gray-200">
-        <div className="h-12" />
-        <div className="h-12 flex items-center justify-center font-semibold text-primary border-l border-gray-200">
+      <div className="grid grid-cols-[60px_1fr] border-b border-gray-100 bg-gray-50/50">
+        <div className="h-14" />
+        <div className="h-14 flex items-center justify-center font-semibold text-gray-700 border-l border-gray-100">
           {isToday(currentDate) && (
-            <span className="bg-primary text-white px-2 py-1 rounded-lg text-sm mr-2">Aujourd'hui</span>
+            <span className="bg-gradient-to-r from-primary to-primary/80 text-white px-3 py-1 rounded-full text-sm mr-2 shadow-sm">Aujourd'hui</span>
           )}
-          {currentDate.getDate()} {MONTHS[currentDate.getMonth()].slice(0, 3)}
+          <span className="text-lg">{currentDate.getDate()}</span>
+          <span className="text-gray-500 ml-1">{MONTHS[currentDate.getMonth()].slice(0, 3)}</span>
         </div>
       </div>
       <div className="flex-1 overflow-y-auto">
         {HOURS.map((hour) => (
-          <div key={hour} className="grid grid-cols-[60px_1fr] min-h-[60px] border-b border-gray-100">
-            <div className="text-xs text-gray-400 text-right pr-2 pt-1">
+          <div key={hour} className="grid grid-cols-[60px_1fr] min-h-[70px] border-b border-gray-50 hover:bg-primary/[0.02] transition-colors">
+            <div className="text-xs text-gray-400 text-right pr-3 pt-2 font-medium">
               {hour.toString().padStart(2, "0")}:00
             </div>
             <div 
-              className="border-l border-gray-200 p-1 hover:bg-gray-50 cursor-pointer relative"
+              className="border-l border-gray-100 p-1.5 cursor-pointer relative group"
               onClick={() => {
                 const slotDate = new Date(currentDate);
                 slotDate.setHours(hour, 0, 0, 0);
                 onSlotClick(slotDate);
               }}
             >
-              {getEventsForHour(currentDate, hour).map(event => renderEvent(event))}
+              <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity rounded-r-lg" />
+              <div className="relative z-10">
+                {getEventsForHour(currentDate, hour).map(event => renderEvent(event))}
+              </div>
             </div>
           </div>
         ))}
@@ -201,17 +216,23 @@ export default function CalendarView({
       <div className="flex flex-col h-full overflow-hidden">
         <div className="overflow-y-auto flex-1">
           <table className="w-full border-collapse table-fixed">
-            <thead className="sticky top-0 bg-white z-10">
-              <tr className="border-b border-gray-200">
-                <th className="w-[40px] lg:w-[60px] h-10 lg:h-12 border-r border-gray-200" />
+            <thead className="sticky top-0 bg-gradient-to-b from-gray-50 to-white z-10">
+              <tr className="border-b border-gray-100">
+                <th className="w-[40px] lg:w-[60px] h-12 lg:h-14 border-r border-gray-100" />
                 {weekDays.map((day, i) => (
                   <th 
                     key={i} 
-                    className={`h-10 lg:h-12 text-center border-r border-gray-200 ${isToday(day) ? "bg-primary/5" : ""}`}
+                    className={`h-12 lg:h-14 text-center border-r border-gray-100 transition-colors ${
+                      isToday(day) ? "bg-primary/5" : ""
+                    }`}
                   >
-                    <span className="text-[10px] lg:text-xs text-gray-500 hidden lg:block">{DAYS[i]}</span>
-                    <span className="text-[10px] lg:hidden text-gray-500">{DAYS_SHORT[i]}</span>
-                    <span className={`text-xs lg:text-sm font-semibold block ${isToday(day) ? "text-primary" : "text-gray-700"}`}>
+                    <span className="text-[10px] lg:text-xs text-gray-400 font-medium hidden lg:block uppercase tracking-wide">{DAYS[i]}</span>
+                    <span className="text-[10px] lg:hidden text-gray-400 font-medium">{DAYS_SHORT[i]}</span>
+                    <span className={`text-sm lg:text-base font-bold block mt-0.5 ${
+                      isToday(day) 
+                        ? "text-white bg-primary w-7 h-7 lg:w-8 lg:h-8 rounded-full flex items-center justify-center mx-auto" 
+                        : "text-gray-700"
+                    }`}>
                       {day.getDate()}
                     </span>
                   </th>
@@ -220,14 +241,16 @@ export default function CalendarView({
             </thead>
             <tbody>
               {HOURS.map((hour) => (
-                <tr key={hour} className="border-b border-gray-100">
-                  <td className="w-[40px] lg:w-[60px] text-[10px] lg:text-xs text-gray-400 text-right pr-1 lg:pr-2 pt-1 border-r border-gray-200 align-top h-[40px] lg:h-[50px]">
+                <tr key={hour} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
+                  <td className="w-[40px] lg:w-[60px] text-[10px] lg:text-xs text-gray-400 text-right pr-2 lg:pr-3 pt-1.5 border-r border-gray-100 align-top h-[45px] lg:h-[55px] font-medium">
                     {hour.toString().padStart(2, "0")}:00
                   </td>
                   {weekDays.map((day, i) => (
                     <td 
                       key={i}
-                      className={`border-r border-gray-200 p-0.5 hover:bg-gray-50 cursor-pointer align-top h-[40px] lg:h-[50px] ${isToday(day) ? "bg-primary/5" : ""}`}
+                      className={`border-r border-gray-100 p-0.5 lg:p-1 cursor-pointer align-top h-[45px] lg:h-[55px] transition-colors ${
+                        isToday(day) ? "bg-primary/[0.03]" : "hover:bg-primary/[0.02]"
+                      }`}
                       onClick={() => {
                         const slotDate = new Date(day);
                         slotDate.setHours(hour, 0, 0, 0);
@@ -252,9 +275,9 @@ export default function CalendarView({
     
     return (
       <div className="flex flex-col h-full">
-        <div className="grid grid-cols-7 border-b border-gray-200">
+        <div className="grid grid-cols-7 border-b border-gray-100 bg-gray-50/50">
           {DAYS.map((day, i) => (
-            <div key={day} className="h-8 lg:h-10 flex items-center justify-center text-[10px] lg:text-xs font-semibold text-gray-500 border-l border-gray-200 first:border-l-0">
+            <div key={day} className="h-10 lg:h-12 flex items-center justify-center text-[10px] lg:text-xs font-semibold text-gray-400 border-l border-gray-100 first:border-l-0 uppercase tracking-wide">
               <span className="hidden lg:block">{day}</span>
               <span className="lg:hidden">{DAYS_SHORT[i]}</span>
             </div>
@@ -264,20 +287,24 @@ export default function CalendarView({
           {monthDays.map((day, i) => (
             <div 
               key={i}
-              className={`border-b border-l border-gray-100 p-0.5 lg:p-1 min-h-[50px] lg:min-h-[80px] ${
-                day ? "hover:bg-gray-50 cursor-pointer" : "bg-gray-50"
-              } ${day && isToday(day) ? "bg-primary/5" : ""}`}
+              className={`border-b border-l border-gray-50 p-1 lg:p-1.5 min-h-[60px] lg:min-h-[90px] transition-colors ${
+                day ? "hover:bg-primary/[0.02] cursor-pointer" : "bg-gray-50/50"
+              } ${day && isToday(day) ? "bg-primary/5 ring-1 ring-inset ring-primary/20" : ""}`}
               onClick={() => day && onSlotClick(day)}
             >
               {day && (
                 <>
-                  <div className={`text-xs lg:text-sm font-medium mb-0.5 lg:mb-1 ${isToday(day) ? "text-primary" : "text-gray-700"}`}>
+                  <div className={`text-xs lg:text-sm font-semibold mb-1 ${
+                    isToday(day) 
+                      ? "text-white bg-primary w-6 h-6 lg:w-7 lg:h-7 rounded-full flex items-center justify-center" 
+                      : "text-gray-700"
+                  }`}>
                     {day.getDate()}
                   </div>
-                  <div className="flex flex-col gap-0.5 overflow-hidden max-h-[30px] lg:max-h-[60px]">
+                  <div className="flex flex-col gap-0.5 overflow-hidden max-h-[35px] lg:max-h-[65px]">
                     {getEventsForDate(day).slice(0, window.innerWidth < 1024 ? 1 : 3).map(event => renderEvent(event, true))}
                     {getEventsForDate(day).length > (window.innerWidth < 1024 ? 1 : 3) && (
-                      <span className="text-[10px] lg:text-xs text-gray-500">+{getEventsForDate(day).length - (window.innerWidth < 1024 ? 1 : 3)}</span>
+                      <span className="text-[10px] lg:text-xs text-primary font-medium bg-primary/10 px-1.5 py-0.5 rounded-full w-fit">+{getEventsForDate(day).length - (window.innerWidth < 1024 ? 1 : 3)}</span>
                     )}
                   </div>
                 </>
@@ -290,48 +317,50 @@ export default function CalendarView({
   };
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-xl lg:rounded-2xl border border-gray-200 overflow-hidden">
+    <div className="flex flex-col h-full bg-white rounded-xl lg:rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between p-2 lg:p-4 border-b border-gray-200 gap-2 lg:gap-0">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between p-3 lg:p-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white gap-2 lg:gap-0">
         {/* Navigation */}
-        <div className="flex items-center justify-between lg:justify-start gap-1 lg:gap-2">
-          <div className="flex items-center gap-1">
+        <div className="flex items-center justify-between lg:justify-start gap-2 lg:gap-3">
+          <div className="flex items-center gap-0.5 bg-white rounded-lg border border-gray-200 p-0.5 shadow-sm">
             <button
               onClick={navigatePrev}
-              className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-500 cursor-pointer"
+              className="w-8 h-8 rounded-md hover:bg-primary/5 flex items-center justify-center text-gray-500 hover:text-primary cursor-pointer transition-colors"
             >
               <ChevronLeft size={18} />
             </button>
             <button
               onClick={navigateNext}
-              className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-500 cursor-pointer"
+              className="w-8 h-8 rounded-md hover:bg-primary/5 flex items-center justify-center text-gray-500 hover:text-primary cursor-pointer transition-colors"
             >
               <ChevronRight size={18} />
             </button>
           </div>
           <button
             onClick={goToToday}
-            className="px-2 lg:px-3 py-1 lg:py-1.5 text-xs lg:text-sm font-medium text-primary hover:bg-primary/5 rounded-lg cursor-pointer"
+            className="px-3 py-1.5 text-xs lg:text-sm font-semibold text-primary bg-primary/5 hover:bg-primary/10 rounded-lg cursor-pointer transition-colors border border-primary/20"
           >
             Aujourd'hui
           </button>
-          <h2 className="text-sm lg:text-lg font-bold text-primary lg:ml-2">
+          <h2 className="text-sm lg:text-lg font-bold text-gray-800 lg:ml-2">
             <span className="hidden lg:inline">{formatDateHeader()}</span>
             <span className="lg:hidden">{formatDateHeader(true)}</span>
           </h2>
         </div>
 
         {/* View switcher */}
-        <div className="flex bg-gray-100 rounded-lg p-0.5 lg:p-1">
+        <div className="flex bg-gray-100/80 rounded-xl p-1 shadow-inner">
           {(["day", "week", "month"] as CalendarViewType[]).map((v) => (
             <button
               key={v}
               onClick={() => onViewChange(v)}
-              className={`flex-1 lg:flex-none px-2 lg:px-3 py-1 lg:py-1.5 text-xs lg:text-sm font-medium rounded-md transition-all cursor-pointer ${
-                view === v ? "bg-white text-primary shadow-sm" : "text-gray-500 hover:text-gray-700"
+              className={`flex-1 lg:flex-none px-3 lg:px-4 py-1.5 lg:py-2 text-xs lg:text-sm font-semibold rounded-lg transition-all cursor-pointer ${
+                view === v 
+                  ? "bg-white text-primary shadow-md" 
+                  : "text-gray-500 hover:text-gray-700 hover:bg-white/50"
               }`}
             >
-              {v === "day" ? "Jour" : v === "week" ? "Sem." : "Mois"}
+              {v === "day" ? "Jour" : v === "week" ? "Semaine" : "Mois"}
             </button>
           ))}
         </div>
