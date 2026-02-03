@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { Box, Stack, Text, Logo } from "@/components/ui";
+import { Logo } from "@/components/ui";
 import { 
   Building2, 
   Wallet, 
@@ -11,7 +11,6 @@ import {
   Briefcase, 
   CreditCard, 
   LogOut,
-  ChevronRight,
   X
 } from "lucide-react";
 
@@ -80,7 +79,7 @@ export default function DashboardSidebar({ onLogout, isOpen, onClose }: Dashboar
           <Logo variant="light" size="md" />
           <button 
             onClick={onClose}
-            className="lg:hidden w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-white/70 hover:bg-white/20"
+            className="lg:hidden w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-white/70 hover:bg-white/20 transition-colors"
           >
             <X size={18} />
           </button>
@@ -105,12 +104,9 @@ export default function DashboardSidebar({ onLogout, isOpen, onClose }: Dashboar
                     `}
                   >
                     <Icon size={20} strokeWidth={1.5} />
-                    <span className={`text-sm font-medium flex-1 ${isActive ? "text-primary" : "text-white/70"}`}>
+                    <span className="text-sm font-medium">
                       {item.label}
                     </span>
-                    {isActive && (
-                      <ChevronRight size={16} className="opacity-60" />
-                    )}
                   </div>
                 </Link>
               );

@@ -19,6 +19,8 @@ interface AgendaModalsProps {
   onCloseUnavailabilityForm: () => void;
   onCloseDeleteModal: () => void;
   onConfirmDelete: () => void;
+  onDeleteAppointment?: () => void;
+  onDeleteUnavailability?: () => void;
 }
 
 export default function AgendaModals({
@@ -35,31 +37,31 @@ export default function AgendaModals({
   onCloseUnavailabilityForm,
   onCloseDeleteModal,
   onConfirmDelete,
+  onDeleteAppointment,
+  onDeleteUnavailability,
 }: AgendaModalsProps) {
   return (
     <>
       {showAppointmentForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <AppointmentForm
-            appointment={editingAppointment}
-            establishmentId={establishmentId}
-            selectedDate={selectedDate}
-            onSave={onAppointmentSave}
-            onCancel={onCloseAppointmentForm}
-          />
-        </div>
+        <AppointmentForm
+          appointment={editingAppointment}
+          establishmentId={establishmentId}
+          selectedDate={selectedDate}
+          onSave={onAppointmentSave}
+          onCancel={onCloseAppointmentForm}
+          onDelete={editingAppointment ? onDeleteAppointment : undefined}
+        />
       )}
 
       {showUnavailabilityForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <UnavailabilityForm
-            unavailability={editingUnavailability}
-            establishmentId={establishmentId}
-            selectedDate={selectedDate}
-            onSave={onUnavailabilitySave}
-            onCancel={onCloseUnavailabilityForm}
-          />
-        </div>
+        <UnavailabilityForm
+          unavailability={editingUnavailability}
+          establishmentId={establishmentId}
+          selectedDate={selectedDate}
+          onSave={onUnavailabilitySave}
+          onCancel={onCloseUnavailabilityForm}
+          onDelete={editingUnavailability ? onDeleteUnavailability : undefined}
+        />
       )}
 
       <Modal

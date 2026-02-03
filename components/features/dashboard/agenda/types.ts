@@ -17,11 +17,14 @@ export interface AppointmentData {
   };
 }
 
+export type UnavailabilityType = "vacation" | "training" | "illness" | "event" | "other";
+
 export interface UnavailabilityData {
   id?: string;
   establishment_id?: string;
   start_time: string;
   end_time: string;
+  unavailability_type: UnavailabilityType;
   reason?: string;
   is_recurring: boolean;
   recurrence_pattern?: "daily" | "weekly" | "monthly" | null;

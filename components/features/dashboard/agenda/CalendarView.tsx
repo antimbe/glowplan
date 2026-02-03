@@ -3,7 +3,15 @@
 import { useState, useMemo } from "react";
 import { ChevronLeft, ChevronRight, Plus, Clock, User, Ban } from "lucide-react";
 import { Button } from "@/components/ui";
-import { CalendarViewType, CalendarEvent, AppointmentData, UnavailabilityData } from "./types";
+import { CalendarViewType, CalendarEvent, AppointmentData, UnavailabilityData, UnavailabilityType } from "./types";
+
+const UNAVAILABILITY_TYPE_LABELS: Record<UnavailabilityType, string> = {
+  vacation: "Vacances",
+  training: "Formation",
+  illness: "Maladie",
+  event: "Événement",
+  other: "Indisponible",
+};
 
 interface CalendarViewProps {
   events: CalendarEvent[];
@@ -15,7 +23,7 @@ interface CalendarViewProps {
   onSlotClick: (date: Date) => void;
 }
 
-const HOURS = Array.from({ length: 14 }, (_, i) => i + 7); // 7h à 20h
+const HOURS = Array.from({ length: 13 }, (_, i) => i + 7); // 7h à 19h (dernier créneau visible)
 const DAYS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
 const DAYS_SHORT = ["L", "M", "M", "J", "V", "S", "D"];
 const MONTHS = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
@@ -84,9 +92,46 @@ export default function CalendarView({
 
   const getEventsForDate = (date: Date) => {
     return events.filter(event => {
-      const eventDate = new Date(event.start);
-      return eventDate.toDateString() === date.toDateString();
+      const eventStart = new Date(event.start);
+      const eventEnd = new Date(event.end);
+      const dayStart = new Date(date);
+      dayStart.setHours(0, 0, 0, 0);
+      const dayEnd = new Date(date);
+      dayEnd.setHours(23, 59, 59, 999);
+      return eventStart <= dayEnd && eventEnd >= dayStart;
     });
+  };
+
+  const isFullDayUnavailable = (date: Date) => {
+    const dayStart = new Date(date);
+    dayStart.setHours(7, 0, 0, 0); // Journée de travail commence à 7h
+    const dayEnd = new Date(date);
+    dayEnd.setHours(20, 0, 0, 0); // Journée de travail finit à 20h
+
+    return events.find(event => {
+      if (event.type !== "unavailability") return false;
+      const eventStart = new Date(event.start);
+      const eventEnd = new Date(event.end);
+      // Vérifier si l'indisponibilité couvre TOUTE la journée de travail (7h-20h)
+      return eventStart <= dayStart && eventEnd >= dayEnd;
+    }) as CalendarEvent | undefined;
+  };
+
+  const isSlotUnavailable = (date: Date, hour: number) => {
+    const slotStart = new Date(date);
+    slotStart.setHours(hour, 0, 0, 0);
+    const slotEnd = new Date(date);
+    slotEnd.setHours(hour + 1, 0, 0, 0);
+
+    return events.find(event => {
+      if (event.type !== "unavailability") return false;
+      const eventStart = new Date(event.start);
+      const eventEnd = new Date(event.end);
+      
+      // Vérifier si le créneau chevauche l'indisponibilité
+      // slotStart < eventEnd ET slotEnd > eventStart
+      return slotStart.getTime() < eventEnd.getTime() && slotEnd.getTime() > eventStart.getTime();
+    }) as CalendarEvent | undefined;
   };
 
   const getEventsForHour = (date: Date, hour: number) => {
@@ -127,6 +172,10 @@ export default function CalendarView({
 
   const renderEvent = (event: CalendarEvent, compact = false) => {
     const isAppointment = event.type === "appointment";
+    const unavailabilityData = !isAppointment ? event.data as UnavailabilityData : null;
+    const typeLabel = unavailabilityData?.unavailability_type 
+      ? UNAVAILABILITY_TYPE_LABELS[unavailabilityData.unavailability_type] 
+      : "Indisponible";
     
     if (compact) {
       return (
@@ -139,7 +188,7 @@ export default function CalendarView({
               : "bg-gradient-to-r from-red-500 to-red-400 border-l-2 border-red-600"
           } text-white text-[10px] lg:text-xs px-1.5 py-0.5 rounded-md truncate cursor-pointer hover:shadow-md transition-all`}
         >
-          {event.title}
+          {isAppointment ? event.title : typeLabel}
         </div>
       );
     }
@@ -159,8 +208,11 @@ export default function CalendarView({
       >
         <div className="font-semibold truncate flex items-center gap-1">
           {isAppointment ? <User size={10} /> : <Ban size={10} />}
-          {event.title}
+          {isAppointment ? event.title : typeLabel}
         </div>
+        {!isAppointment && unavailabilityData?.reason && (
+          <div className="opacity-80 text-[10px] truncate mt-0.5">{unavailabilityData.reason}</div>
+        )}
         <div className="opacity-90 flex items-center gap-1 mt-0.5">
           <Clock size={10} />
           {start.getHours().toString().padStart(2, "0")}:{start.getMinutes().toString().padStart(2, "0")} - 
@@ -168,6 +220,135 @@ export default function CalendarView({
         </div>
       </div>
     );
+  };
+
+  const renderUnavailableSlot = (unavailability: CalendarEvent) => {
+    const data = unavailability.data as UnavailabilityData;
+    const typeLabel = data?.unavailability_type 
+      ? UNAVAILABILITY_TYPE_LABELS[data.unavailability_type] 
+      : "Indisponible";
+    
+    return (
+      <div 
+        className="absolute inset-0 bg-red-100/80 flex items-center justify-center cursor-pointer"
+        onClick={(e) => { e.stopPropagation(); onEventClick(unavailability); }}
+      >
+        <div className="text-red-600 text-[10px] lg:text-xs font-medium flex items-center gap-1">
+          <Ban size={12} />
+          {typeLabel}
+        </div>
+      </div>
+    );
+  };
+
+  const renderEventPositioned = (event: CalendarEvent, slotHour: number, cellHeight: number, currentDay?: Date) => {
+    const isAppointment = event.type === "appointment";
+    const start = new Date(event.start);
+    const end = new Date(event.end);
+    
+    let startMinutes = start.getHours() * 60 + start.getMinutes();
+    let endMinutes = end.getHours() * 60 + end.getMinutes();
+    
+    // Pour les indisponibilités multi-jours, calculer les heures pour ce jour spécifique
+    if (!isAppointment && currentDay) {
+      const dayStart = new Date(currentDay);
+      dayStart.setHours(0, 0, 0, 0);
+      const eventStartDate = new Date(start);
+      eventStartDate.setHours(0, 0, 0, 0);
+      const eventEndDate = new Date(end);
+      eventEndDate.setHours(0, 0, 0, 0);
+      
+      // Premier jour : de l'heure de début à 20h
+      if (dayStart.getTime() === eventStartDate.getTime()) {
+        endMinutes = 20 * 60; // Fin à 20h
+      }
+      // Dernier jour : de 7h à l'heure de fin
+      else if (dayStart.getTime() === eventEndDate.getTime()) {
+        startMinutes = 7 * 60; // Début à 7h
+      }
+      // Jours intermédiaires : toute la journée (7h à 20h)
+      else {
+        startMinutes = 7 * 60;
+        endMinutes = 20 * 60;
+      }
+    }
+    
+    const slotStartMinutes = slotHour * 60;
+    
+    const topOffset = Math.max(0, startMinutes - slotStartMinutes);
+    const duration = endMinutes - startMinutes;
+    const topPercent = (topOffset / 60) * 100;
+    const heightPercent = (duration / 60) * 100;
+    
+    const unavailabilityData = event.data as UnavailabilityData | undefined;
+    const typeLabel = unavailabilityData?.unavailability_type 
+      ? UNAVAILABILITY_TYPE_LABELS[unavailabilityData.unavailability_type] 
+      : "Indisponible";
+
+    return (
+      <div
+        key={event.id}
+        onClick={(e) => { e.stopPropagation(); onEventClick(event); }}
+        className={`absolute left-0.5 right-0.5 z-10 ${
+          isAppointment 
+            ? "bg-gradient-to-r from-primary to-primary/80 border-l-2 border-primary-dark" 
+            : "bg-gradient-to-r from-red-500 to-red-400 border-l-2 border-red-600"
+        } text-white text-[10px] lg:text-xs px-1.5 py-0.5 rounded-md cursor-pointer hover:shadow-lg hover:z-20 transition-all overflow-hidden`}
+        style={{
+          top: `${topPercent}%`,
+          height: `${heightPercent}%`,
+          minHeight: '20px',
+        }}
+      >
+        <div className="font-semibold truncate flex items-center gap-1">
+          {isAppointment ? <User size={10} /> : <Ban size={10} />}
+          {isAppointment ? event.title : typeLabel}
+        </div>
+        {heightPercent >= 100 && (
+          <div className="opacity-90 flex items-center gap-1 mt-0.5">
+            <Clock size={10} />
+            {start.getHours().toString().padStart(2, "0")}:{start.getMinutes().toString().padStart(2, "0")} - 
+            {end.getHours().toString().padStart(2, "0")}:{end.getMinutes().toString().padStart(2, "0")}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const getEventsStartingAtHour = (date: Date, hour: number) => {
+    return events.filter(event => {
+      const eventStart = new Date(event.start);
+      const eventEnd = new Date(event.end);
+      
+      // Pour les RDV : afficher seulement à l'heure de début
+      if (event.type === "appointment") {
+        return eventStart.getFullYear() === date.getFullYear() &&
+               eventStart.getMonth() === date.getMonth() &&
+               eventStart.getDate() === date.getDate() &&
+               eventStart.getHours() === hour;
+      }
+      
+      // Pour les indisponibilités multi-jours : afficher au début de chaque jour couvert
+      const dateStart = new Date(date);
+      dateStart.setHours(0, 0, 0, 0);
+      const eventStartDate = new Date(eventStart);
+      eventStartDate.setHours(0, 0, 0, 0);
+      const eventEndDate = new Date(eventEnd);
+      eventEndDate.setHours(0, 0, 0, 0);
+      
+      // Vérifier si ce jour est couvert par l'indisponibilité
+      if (dateStart < eventStartDate || dateStart > eventEndDate) {
+        return false;
+      }
+      
+      // Premier jour : afficher à l'heure de début
+      if (dateStart.getTime() === eventStartDate.getTime()) {
+        return eventStart.getHours() === hour;
+      }
+      
+      // Jours intermédiaires et dernier jour : afficher à 7h (début de journée visible)
+      return hour === 7;
+    });
   };
 
   // Vue Jour
@@ -184,26 +365,37 @@ export default function CalendarView({
         </div>
       </div>
       <div className="flex-1 overflow-y-auto">
-        {HOURS.map((hour) => (
-          <div key={hour} className="grid grid-cols-[60px_1fr] min-h-[70px] border-b border-gray-50 hover:bg-primary/[0.02] transition-colors">
-            <div className="text-xs text-gray-400 text-right pr-3 pt-2 font-medium">
-              {hour.toString().padStart(2, "0")}:00
-            </div>
-            <div 
-              className="border-l border-gray-100 p-1.5 cursor-pointer relative group"
-              onClick={() => {
-                const slotDate = new Date(currentDate);
-                slotDate.setHours(hour, 0, 0, 0);
-                onSlotClick(slotDate);
-              }}
-            >
-              <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity rounded-r-lg" />
-              <div className="relative z-10">
-                {getEventsForHour(currentDate, hour).map(event => renderEvent(event))}
+        {HOURS.map((hour) => {
+          const unavailableSlot = isSlotUnavailable(currentDate, hour);
+          const slotEvents = getEventsStartingAtHour(currentDate, hour);
+          
+          return (
+            <div key={hour} className="grid grid-cols-[60px_1fr] h-[70px] border-b border-gray-50 hover:bg-primary/[0.02] transition-colors">
+              <div className="text-xs text-gray-400 text-right pr-3 pt-2 font-medium">
+                {hour.toString().padStart(2, "0")}:00
+              </div>
+              <div 
+                className={`border-l border-gray-100 relative group ${
+                  unavailableSlot ? "cursor-not-allowed" : "cursor-pointer"
+                }`}
+                onClick={() => {
+                  if (unavailableSlot) {
+                    onEventClick(unavailableSlot);
+                    return;
+                  }
+                  const slotDate = new Date(currentDate);
+                  slotDate.setHours(hour, 0, 0, 0);
+                  onSlotClick(slotDate);
+                }}
+              >
+                {!unavailableSlot && (
+                  <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity rounded-r-lg" />
+                )}
+                {slotEvents.map(event => renderEventPositioned(event, hour, 70, currentDate))}
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -245,21 +437,32 @@ export default function CalendarView({
                   <td className="w-[40px] lg:w-[60px] text-[10px] lg:text-xs text-gray-400 text-right pr-2 lg:pr-3 pt-1.5 border-r border-gray-100 align-top h-[45px] lg:h-[55px] font-medium">
                     {hour.toString().padStart(2, "0")}:00
                   </td>
-                  {weekDays.map((day, i) => (
-                    <td 
-                      key={i}
-                      className={`border-r border-gray-100 p-0.5 lg:p-1 cursor-pointer align-top h-[45px] lg:h-[55px] transition-colors ${
-                        isToday(day) ? "bg-primary/[0.03]" : "hover:bg-primary/[0.02]"
-                      }`}
-                      onClick={() => {
-                        const slotDate = new Date(day);
-                        slotDate.setHours(hour, 0, 0, 0);
-                        onSlotClick(slotDate);
-                      }}
-                    >
-                      {getEventsForHour(day, hour).map(event => renderEvent(event, true))}
-                    </td>
-                  ))}
+                  {weekDays.map((day, i) => {
+                    const unavailableSlot = isSlotUnavailable(day, hour);
+                    const slotEvents = getEventsStartingAtHour(day, hour);
+                    
+                    return (
+                      <td 
+                        key={i}
+                        className={`border-r border-gray-100 h-[45px] lg:h-[55px] transition-colors relative overflow-visible ${
+                          unavailableSlot 
+                            ? "bg-red-50 cursor-not-allowed" 
+                            : isToday(day) ? "bg-primary/[0.03] cursor-pointer" : "hover:bg-primary/[0.02] cursor-pointer"
+                        }`}
+                        onClick={() => {
+                          if (unavailableSlot) {
+                            onEventClick(unavailableSlot);
+                            return;
+                          }
+                          const slotDate = new Date(day);
+                          slotDate.setHours(hour, 0, 0, 0);
+                          onSlotClick(slotDate);
+                        }}
+                      >
+                        {slotEvents.map(event => renderEventPositioned(event, hour, 55, day))}
+                      </td>
+                    );
+                  })}
                 </tr>
               ))}
             </tbody>
@@ -283,34 +486,67 @@ export default function CalendarView({
             </div>
           ))}
         </div>
-        <div className="flex-1 grid grid-cols-7 auto-rows-fr overflow-y-auto">
-          {monthDays.map((day, i) => (
-            <div 
-              key={i}
-              className={`border-b border-l border-gray-50 p-1 lg:p-1.5 min-h-[60px] lg:min-h-[90px] transition-colors ${
-                day ? "hover:bg-primary/[0.02] cursor-pointer" : "bg-gray-50/50"
-              } ${day && isToday(day) ? "bg-primary/5 ring-1 ring-inset ring-primary/20" : ""}`}
-              onClick={() => day && onSlotClick(day)}
-            >
-              {day && (
-                <>
-                  <div className={`text-xs lg:text-sm font-semibold mb-1 ${
-                    isToday(day) 
-                      ? "text-white bg-primary w-6 h-6 lg:w-7 lg:h-7 rounded-full flex items-center justify-center" 
-                      : "text-gray-700"
-                  }`}>
-                    {day.getDate()}
-                  </div>
-                  <div className="flex flex-col gap-0.5 overflow-hidden max-h-[35px] lg:max-h-[65px]">
-                    {getEventsForDate(day).slice(0, window.innerWidth < 1024 ? 1 : 3).map(event => renderEvent(event, true))}
-                    {getEventsForDate(day).length > (window.innerWidth < 1024 ? 1 : 3) && (
-                      <span className="text-[10px] lg:text-xs text-primary font-medium bg-primary/10 px-1.5 py-0.5 rounded-full w-fit">+{getEventsForDate(day).length - (window.innerWidth < 1024 ? 1 : 3)}</span>
+        <div className="grid grid-cols-7" style={{ gridTemplateRows: 'repeat(6, minmax(80px, 1fr))' }}>
+          {monthDays.map((day, i) => {
+            const fullDayUnavailable = day ? isFullDayUnavailable(day) : undefined;
+            const unavailabilityData = fullDayUnavailable?.data as UnavailabilityData | undefined;
+            const typeLabel = unavailabilityData?.unavailability_type 
+              ? UNAVAILABILITY_TYPE_LABELS[unavailabilityData.unavailability_type] 
+              : "Indisponible";
+            
+            return (
+              <div 
+                key={i}
+                className={`border-b border-l border-gray-50 p-1 lg:p-1.5 overflow-hidden transition-colors ${
+                  !day ? "bg-gray-50/50" :
+                  fullDayUnavailable ? "bg-red-50 cursor-pointer" :
+                  "hover:bg-primary/30 cursor-pointer"
+                } ${day && isToday(day) && !fullDayUnavailable ? "bg-primary/5 ring-1 ring-inset ring-primary/20" : ""}`}
+                onClick={() => {
+                  if (!day) return;
+                  if (fullDayUnavailable) {
+                    onEventClick(fullDayUnavailable);
+                    return;
+                  }
+                  // En vue mois, passer en vue jour sur le jour cliqué
+                  onDateChange(day);
+                  onViewChange("day");
+                }}
+              >
+                {day && (
+                  <>
+                    <div className={`text-xs lg:text-sm font-semibold mb-1 ${
+                      fullDayUnavailable 
+                        ? "text-red-600"
+                        : isToday(day) 
+                          ? "text-white bg-primary w-6 h-6 lg:w-7 lg:h-7 rounded-full flex items-center justify-center" 
+                          : "text-gray-700"
+                    }`}>
+                      {day.getDate()}
+                    </div>
+                    {fullDayUnavailable ? (
+                      <div className="bg-red-100 rounded-md p-1 lg:p-1.5">
+                        <div className="flex items-center gap-1 text-red-600">
+                          <Ban size={10} />
+                          <span className="text-[10px] lg:text-xs font-medium">{typeLabel}</span>
+                        </div>
+                        {unavailabilityData?.reason && (
+                          <p className="text-[9px] lg:text-[10px] text-red-500 truncate mt-0.5">{unavailabilityData.reason}</p>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-0.5 overflow-hidden max-h-[35px] lg:max-h-[65px]">
+                        {getEventsForDate(day).slice(0, typeof window !== 'undefined' && window.innerWidth < 1024 ? 1 : 3).map(event => renderEvent(event, true))}
+                        {getEventsForDate(day).length > (typeof window !== 'undefined' && window.innerWidth < 1024 ? 1 : 3) && (
+                          <span className="text-[10px] lg:text-xs text-primary font-medium bg-primary/10 px-1.5 py-0.5 rounded-full w-fit">+{getEventsForDate(day).length - (typeof window !== 'undefined' && window.innerWidth < 1024 ? 1 : 3)}</span>
+                        )}
+                      </div>
                     )}
-                  </div>
-                </>
-              )}
-            </div>
-          ))}
+                  </>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     );

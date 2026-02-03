@@ -32,6 +32,34 @@ export default function AgendaPage() {
     }
   };
 
+  const handleDeleteAppointment = () => {
+    if (modals.editingAppointment) {
+      modals.openDeleteModal({
+        id: modals.editingAppointment.id!,
+        type: "appointment",
+        title: modals.editingAppointment.client_name,
+        start: new Date(modals.editingAppointment.start_time),
+        end: new Date(modals.editingAppointment.end_time),
+        data: modals.editingAppointment,
+      });
+      modals.closeAppointmentForm();
+    }
+  };
+
+  const handleDeleteUnavailability = () => {
+    if (modals.editingUnavailability) {
+      modals.openDeleteModal({
+        id: modals.editingUnavailability.id!,
+        type: "unavailability",
+        title: modals.editingUnavailability.reason || "Indisponibilité",
+        start: new Date(modals.editingUnavailability.start_time),
+        end: new Date(modals.editingUnavailability.end_time),
+        data: modals.editingUnavailability,
+      });
+      modals.closeUnavailabilityForm();
+    }
+  };
+
   if (loading) {
     return <AgendaLoading />;
   }
@@ -73,6 +101,8 @@ export default function AgendaPage() {
         onCloseUnavailabilityForm={modals.closeUnavailabilityForm}
         onCloseDeleteModal={modals.closeDeleteModal}
         onConfirmDelete={handleConfirmDelete}
+        onDeleteAppointment={handleDeleteAppointment}
+        onDeleteUnavailability={handleDeleteUnavailability}
       />
     </div>
   );

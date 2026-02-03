@@ -69,8 +69,8 @@ export function useAgenda() {
         .from("unavailabilities")
         .select("*")
         .eq("establishment_id", establishmentId)
-        .gte("start_time", startDate.toISOString())
         .lte("start_time", endDate.toISOString())
+        .gte("end_time", startDate.toISOString())
         .order("start_time");
 
       const calendarEvents: CalendarEvent[] = [];

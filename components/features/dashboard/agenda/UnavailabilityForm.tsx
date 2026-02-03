@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { X, Clock, FileText, Loader2, RefreshCw, Ban } from "lucide-react";
-import { Button, Switch } from "@/components/ui";
-import { UnavailabilityData } from "./types";
+import { Clock, FileText, Ban, Trash2, Tag } from "lucide-react";
+import { Button, Input, Select, FormField, FormModal, Modal } from "@/components/ui";
+import { UnavailabilityData, UnavailabilityType } from "./types";
+import { checkUnavailabilityConflicts, ConflictResult } from "./hooks";
 import { createClient } from "@/lib/supabase/client";
 
 interface UnavailabilityFormProps {
@@ -12,18 +13,21 @@ interface UnavailabilityFormProps {
   selectedDate?: Date;
   onSave: (unavailability: UnavailabilityData) => void;
   onCancel: () => void;
+  onDelete?: () => void;
 }
 
-const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
-  const hours = Math.floor(i / 2);
+const TIME_OPTIONS = Array.from({ length: 27 }, (_, i) => {
+  const hours = Math.floor(i / 2) + 7;
   const minutes = (i % 2) * 30;
   return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
 });
 
-const RECURRENCE_OPTIONS = [
-  { value: "daily", label: "Tous les jours" },
-  { value: "weekly", label: "Toutes les semaines" },
-  { value: "monthly", label: "Tous les mois" },
+const UNAVAILABILITY_TYPES = [
+  { value: "vacation", label: "Vacances" },
+  { value: "training", label: "Formation" },
+  { value: "illness", label: "Maladie" },
+  { value: "event", label: "Événement" },
+  { value: "other", label: "Autre" },
 ];
 
 export default function UnavailabilityForm({ 
@@ -31,11 +35,17 @@ export default function UnavailabilityForm({
   establishmentId, 
   selectedDate,
   onSave, 
-  onCancel 
+  onCancel,
+  onDelete
 }: UnavailabilityFormProps) {
-  const [date, setDate] = useState(
+  const [startDate, setStartDate] = useState(
     selectedDate ? selectedDate.toISOString().split("T")[0] : 
     unavailability?.start_time ? new Date(unavailability.start_time).toISOString().split("T")[0] :
+    new Date().toISOString().split("T")[0]
+  );
+  const [endDate, setEndDate] = useState(
+    unavailability?.end_time ? new Date(unavailability.end_time).toISOString().split("T")[0] :
+    selectedDate ? selectedDate.toISOString().split("T")[0] :
     new Date().toISOString().split("T")[0]
   );
   const [startTime, setStartTime] = useState(() => {
@@ -52,30 +62,54 @@ export default function UnavailabilityForm({
     }
     return "18:00";
   });
-  const [reason, setReason] = useState(unavailability?.reason || "");
-  const [isRecurring, setIsRecurring] = useState(unavailability?.is_recurring || false);
-  const [recurrencePattern, setRecurrencePattern] = useState<string>(
-    unavailability?.recurrence_pattern || "weekly"
+  const [unavailabilityType, setUnavailabilityType] = useState<UnavailabilityType>(
+    unavailability?.unavailability_type || "other"
   );
+  const [reason, setReason] = useState(unavailability?.reason || "");
   const [saving, setSaving] = useState(false);
+  const [conflictModal, setConflictModal] = useState<{ open: boolean; conflict: ConflictResult | null; forceCreate: boolean }>({
+    open: false,
+    conflict: null,
+    forceCreate: false,
+  });
 
   const supabase = createClient();
 
-  const handleSubmit = async () => {
-    if (!date || !startTime || !endTime) return;
+  const handleSubmit = async (skipConflictCheck = false) => {
+    if (!startDate || !endDate || !startTime || !endTime) return;
+
+    const startDateTime = new Date(`${startDate}T${startTime}:00`);
+    const endDateTime = new Date(`${endDate}T${endTime}:00`);
+
+    // Vérifier les conflits avant de sauvegarder
+    if (!skipConflictCheck) {
+      setSaving(true);
+      const conflict = await checkUnavailabilityConflicts(
+        establishmentId,
+        startDateTime,
+        endDateTime,
+        unavailability?.id
+      );
+      
+      if (conflict.hasConflict) {
+        setSaving(false);
+        // Pour les RDV existants, on peut forcer la création
+        const canForce = conflict.type === "appointment";
+        setConflictModal({ open: true, conflict, forceCreate: canForce });
+        return;
+      }
+    }
 
     setSaving(true);
     try {
-      const startDateTime = new Date(`${date}T${startTime}:00`);
-      const endDateTime = new Date(`${date}T${endTime}:00`);
-
       const unavailabilityData = {
         establishment_id: establishmentId,
         start_time: startDateTime.toISOString(),
         end_time: endDateTime.toISOString(),
+        unavailability_type: unavailabilityType,
         reason: reason || null,
-        is_recurring: isRecurring,
-        recurrence_pattern: isRecurring ? recurrencePattern : null,
+        is_recurring: false,
+        recurrence_pattern: null,
       };
 
       if (unavailability?.id) {
@@ -105,144 +139,147 @@ export default function UnavailabilityForm({
     }
   };
 
-  const isValid = date && startTime && endTime;
+  const isValid = startDate && endDate && startTime && endTime && unavailabilityType;
 
-  return (
-    <div className="bg-white rounded-2xl lg:rounded-3xl border border-gray-100 shadow-2xl max-w-lg w-full max-h-[90vh] overflow-hidden mx-2 lg:mx-0">
-      {/* Header avec gradient rouge */}
-      <div className="bg-gradient-to-r from-red-500 to-red-400 p-4 lg:p-5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-              <Ban className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h3 className="text-white text-base lg:text-lg font-bold">
-                {unavailability ? "Modifier l'indisponibilité" : "Nouvelle indisponibilité"}
-              </h3>
-              <p className="text-white/70 text-xs lg:text-sm">Bloquez un créneau dans votre agenda</p>
-            </div>
-          </div>
-          <button
-            onClick={onCancel}
-            className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors cursor-pointer"
-          >
-            <X size={18} />
-          </button>
-        </div>
-      </div>
+  const timeOptions = TIME_OPTIONS.map(time => ({ value: time, label: time }));
 
-      <div className="p-4 lg:p-6">
-        <div className="flex flex-col gap-4 lg:gap-5">
-          {/* Date et heure */}
-          <div className="bg-red-50/50 rounded-xl p-4">
-            <label className="text-xs font-semibold text-gray-600 flex items-center gap-2 mb-3">
-              <Clock size={14} className="text-red-500" />
-              Date et horaires <span className="text-red-400">*</span>
-            </label>
-            <div className="grid grid-cols-3 gap-2">
-              <input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="h-11 px-3 rounded-lg border border-gray-200 focus:border-red-400 focus:ring-2 focus:ring-red-100 transition-all text-sm bg-white"
-              />
-              <div className="flex flex-col">
-                <span className="text-[10px] text-gray-400 mb-1">Début</span>
-                <select
-                  value={startTime}
-                  onChange={(e) => setStartTime(e.target.value)}
-                  className="h-11 px-3 rounded-lg border border-gray-200 focus:border-red-400 focus:ring-2 focus:ring-red-100 transition-all text-sm bg-white cursor-pointer"
-                >
-                  {TIME_OPTIONS.map((time) => (
-                    <option key={time} value={time}>{time}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex flex-col">
-                <span className="text-[10px] text-gray-400 mb-1">Fin</span>
-                <select
-                  value={endTime}
-                  onChange={(e) => setEndTime(e.target.value)}
-                  className="h-11 px-3 rounded-lg border border-gray-200 focus:border-red-400 focus:ring-2 focus:ring-red-100 transition-all text-sm bg-white cursor-pointer"
-                >
-                  {TIME_OPTIONS.map((time) => (
-                    <option key={time} value={time}>{time}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* Motif */}
-          <div className="flex flex-col gap-2">
-            <label className="text-xs font-semibold text-gray-600 flex items-center gap-2">
-              <FileText size={14} className="text-red-500" />
-              Motif (optionnel)
-            </label>
-            <input
-              type="text"
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder="Ex: Congés, Formation, Rendez-vous personnel..."
-              className="h-11 lg:h-12 px-4 rounded-xl border border-gray-200 focus:border-red-400 focus:ring-2 focus:ring-red-100 transition-all text-sm lg:text-base placeholder:text-gray-400"
-            />
-          </div>
-
-          {/* Récurrence */}
-          <div className="bg-gray-50 rounded-xl p-4">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <RefreshCw size={14} className="text-red-500" />
-                <span className="text-sm font-semibold text-gray-700">Répéter cette indisponibilité</span>
-              </div>
-              <Switch
-                checked={isRecurring}
-                onChange={() => setIsRecurring(!isRecurring)}
-                size="sm"
-              />
-            </div>
-            
-            {isRecurring && (
-              <select
-                value={recurrencePattern}
-                onChange={(e) => setRecurrencePattern(e.target.value)}
-                className="w-full h-11 px-4 rounded-lg border border-gray-200 focus:border-red-400 focus:ring-2 focus:ring-red-100 transition-all text-sm bg-white cursor-pointer"
-              >
-                {RECURRENCE_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Footer avec actions */}
-      <div className="border-t border-gray-100 p-4 lg:p-5 bg-gray-50/50">
-        <div className="flex justify-end gap-3">
-          <Button variant="outline" onClick={onCancel} className="px-5">
-            Annuler
-          </Button>
-          <Button
-            variant="primary"
-            onClick={handleSubmit}
-            disabled={!isValid || saving}
-            className="px-6 bg-gradient-to-r from-red-500 to-red-400 hover:from-red-600 hover:to-red-500 shadow-lg hover:shadow-xl transition-all"
-          >
-            {saving ? (
-              <div className="flex items-center gap-2">
-                <Loader2 size={16} className="animate-spin" />
-                <span>Enregistrement...</span>
-              </div>
-            ) : (
-              <span>{unavailability ? "Modifier" : "Bloquer ce créneau"}</span>
-            )}
-          </Button>
-        </div>
+  const footer = (
+    <div className="flex justify-between">
+      {unavailability && onDelete ? (
+        <Button variant="outline" onClick={onDelete} className="px-4 text-red-500 border-red-200 hover:bg-red-50">
+          <Trash2 size={16} className="mr-2" />
+          Supprimer
+        </Button>
+      ) : <div />}
+      <div className="flex gap-3">
+        <Button variant="outline" onClick={onCancel} className="px-5">
+          Annuler
+        </Button>
+        <Button
+          variant="danger"
+          onClick={() => handleSubmit()}
+          disabled={!isValid || saving}
+          loading={saving}
+          className="px-6"
+        >
+          {unavailability ? "Modifier" : "Bloquer ce créneau"}
+        </Button>
       </div>
     </div>
+  );
+
+  return (
+    <>
+    <FormModal
+      isOpen={true}
+      onClose={onCancel}
+      title={unavailability ? "Modifier l'indisponibilité" : "Nouvelle indisponibilité"}
+      subtitle="Bloquez un créneau dans votre agenda"
+      icon={<Ban className="w-5 h-5 text-white" />}
+      variant="danger"
+      footer={footer}
+    >
+      <div className="flex flex-col gap-4 lg:gap-5">
+        <FormField
+          label="Type d'indisponibilité"
+          required
+          leftIcon={<Tag size={14} className="text-red-500" />}
+        >
+          <Select
+            value={unavailabilityType}
+            onChange={(e) => setUnavailabilityType(e.target.value as UnavailabilityType)}
+            options={UNAVAILABILITY_TYPES}
+            fullWidth
+            size="md"
+          />
+        </FormField>
+
+        <div className="bg-red-50/50 rounded-xl p-4">
+          <FormField
+            label="Période"
+            required
+            leftIcon={<Clock size={14} className="text-red-500" />}
+          >
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              <div className="flex flex-col">
+                <span className="text-[10px] text-gray-400 mb-1">Date de début</span>
+                <Input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  fullWidth
+                  className="h-11 !p-3"
+                />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[10px] text-gray-400 mb-1">Heure de début</span>
+                <Select
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                  options={timeOptions}
+                  fullWidth
+                  size="md"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col">
+                <span className="text-[10px] text-gray-400 mb-1">Date de fin</span>
+                <Input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  fullWidth
+                  className="h-11 !p-3"
+                />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[10px] text-gray-400 mb-1">Heure de fin</span>
+                <Select
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                  options={timeOptions}
+                  fullWidth
+                  size="md"
+                />
+              </div>
+            </div>
+          </FormField>
+        </div>
+
+        <FormField
+          label="Motif (optionnel)"
+          leftIcon={<FileText size={14} className="text-red-500" />}
+        >
+          <Input
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="Précisez le motif de l'indisponibilité..."
+            fullWidth
+            className="h-11"
+          />
+        </FormField>
+      </div>
+    </FormModal>
+
+      <Modal
+        isOpen={conflictModal.open}
+        onClose={() => setConflictModal({ open: false, conflict: null, forceCreate: false })}
+        title="Conflit détecté"
+        message={conflictModal.conflict?.message || ""}
+        variant={conflictModal.conflict?.type === "appointment" ? "warning" : "error"}
+        confirmText={conflictModal.forceCreate ? "Créer quand même" : "Compris"}
+        cancelText={conflictModal.forceCreate ? "Annuler" : undefined}
+        showCancel={conflictModal.forceCreate}
+        onConfirm={() => {
+          if (conflictModal.forceCreate) {
+            setConflictModal({ open: false, conflict: null, forceCreate: false });
+            handleSubmit(true);
+          } else {
+            setConflictModal({ open: false, conflict: null, forceCreate: false });
+          }
+        }}
+      />
+    </>
   );
 }

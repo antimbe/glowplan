@@ -22,7 +22,7 @@ export default function DashboardHeader({ userEmail, onMenuClick }: DashboardHea
           </button>
 
           {/* Search Bar - hidden on mobile, visible on tablet+ */}
-          <div className="relative hidden sm:block w-48 md:w-64 lg:w-80">
+          <div className="relative hidden sm:block w-64 md:w-80 lg:w-96">
             <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" />
             <input
               type="text"
@@ -33,7 +33,7 @@ export default function DashboardHeader({ userEmail, onMenuClick }: DashboardHea
         </div>
 
         {/* Right Actions */}
-        <div className="flex items-center gap-2 lg:gap-4">
+        <div className="flex items-center gap-2 lg:gap-3">
           {/* Search button - mobile only */}
           <button className="sm:hidden w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors">
             <Search size={20} className="text-white/70" />
@@ -51,9 +51,9 @@ export default function DashboardHeader({ userEmail, onMenuClick }: DashboardHea
           </button>
 
           {/* User Profile */}
-          <div className="flex items-center gap-3 pl-2 lg:pl-4 border-l border-white/10">
+          <div className="flex items-center gap-3 pl-3 lg:pl-4 border-l border-white/10">
             <div className="w-9 h-9 lg:w-10 lg:h-10 rounded-full bg-white flex items-center justify-center">
-              <span className="text-primary font-bold text-sm">
+              <span className="text-primary font-semibold text-sm">
                 {userEmail?.charAt(0).toUpperCase() || "U"}
               </span>
             </div>
