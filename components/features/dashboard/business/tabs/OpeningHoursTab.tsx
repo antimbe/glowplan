@@ -49,7 +49,15 @@ export default function OpeningHoursTab({ establishmentId }: OpeningHoursTabProp
       if (error) throw error;
 
       if (data && data.length > 0) {
-        setHours(data);
+        // Normaliser les heures (enlever les secondes si présentes)
+        const normalizedData = data.map(h => ({
+          ...h,
+          open_time: h.open_time ? h.open_time.substring(0, 5) : null,
+          close_time: h.close_time ? h.close_time.substring(0, 5) : null,
+          break_start: h.break_start ? h.break_start.substring(0, 5) : null,
+          break_end: h.break_end ? h.break_end.substring(0, 5) : null,
+        }));
+        setHours(normalizedData);
       } else {
         // Initialiser avec les horaires par défaut
         setHours(DEFAULT_HOURS.map(h => ({ ...h, establishment_id: establishmentId })));

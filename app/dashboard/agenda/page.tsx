@@ -1,16 +1,20 @@
 "use client";
 
+import { useState } from "react";
 import { 
   CalendarView, 
   AgendaHeader,
   AgendaLoading,
   AgendaEmpty,
   AgendaModals,
+  ShareAvailabilityModal,
   useAgenda,
   useAgendaModals,
 } from "@/components/features/dashboard/agenda";
 
 export default function AgendaPage() {
+  const [showShareModal, setShowShareModal] = useState(false);
+  
   const {
     loading,
     establishmentId,
@@ -73,6 +77,7 @@ export default function AgendaPage() {
       <AgendaHeader
         onNewAppointment={modals.openNewAppointment}
         onNewUnavailability={modals.openNewUnavailability}
+        onShare={() => setShowShareModal(true)}
       />
 
       <div className="flex-1 min-h-0">
@@ -103,6 +108,12 @@ export default function AgendaPage() {
         onConfirmDelete={handleConfirmDelete}
         onDeleteAppointment={handleDeleteAppointment}
         onDeleteUnavailability={handleDeleteUnavailability}
+      />
+
+      <ShareAvailabilityModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        establishmentId={establishmentId}
       />
     </div>
   );

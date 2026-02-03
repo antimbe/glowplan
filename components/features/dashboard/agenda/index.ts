@@ -5,5 +5,6 @@ export { default as AgendaHeader } from "./AgendaHeader";
 export { default as AgendaLoading } from "./AgendaLoading";
 export { default as AgendaEmpty } from "./AgendaEmpty";
 export { default as AgendaModals } from "./AgendaModals";
+export { default as ShareAvailabilityModal } from "./ShareAvailabilityModal";
 export * from "./types";
 export * from "./hooks";

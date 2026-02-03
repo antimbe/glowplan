@@ -1,14 +1,15 @@
 "use client";
 
-import { Plus, Ban, Calendar } from "lucide-react";
+import { Plus, Ban, Calendar, Share2 } from "lucide-react";
 import { Button } from "@/components/ui";
 
 interface AgendaHeaderProps {
   onNewAppointment: () => void;
   onNewUnavailability: () => void;
+  onShare: () => void;
 }
 
-export default function AgendaHeader({ onNewAppointment, onNewUnavailability }: AgendaHeaderProps) {
+export default function AgendaHeader({ onNewAppointment, onNewUnavailability, onShare }: AgendaHeaderProps) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gradient-to-r from-primary/5 to-transparent p-3 lg:p-4 rounded-xl lg:rounded-2xl">
       <div className="flex items-center gap-3">
@@ -21,6 +22,15 @@ export default function AgendaHeader({ onNewAppointment, onNewUnavailability }: 
         </div>
       </div>
       <div className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onShare}
+          className="text-primary border-primary/20 hover:bg-primary/5 hover:border-primary/30 text-xs lg:text-sm shadow-sm"
+        >
+          <Share2 size={16} className="mr-1.5" />
+          <span className="hidden sm:inline">Partager</span>
+        </Button>
         <Button
           variant="outline"
           size="sm"
