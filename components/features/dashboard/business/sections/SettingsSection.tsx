@@ -5,6 +5,7 @@ import SectionCard from "../SectionCard";
 import FormInput from "../FormInput";
 import FormTextarea from "../FormTextarea";
 import { TabProps } from "../types";
+import { Switch, Checkbox } from "@/components/ui";
 
 export default function SettingsSection({ formData, updateField }: TabProps) {
   return (
@@ -22,19 +23,11 @@ export default function SettingsSection({ formData, updateField }: TabProps) {
             <div className="flex-1">
               <div className="flex items-center justify-between">
                 <p className="text-primary font-bold text-xs lg:text-sm">Confirmation automatique des RDV</p>
-                <div className="relative">
-                  <input 
-                    type="checkbox" 
-                    className="sr-only peer" 
-                    id="auto-confirm"
-                    checked={formData.auto_confirm_appointments}
-                    onChange={(e) => updateField("auto_confirm_appointments", e.target.checked)}
-                  />
-                  <label 
-                    htmlFor="auto-confirm"
-                    className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary cursor-pointer block"
-                  />
-                </div>
+                <Switch
+                  id="auto-confirm"
+                  checked={formData.auto_confirm_appointments}
+                  onChange={(e) => updateField("auto_confirm_appointments", e.target.checked)}
+                />
               </div>
               <p className="text-primary/60 text-xs mt-2">
                 Les demandes seront automatiquement confirmées pour les clients réguliers (2+ visites).
@@ -52,15 +45,12 @@ export default function SettingsSection({ formData, updateField }: TabProps) {
             onChange={(value) => updateField("general_conditions", value)}
             rows={3}
           />
-          <div className="flex items-center gap-2">
-            <input 
-              type="checkbox" 
-              className="w-4 h-4 rounded border-gray-300 text-purple-500 focus:ring-purple-500 cursor-pointer"
-              checked={formData.show_conditions_online}
-              onChange={(e) => updateField("show_conditions_online", e.target.checked)}
-            />
-            <span className="text-gray-500 text-xs">Afficher les conditions sur ma vitrine en ligne</span>
-          </div>
+          <Checkbox
+            checked={formData.show_conditions_online}
+            onChange={(e) => updateField("show_conditions_online", e.target.checked)}
+            label="Afficher les conditions sur ma vitrine en ligne"
+            size="sm"
+          />
         </div>
 
         <FormInput

@@ -17,3 +17,7 @@ export { default as MotionBox } from "./MotionBox";
 export { default as Textarea } from "./Textarea";
 export { default as Modal } from "./Modal";
 export type { ModalVariant } from "./Modal";
+export { default as Checkbox } from "./Checkbox";
+export { default as Switch } from "./Switch";
+export { default as Tabs } from "./Tabs";
+export type { Tab, TabsProps } from "./Tabs";

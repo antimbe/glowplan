@@ -122,7 +122,7 @@ export default function DashboardSidebar({ onLogout, isOpen, onClose }: Dashboar
         <div className="p-3 border-t border-white/10">
           <button
             onClick={onLogout}
-            className="flex items-center gap-3 px-4 py-3 rounded-xl w-full text-white/60 hover:bg-red-500/20 hover:text-red-300 transition-all duration-200"
+            className="flex cursor-pointer items-center gap-3 px-4 py-3 rounded-xl w-full text-white/60 hover:bg-red-500/20 hover:text-red-300 transition-all duration-200"
           >
             <LogOut size={20} strokeWidth={1.5} />
             <span className="text-sm font-medium">Déconnexion</span>

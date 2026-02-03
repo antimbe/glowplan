@@ -1,14 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui";
+import { Button, Tabs } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
-import { Loader2, Lock, Info, ChevronRight } from "lucide-react";
+import { Loader2, Info, ChevronRight } from "lucide-react";
 import { 
   EstablishmentData, 
   TABS 
 } from "@/components/features/dashboard/business";
-import { GeneralInfoTab, UnderConstructionTab } from "@/components/features/dashboard/business/tabs";
+import { GeneralInfoTab, UnderConstructionTab, ServicesTab, OpeningHoursTab } from "@/components/features/dashboard/business/tabs";
 import { useModal } from "@/contexts/ModalContext";
 
 export default function BusinessPage() {
@@ -181,37 +181,18 @@ export default function BusinessPage() {
       )}
 
       {/* Tabs Navigation */}
-      <div className="w-full bg-white rounded-2xl border border-gray-200 mb-4 overflow-x-auto shadow-sm">
-        <div className="flex min-w-max">
-          {TABS.map((tab) => {
-            const isAccessible = canAccessTab(tab.id);
-            return (
-              <button
-                key={tab.id}
-                onClick={() => handleTabClick(tab.id)}
-                disabled={!isAccessible}
-                className={`
-                  px-3 lg:px-6 py-3 lg:py-4 text-xs lg:text-sm font-medium whitespace-nowrap transition-all border-b-2 flex items-center gap-1 lg:gap-2
-                  ${!isAccessible 
-                    ? "text-gray-300 border-transparent cursor-not-allowed" 
-                    : activeTab === tab.id 
-                      ? "text-primary border-primary bg-primary/5 cursor-pointer" 
-                      : "text-gray-500 border-transparent hover:text-primary hover:bg-gray-50 cursor-pointer"
-                  }
-                `}
-              >
-                {!isAccessible && <Lock size={14} />}
-                {tab.label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      <Tabs
+        tabs={TABS.map(tab => ({
+          ...tab,
+          disabled: !canAccessTab(tab.id)
+        }))}
+        activeTab={activeTab}
+        onTabChange={handleTabClick}
+        className="mb-4"
+      />
 
       {/* Content */}
-      {activeTab !== "general" ? (
-        <UnderConstructionTab />
-      ) : (
+      {activeTab === "general" ? (
         <>
           <GeneralInfoTab formData={formData} updateField={updateField} />
           
@@ -239,6 +220,12 @@ export default function BusinessPage() {
             </Button>
           </div>
         </>
+      ) : activeTab === "offres" && establishmentId ? (
+        <ServicesTab establishmentId={establishmentId} />
+      ) : activeTab === "horaires" && establishmentId ? (
+        <OpeningHoursTab establishmentId={establishmentId} />
+      ) : (
+        <UnderConstructionTab />
       )}
     </div>
   );

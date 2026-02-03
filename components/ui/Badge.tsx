@@ -18,7 +18,7 @@ const Badge = forwardRef<HTMLSpanElement, BadgeProps>(
       default: "bg-gray-100 text-gray-600 border border-gray-200",
       primary: "bg-primary/10 text-primary border border-primary/20",
       secondary: "bg-secondary text-primary border border-gray-200",
-      success: "bg-green-50 text-green-700 border border-green-200",
+      success: "bg-primary/10 text-primary border border-primary/20",
       danger: "bg-red-50 text-red-700 border border-red-200",
       outline: "bg-transparent border-2 border-primary text-primary",
     };

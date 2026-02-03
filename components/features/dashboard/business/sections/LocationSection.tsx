@@ -1,9 +1,10 @@
 "use client";
 
-import { MapPin } from "lucide-react";
+import { MapPin, EyeOff } from "lucide-react";
 import SectionCard from "../SectionCard";
 import FormInput from "../FormInput";
 import { TabProps } from "../types";
+import { Switch } from "@/components/ui";
 
 export default function LocationSection({ formData, updateField }: TabProps) {
   return (
@@ -47,17 +48,21 @@ export default function LocationSection({ formData, updateField }: TabProps) {
           onChange={(value) => updateField("address_complement", value)}
         />
 
-        <div className="bg-amber-50 border border-amber-200/50 rounded-xl p-4">
-          <div className="flex items-start gap-4">
-            <input 
-              type="checkbox" 
-              className="mt-0.5 w-5 h-5 rounded border-amber-300 text-amber-500 focus:ring-amber-500 cursor-pointer"
-              checked={formData.hide_exact_address}
-              onChange={(e) => updateField("hide_exact_address", e.target.checked)}
-            />
-            <div>
-              <p className="text-amber-800 font-semibold text-sm">Masquer l'adresse exacte</p>
-              <p className="text-amber-700/70 text-xs">
+        <div className="bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/15 rounded-xl p-3 lg:p-5">
+          <div className="flex items-start gap-3 lg:gap-4">
+            <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
+              <EyeOff size={18} className="text-white" />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center justify-between">
+                <p className="text-primary font-bold text-xs lg:text-sm">Masquer l'adresse exacte</p>
+                <Switch
+                  id="hide-address"
+                  checked={formData.hide_exact_address}
+                  onChange={(e) => updateField("hide_exact_address", e.target.checked)}
+                />
+              </div>
+              <p className="text-primary/60 text-xs mt-2">
                 Seule la ville sera affichée publiquement. L'adresse exacte sera envoyée au client 24h avant le rendez-vous dans le mail de rappel.
               </p>
             </div>

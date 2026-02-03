@@ -42,10 +42,44 @@ export const ACTIVITY_SECTORS = [
 
 export const TABS = [
   { id: "general", label: "Informations générales" },
+  { id: "offres", label: "Offres et prestations" },
   { id: "sections", label: "Sections de rendez-vous" },
   { id: "rappels", label: "Rappels et RDV" },
   { id: "horaires", label: "Horaires d'ouverture" },
   { id: "paiement", label: "Paiement et acompte" },
-  { id: "offres", label: "Offres et prestations" },
   { id: "avancee", label: "Avancée" },
+];
+
+export interface ServiceData {
+  id?: string;
+  establishment_id?: string;
+  name: string;
+  description: string;
+  price: number;
+  duration: number;
+  min_age?: number | null;
+  image_url?: string | null;
+  is_active: boolean;
+  position: number;
+}
+
+export interface OpeningHoursData {
+  id?: string;
+  establishment_id?: string;
+  day_of_week: number; // 0=Lundi, 6=Dimanche
+  is_open: boolean;
+  open_time: string | null;
+  close_time: string | null;
+  break_start: string | null;
+  break_end: string | null;
+}
+
+export const DAYS_OF_WEEK = [
+  { value: 0, label: "Lundi" },
+  { value: 1, label: "Mardi" },
+  { value: 2, label: "Mercredi" },
+  { value: 3, label: "Jeudi" },
+  { value: 4, label: "Vendredi" },
+  { value: 5, label: "Samedi" },
+  { value: 6, label: "Dimanche" },
 ];
