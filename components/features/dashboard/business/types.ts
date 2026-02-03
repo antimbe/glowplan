@@ -18,6 +18,7 @@ export interface EstablishmentData {
   logo_format: string;
   photo_format: string;
   photo_display: string;
+  main_photo_url: string;
 }
 
 export interface TabProps {

@@ -17,11 +17,11 @@ export default function ContactFormSection() {
             className="lg:col-span-5 flex"
           >
             <Card 
-              className="bg-[#2a3626] border-none shadow-[0_40px_80px_-15px_rgba(42,54,38,0.25)] w-full relative overflow-hidden flex flex-col justify-between" 
+              className="bg-primary border-none shadow-[0_40px_80px_-15px_rgba(42,54,38,0.25)] w-full relative overflow-hidden flex flex-col justify-between" 
               padding="lg"
             >
               {/* Refined decorative elements */}
-              <Box className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#6a845c]/10 rounded-full -mr-64 -mt-64 blur-3xl pointer-events-none" />
+              <Box className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary-light/10 rounded-full -mr-64 -mt-64 blur-3xl pointer-events-none" />
               <Box className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-black/20 rounded-full -ml-32 -mb-32 blur-3xl pointer-events-none" />
 
               <Stack space={16} className="relative z-10">
@@ -109,11 +109,11 @@ export default function ContactFormSection() {
 
               <Stack space={6} align="stretch">
                 <Text className="text-[10px] font-bold text-primary/40 uppercase tracking-[0.3em] ml-1">Sélectionner un sujet</Text>
-                <Box className="group cursor-pointer flex items-center gap-6 py-6 px-10 rounded-[2rem] bg-[#2a3626]/5 border-2 border-transparent hover:border-[#2a3626] hover:bg-white transition-all duration-500 shadow-sm hover:shadow-xl w-full">
-                  <Box className="w-4 h-4 rounded-full border-2 border-[#2a3626] flex items-center justify-center p-0.5">
-                    <Box className="w-full h-full rounded-full bg-[#2a3626]" />
+                <Box className="group cursor-pointer flex items-center gap-6 py-6 px-10 rounded-[2rem] bg-primary/5 border-2 border-transparent hover:border-primary hover:bg-white transition-all duration-500 shadow-sm hover:shadow-xl w-full">
+                  <Box className="w-4 h-4 rounded-full border-2 border-primary flex items-center justify-center p-0.5">
+                    <Box className="w-full h-full rounded-full bg-primary" />
                   </Box>
-                  <Text className="text-lg font-bold text-[#2a3626]">Booker un appel pour une démo</Text>
+                  <Text className="text-lg font-bold text-primary">Booker un appel pour une démo</Text>
                 </Box>
               </Stack>
 
@@ -131,7 +131,7 @@ export default function ContactFormSection() {
                     <Button 
                       variant="primary" 
                       size="xl" 
-                      className="bg-[#2a3626] hover:bg-[#1a2318] px-20 rounded-2xl font-bold h-16 text-lg shadow-2xl shadow-[#2a3626]/20 transition-all duration-500 hover:scale-[1.02] active:scale-[0.98] group"
+                      className="bg-primary hover:bg-primary-dark px-20 rounded-2xl font-bold h-16 text-lg shadow-2xl shadow-primary/20 transition-all duration-500 hover:scale-[1.02] active:scale-[0.98] group"
                     >
                       <Flex align="center" gap={3}>
                         <span>Envoyez</span>

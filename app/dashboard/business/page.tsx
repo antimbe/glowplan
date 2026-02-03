@@ -9,6 +9,7 @@ import {
   TABS 
 } from "@/components/features/dashboard/business";
 import { GeneralInfoTab, UnderConstructionTab } from "@/components/features/dashboard/business/tabs";
+import { useModal } from "@/contexts/ModalContext";
 
 export default function BusinessPage() {
   const [activeTab, setActiveTab] = useState("general");
@@ -17,6 +18,8 @@ export default function BusinessPage() {
   const [establishmentId, setEstablishmentId] = useState<string | null>(null);
   const [isProfileComplete, setIsProfileComplete] = useState(false);
   
+  const { showSuccess, showError } = useModal();
+
   const [formData, setFormData] = useState<EstablishmentData>({
     name: "",
     siret: "",
@@ -36,6 +39,7 @@ export default function BusinessPage() {
     logo_format: "generate",
     photo_format: "generate",
     photo_display: "fill",
+    main_photo_url: "",
   });
 
   const supabase = createClient();
@@ -77,6 +81,7 @@ export default function BusinessPage() {
           logo_format: data.logo_format || "generate",
           photo_format: data.photo_format || "generate",
           photo_display: data.photo_display || "fill",
+          main_photo_url: data.main_photo_url || "",
         });
       }
     } catch (error) {
@@ -98,7 +103,8 @@ export default function BusinessPage() {
         formData.email && 
         formData.address && 
         formData.city && 
-        formData.activity_sectors.length > 0
+        formData.activity_sectors.length > 0 &&
+        formData.main_photo_url
       );
 
       const establishmentData = {
@@ -124,10 +130,10 @@ export default function BusinessPage() {
       }
 
       setIsProfileComplete(isComplete);
-      alert("Informations enregistrées avec succès !");
+      showSuccess("Succès", "Vos informations ont été enregistrées avec succès !");
     } catch (error) {
       console.error("Error saving establishment:", error);
-      alert("Erreur lors de l'enregistrement");
+      showError("Erreur", "Une erreur est survenue lors de l'enregistrement. Veuillez réessayer.");
     } finally {
       setSaving(false);
     }
@@ -149,7 +155,7 @@ export default function BusinessPage() {
   if (loading) {
     return (
       <div className="w-full flex items-center justify-center py-20">
-        <Loader2 className="animate-spin text-[#2a3626]" size={32} />
+        <Loader2 className="animate-spin text-primary" size={32} />
       </div>
     );
   }
@@ -164,10 +170,10 @@ export default function BusinessPage() {
               <Info size={20} className="text-white" />
             </div>
             <div>
-              <h3 className="text-amber-800 font-bold text-sm">Bienvenue sur GlowPlan !</h3>
+              <h3 className="text-amber-800 font-bold text-sm">Complétez votre profil professionnel</h3>
               <p className="text-amber-700 text-xs mt-1">
-                Pour commencer, veuillez remplir les informations générales de votre établissement. 
-                Les champs obligatoires sont : <strong>Nom</strong>, <strong>Description</strong>, <strong>Email</strong>, <strong>Adresse</strong>, <strong>Ville</strong> et au moins un <strong>Secteur d'activité</strong>.
+                Pour débloquer toutes les fonctionnalités, veuillez renseigner les informations de votre établissement. 
+                Champs obligatoires : <strong>Nom</strong>, <strong>Description</strong>, <strong>Email</strong>, <strong>Adresse</strong>, <strong>Ville</strong>, au moins un <strong>Secteur d'activité</strong> et une <strong>Photo principale</strong>.
               </p>
             </div>
           </div>
@@ -189,8 +195,8 @@ export default function BusinessPage() {
                   ${!isAccessible 
                     ? "text-gray-300 border-transparent cursor-not-allowed" 
                     : activeTab === tab.id 
-                      ? "text-[#2a3626] border-[#2a3626] bg-[#2a3626]/5 cursor-pointer" 
-                      : "text-gray-500 border-transparent hover:text-[#2a3626] hover:bg-gray-50 cursor-pointer"
+                      ? "text-primary border-primary bg-primary/5 cursor-pointer" 
+                      : "text-gray-500 border-transparent hover:text-primary hover:bg-gray-50 cursor-pointer"
                   }
                 `}
               >
@@ -213,7 +219,7 @@ export default function BusinessPage() {
           <div className="w-full flex justify-end mt-4">
             <Button
               variant="primary"
-              className="bg-[#2a3626] hover:bg-[#1a2318] rounded-xl px-6 lg:px-8 h-10 lg:h-12 text-sm lg:text-base font-semibold shadow-lg shadow-[#2a3626]/20 cursor-pointer disabled:opacity-50"
+              className="bg-primary hover:bg-primary-dark rounded-xl px-6 lg:px-8 h-10 lg:h-12 text-sm lg:text-base font-semibold shadow-lg shadow-primary/20 cursor-pointer disabled:opacity-50"
               onClick={handleSave}
               disabled={saving}
             >

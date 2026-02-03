@@ -26,13 +26,13 @@ export default function FormTextarea({
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center gap-2">
-        {Icon && <Icon size={14} className="text-[#2a3626]/50" />}
+        {Icon && <Icon size={14} className="text-primary/50" />}
         <label className={labelStyle}>{label}{required && " *"}</label>
       </div>
       <textarea
         placeholder={placeholder}
         rows={rows}
-        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2a3626]/20 focus:border-[#2a3626]/40 transition-all resize-none"
+        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all resize-none"
         value={value}
         onChange={(e) => onChange(e.target.value)}
       />

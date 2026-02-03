@@ -15,3 +15,5 @@ export { default as List, ListItem } from "./List";
 export { default as Separator } from "./Separator";
 export { default as MotionBox } from "./MotionBox";
 export { default as Textarea } from "./Textarea";
+export { default as Modal } from "./Modal";
+export type { ModalVariant } from "./Modal";

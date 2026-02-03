@@ -7,7 +7,7 @@ import Image from "next/image";
 
 export default function SelectSpacePage() {
   return (
-    <Section spacing="none" className="min-h-screen relative overflow-x-hidden bg-[#2a3626] flex flex-col items-center justify-center p-4 md:p-8">
+    <Section spacing="none" className="min-h-screen relative overflow-x-hidden bg-primary flex flex-col items-center justify-center p-4 md:p-8">
       {/* Background Atmosphere - Fixed to stay in place while scrolling */}
       <Box className="fixed inset-0 z-0 pointer-events-none">
         <Image
@@ -17,13 +17,13 @@ export default function SelectSpacePage() {
           className="object-cover opacity-30 grayscale"
           priority
         />
-        <Box className="absolute inset-0 bg-gradient-to-b from-[#2a3626]/95 via-[#2a3626]/90 to-[#2a3626]/95" />
+        <Box className="absolute inset-0 bg-gradient-to-b from-primary/95 via-primary/90 to-primary/95" />
         
         {/* Decorative Blur */}
         <MotionBox 
           animate={{ scale: [1, 1.2, 1], opacity: [0.1, 0.2, 0.1] }}
           transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-[-10%] right-[-5%] w-[60%] h-[60%] bg-[#6a845c] rounded-full blur-[150px]" 
+          className="absolute top-[-10%] right-[-5%] w-[60%] h-[60%] bg-primary-light rounded-full blur-[150px]" 
         />
       </Box>
 
@@ -75,11 +75,11 @@ export default function SelectSpacePage() {
                 <Stack space={10} align="center" className="text-center h-full justify-between">
                   <Stack space={8} align="center">
                     <Box className="w-20 h-20 rounded-3xl bg-gray-100 flex items-center justify-center">
-                      <User size={40} className="text-[#2a3626]" strokeWidth={2} />
+                      <User size={40} className="text-primary" strokeWidth={2} />
                     </Box>
                     
                     <Stack space={4} align="center">
-                      <Heading level={3} className="text-[#2a3626] text-2xl font-bold">
+                      <Heading level={3} className="text-primary text-2xl font-bold">
                         Je suis Client(e)
                       </Heading>
                       <Text className="text-gray-600 text-base font-medium leading-relaxed">
@@ -93,8 +93,7 @@ export default function SelectSpacePage() {
                       variant="primary" 
                       size="lg" 
                       fullWidth
-                      className="bg-[#2a3626] hover:bg-[#1a2318] rounded-2xl font-bold h-14 text-base shadow-xl transition-all duration-500 hover:scale-[1.02]"
-                    >
+                      className="bg-primary hover:bg-primary-dark rounded-2xl font-bold h-14 text-base shadow-xl transition-all duration-500 hover:scale-[1.02]">
                       Connexion / Inscription Client
                     </Button>
                   </Link>
@@ -114,11 +113,11 @@ export default function SelectSpacePage() {
                 <Stack space={10} align="center" className="text-center h-full justify-between">
                   <Stack space={8} align="center">
                     <Box className="w-20 h-20 rounded-3xl bg-gray-100 flex items-center justify-center">
-                      <Briefcase size={40} className="text-[#2a3626]" strokeWidth={2} />
+                      <Briefcase size={40} className="text-primary" strokeWidth={2} />
                     </Box>
                     
                     <Stack space={4} align="center">
-                      <Heading level={3} className="text-[#2a3626] text-2xl font-bold">
+                      <Heading level={3} className="text-primary text-2xl font-bold">
                         Je suis Professionnel(le)
                       </Heading>
                       <Text className="text-gray-600 text-base font-medium leading-relaxed">
@@ -132,8 +131,7 @@ export default function SelectSpacePage() {
                       variant="primary" 
                       size="lg" 
                       fullWidth
-                      className="bg-[#2a3626] hover:bg-[#1a2318] rounded-2xl font-bold h-14 text-base shadow-xl transition-all duration-500 hover:scale-[1.02]"
-                    >
+                      className="bg-primary hover:bg-primary-dark rounded-2xl font-bold h-14 text-base shadow-xl transition-all duration-500 hover:scale-[1.02]">
                       Connexion / Inscription Pro
                     </Button>
                   </Link>

@@ -9,7 +9,7 @@ interface DashboardHeaderProps {
 
 export default function DashboardHeader({ userEmail, onMenuClick }: DashboardHeaderProps) {
   return (
-    <div className="h-14 lg:h-16 bg-[#2a3626] sticky top-0 z-30">
+    <div className="h-14 lg:h-16 bg-primary sticky top-0 z-30">
       <div className="flex items-center justify-between h-full px-4 lg:px-8">
         {/* Left: Menu button (mobile) + Search */}
         <div className="flex items-center gap-3">
@@ -53,7 +53,7 @@ export default function DashboardHeader({ userEmail, onMenuClick }: DashboardHea
           {/* User Profile */}
           <div className="flex items-center gap-3 pl-2 lg:pl-4 border-l border-white/10">
             <div className="w-9 h-9 lg:w-10 lg:h-10 rounded-full bg-white flex items-center justify-center">
-              <span className="text-[#2a3626] font-bold text-sm">
+              <span className="text-primary font-bold text-sm">
                 {userEmail?.charAt(0).toUpperCase() || "U"}
               </span>
             </div>

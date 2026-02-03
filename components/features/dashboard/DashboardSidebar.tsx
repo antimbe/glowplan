@@ -70,7 +70,7 @@ export default function DashboardSidebar({ onLogout, isOpen, onClose }: Dashboar
       
       {/* Sidebar */}
       <div className={`
-        w-64 bg-[#2a3626] h-screen flex flex-col fixed left-0 top-0 z-50
+        w-64 bg-primary h-screen flex flex-col fixed left-0 top-0 z-50
         transform transition-transform duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
         lg:translate-x-0
@@ -99,13 +99,13 @@ export default function DashboardSidebar({ onLogout, isOpen, onClose }: Dashboar
                     className={`
                       flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200
                       ${isActive 
-                        ? "bg-white text-[#2a3626]" 
+                        ? "bg-white text-primary" 
                         : "text-white/70 hover:bg-white/10 hover:text-white"
                       }
                     `}
                   >
                     <Icon size={20} strokeWidth={1.5} />
-                    <span className={`text-sm font-medium flex-1 ${isActive ? "text-[#2a3626]" : "text-white/70"}`}>
+                    <span className={`text-sm font-medium flex-1 ${isActive ? "text-primary" : "text-white/70"}`}>
                       {item.label}
                     </span>
                     {isActive && (

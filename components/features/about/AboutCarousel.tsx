@@ -68,7 +68,7 @@ export default function AboutCarousel() {
 
             {/* Content side - Occupies less space, stable height */}
             <Box className="lg:col-span-5 flex flex-col">
-              <Box className="bg-[#2a3626] rounded-[3rem] p-10 lg:p-14 h-full relative overflow-hidden flex flex-col justify-center shadow-2xl">
+              <Box className="bg-primary rounded-[3rem] p-10 lg:p-14 h-full relative overflow-hidden flex flex-col justify-center shadow-2xl">
                 <AnimatePresence mode="wait">
                   <MotionBox
                     key={currentSlide}
@@ -109,7 +109,7 @@ export default function AboutCarousel() {
               variant="outline"
               size="sm"
               onClick={prevSlide}
-              className="rounded-full w-12 h-12 p-0 border-[#2a3626] text-[#2a3626] hover:bg-[#2a3626] hover:text-white"
+              className="rounded-full w-12 h-12 p-0 border-primary text-primary hover:bg-primary hover:text-white"
             >
               <ChevronLeft size={24} />
             </Button>
@@ -119,7 +119,7 @@ export default function AboutCarousel() {
                 <Box 
                   key={index}
                   className={`h-2 rounded-full transition-all duration-300 ${
-                    currentSlide === index ? "w-8 bg-[#2a3626]" : "w-2 bg-gray-200"
+                    currentSlide === index ? "w-8 bg-primary" : "w-2 bg-gray-200"
                   }`}
                 />
               ))}
@@ -129,7 +129,7 @@ export default function AboutCarousel() {
               variant="outline"
               size="sm"
               onClick={nextSlide}
-              className="rounded-full w-12 h-12 p-0 border-[#2a3626] text-[#2a3626] hover:bg-[#2a3626] hover:text-white"
+              className="rounded-full w-12 h-12 p-0 border-primary text-primary hover:bg-primary hover:text-white"
             >
               <ChevronRight size={24} />
             </Button>

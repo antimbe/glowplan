@@ -7,7 +7,7 @@ import Link from "next/link";
 
 export default function ComingSoon() {
   return (
-    <Section spacing="none" className="h-screen relative overflow-hidden flex items-center justify-center bg-[#2a3626]">
+    <Section spacing="none" className="h-screen relative overflow-hidden flex items-center justify-center bg-primary">
       {/* Cinematic Background Atmosphere */}
       <Box className="absolute inset-0 z-0">
         <Image
@@ -17,7 +17,7 @@ export default function ComingSoon() {
           className="object-cover opacity-40 grayscale"
           priority
         />
-        <Box className="absolute inset-0 bg-gradient-to-b from-[#2a3626]/90 via-[#2a3626]/70 to-[#2a3626]" />
+        <Box className="absolute inset-0 bg-gradient-to-b from-primary/90 via-primary/70 to-primary" />
       </Box>
 
       {/* Dynamic Background Elements */}
@@ -29,7 +29,7 @@ export default function ComingSoon() {
             x: [0, 30, 0]
           }}
           transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-[-10%] right-[-5%] w-[60%] h-[60%] bg-[#6a845c] rounded-full blur-[150px]" 
+          className="absolute top-[-10%] right-[-5%] w-[60%] h-[60%] bg-primary-light rounded-full blur-[150px]" 
         />
         <MotionBox 
           animate={{ 
@@ -89,7 +89,7 @@ export default function ComingSoon() {
               <Button 
                 variant="outline" 
                 size="xl" 
-                className="rounded-2xl border-white/20 text-white hover:bg-white hover:text-[#2a3626] group transition-all duration-500 px-10 h-16 text-lg font-bold"
+                className="rounded-2xl border-white/20 text-white hover:bg-white hover:text-primary group transition-all duration-500 px-10 h-16 text-lg font-bold"
               >
                 <Flex align="center" gap={3}>
                   <ArrowLeft size={20} className="transition-transform duration-500 group-hover:-translate-x-2" />

@@ -11,9 +11,9 @@ const links = [
     subtitle: "L'expérience GlowPlan complète",
     href: "/", 
     icon: Home,
-    color: "bg-[#2a3626]", 
+    color: "bg-primary", 
     textColor: "text-white",
-    iconColor: "bg-white/10 text-white group-hover:bg-white group-hover:text-[#2a3626]"
+    iconColor: "bg-white/10 text-white group-hover:bg-white group-hover:text-primary"
   },
   { 
     title: "Nos Offres", 
@@ -21,8 +21,8 @@ const links = [
     href: "#", 
     icon: Layout,
     color: "bg-[#f4f1ea]", 
-    textColor: "text-[#2a3626]",
-    iconColor: "bg-[#2a3626]/5 text-[#2a3626] group-hover:bg-[#2a3626] group-hover:text-white"
+    textColor: "text-primary",
+    iconColor: "bg-primary/5 text-primary group-hover:bg-primary group-hover:text-white"
   },
   { 
     title: "Qui sommes-nous", 
@@ -31,7 +31,7 @@ const links = [
     icon: Users,
     color: "bg-[#6a845c]", 
     textColor: "text-white",
-    iconColor: "bg-white/10 text-white group-hover:bg-white group-hover:text-[#6a845c]"
+    iconColor: "bg-white/10 text-white group-hover:bg-white group-hover:text-primary-light"
   },
 ];
 
@@ -46,7 +46,7 @@ export default function ContactQuickLinks() {
                 <Sparkles size={16} />
                 <Text variant="small" className="font-bold uppercase tracking-[0.4em] text-[10px]">Continuer la visite</Text>
               </Flex>
-              <Heading level={2} className="text-[#2a3626] text-5xl md:text-6xl font-bold tracking-tighter">
+              <Heading level={2} className="text-primary text-5xl md:text-6xl font-bold tracking-tighter">
                 Explorer <Box as="span" className="text-primary italic font-serif">plus loin</Box>.
               </Heading>
             </Stack>
@@ -89,7 +89,7 @@ export default function ContactQuickLinks() {
                       )}>
                         <ChevronRight size={40} strokeWidth={2.5} className="transition-transform duration-700 group-hover:translate-x-2" />
                       </Box>
-                      <Box className={cn("h-px flex-1 ml-10 opacity-10", link.textColor === "text-white" ? "bg-white" : "bg-[#2a3626]")} />
+                      <Box className={cn("h-px flex-1 ml-10 opacity-10", link.textColor === "text-white" ? "bg-white" : "bg-primary")} />
                     </Flex>
                   </Card>
                 </MotionBox>

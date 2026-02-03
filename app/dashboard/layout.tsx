@@ -36,8 +36,8 @@ export default function DashboardLayout({
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="flex items-center gap-3">
-          <Loader2 className="animate-spin text-[#2a3626]" size={32} />
-          <span className="text-[#2a3626] font-medium">Chargement...</span>
+          <Loader2 className="animate-spin text-primary" size={32} />
+          <span className="text-primary font-medium">Chargement...</span>
         </div>
       </div>
     );

@@ -35,7 +35,7 @@ const valueCards = [
 
 export default function AboutValues() {
   return (
-    <Section spacing="xl" className="bg-[#2a3626]">
+    <Section spacing="xl" className="bg-primary">
       <Container>
         <Box className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {valueCards.map((card, index) => (
