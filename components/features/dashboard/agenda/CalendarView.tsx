@@ -176,6 +176,9 @@ export default function CalendarView({
     const typeLabel = unavailabilityData?.unavailability_type 
       ? UNAVAILABILITY_TYPE_LABELS[unavailabilityData.unavailability_type] 
       : "Indisponible";
+    const displayTitle = isAppointment 
+      ? event.title 
+      : (unavailabilityData?.reason || event.title || typeLabel);
     
     if (compact) {
       return (
@@ -208,10 +211,17 @@ export default function CalendarView({
       >
         <div className="font-semibold truncate flex items-center gap-1">
           {isAppointment ? <User size={10} /> : <Ban size={10} />}
-          {isAppointment ? event.title : typeLabel}
+          {displayTitle}
         </div>
-        {!isAppointment && unavailabilityData?.reason && (
-          <div className="opacity-80 text-[10px] truncate mt-0.5">{unavailabilityData.reason}</div>
+        {!isAppointment && (
+          <div className="flex items-center gap-1 text-[10px] uppercase tracking-wide opacity-80 mt-0.5">
+            <span className="px-1.5 py-0.5 rounded-full bg-white/20 border border-white/30 text-[9px]">
+              {typeLabel}
+            </span>
+            {unavailabilityData?.reason && (
+              <span className="truncate normal-case text-white/90">{unavailabilityData.reason}</span>
+            )}
+          </div>
         )}
         <div className="opacity-90 flex items-center gap-1 mt-0.5">
           <Clock size={10} />
@@ -284,6 +294,9 @@ export default function CalendarView({
     const typeLabel = unavailabilityData?.unavailability_type 
       ? UNAVAILABILITY_TYPE_LABELS[unavailabilityData.unavailability_type] 
       : "Indisponible";
+    const displayTitle = isAppointment
+      ? event.title
+      : (unavailabilityData?.reason || event.title || typeLabel);
 
     return (
       <div
@@ -302,8 +315,18 @@ export default function CalendarView({
       >
         <div className="font-semibold truncate flex items-center gap-1">
           {isAppointment ? <User size={10} /> : <Ban size={10} />}
-          {isAppointment ? event.title : typeLabel}
+          {displayTitle}
         </div>
+        {!isAppointment && (
+          <div className="flex items-center gap-1 text-[10px] uppercase tracking-wide opacity-80 mt-0.5">
+            <span className="px-1.5 py-0.5 rounded-full bg-white/15 border border-white/25 text-[9px]">
+              {typeLabel}
+            </span>
+            {unavailabilityData?.reason && (
+              <span className="truncate normal-case text-white/90">{unavailabilityData.reason}</span>
+            )}
+          </div>
+        )}
         {heightPercent >= 100 && (
           <div className="opacity-90 flex items-center gap-1 mt-0.5">
             <Clock size={10} />
