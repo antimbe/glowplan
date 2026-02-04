@@ -21,6 +21,25 @@ export default function DashboardLayout({
   useEffect(() => {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        router.push("/auth/pro/login");
+        return;
+      }
+
+      // Check if user is a client (not allowed in pro dashboard)
+      const { data: clientProfile } = await supabase
+        .from("client_profiles")
+        .select("id")
+        .eq("user_id", user.id)
+        .single();
+
+      if (clientProfile) {
+        // User is a client, redirect to client account
+        router.push("/account");
+        return;
+      }
+
       setUser(user);
       setLoading(false);
     };

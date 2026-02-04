@@ -1,9 +1,26 @@
 "use client";
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Search, MapPin, Sparkles } from "lucide-react";
-import { Container, Section, Button, Input, Heading, Text, Box, Flex, Separator, Stack, MotionBox } from "@/components/ui";
+import { Container, Section, Button, Input, Heading, Text, Box, Flex, Separator, Stack } from "@/components/ui";
 
 export default function Hero() {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [locationQuery, setLocationQuery] = useState("");
+  const router = useRouter();
+
+  const handleSearch = () => {
+    const params = new URLSearchParams();
+    if (searchQuery) params.set("q", searchQuery);
+    if (locationQuery) params.set("location", locationQuery);
+    router.push(`/search?${params.toString()}`);
+  };
+
+  const handleTagClick = (tag: string) => {
+    router.push(`/search?q=${encodeURIComponent(tag)}`);
+  };
+
   return (
     <Section className="relative min-h-[90vh] flex items-center pt-20 overflow-hidden bg-gray-50">
       {/* Background with advanced gradient overlay */}
@@ -22,11 +39,7 @@ export default function Hero() {
       <Container className="relative z-10 w-full">
         <Flex direction="col" align="center" className="text-center max-w-4xl mx-auto space-y-10">
           
-          <MotionBox
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-          >
+          <Box>
             <Stack space={6} align="center">
               <Flex align="center" gap={2} className="px-4 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white mb-4 mx-auto">
                 <Sparkles size={16} className="text-accent" />
@@ -43,14 +56,11 @@ export default function Hero() {
                 Découvrez et réservez les meilleurs soins beauté & bien-être auprès de professionnels passionnés près de chez vous.
               </Text>
             </Stack>
-          </MotionBox>
+          </Box>
 
           {/* Floating Search Bar with Premium Design */}
-          <MotionBox 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.4, duration: 0.6 }}
-            className="w-full max-w-3xl mt-4 bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] p-2 flex flex-col md:flex-row items-center gap-2 transform transition-all hover:shadow-[0_30px_60px_rgba(0,0,0,0.2)]"
+          <Box 
+            className="w-full max-w-3xl mt-4 bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] p-2 flex flex-col md:flex-row items-center gap-2 transition-all hover:shadow-[0_30px_60px_rgba(0,0,0,0.2)]"
           >
             <Box className="flex-1 w-full group">
               <Input 
@@ -59,6 +69,9 @@ export default function Hero() {
                 leftIcon={<Search className="text-primary/40 group-focus-within:text-primary transition-colors w-5 h-5" />}
                 fullWidth
                 className="h-16 font-semibold text-lg"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
               />
             </Box>
             
@@ -71,32 +84,30 @@ export default function Hero() {
                 leftIcon={<MapPin className="text-primary/40 group-focus-within:text-primary transition-colors w-5 h-5" />}
                 fullWidth
                 className="h-16 font-semibold text-lg"
+                value={locationQuery}
+                onChange={(e) => setLocationQuery(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
               />
             </Box>
 
-            <Button size="xl" className="h-16 px-12 shadow-lg shadow-primary/20 rounded-2xl w-full md:w-auto font-bold text-lg">
+            <Button size="xl" className="h-16 px-12 shadow-lg shadow-primary/20 rounded-2xl w-full md:w-auto font-bold text-lg" onClick={handleSearch}>
               Trouver un pro
             </Button>
-          </MotionBox>
+          </Box>
           
-          <MotionBox 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.8 }}
-          >
-            <Flex wrap="wrap" justify="center" gap={4} className="pt-4">
-              {["Coiffure", "Ongles", "Soins visage", "Massage"].map((tag) => (
-                <Text 
-                  key={tag}
-                  variant="small" 
-                  as="span" 
-                  className="px-5 py-2 bg-white/5 hover:bg-white/10 backdrop-blur-sm rounded-full border border-white/10 text-white font-bold cursor-pointer transition-all hover:border-white/30"
-                >
-                  {tag}
-                </Text>
-              ))}
-            </Flex>
-          </MotionBox>
+          <Flex wrap="wrap" justify="center" gap={4} className="pt-4">
+            {["Coiffure", "Ongles", "Soins visage", "Massage"].map((tag) => (
+              <Text 
+                key={tag}
+                variant="small" 
+                as="span" 
+                className="px-5 py-2 bg-white/5 hover:bg-white/10 backdrop-blur-sm rounded-full border border-white/10 text-white font-bold cursor-pointer transition-all hover:border-white/30"
+                onClick={() => handleTagClick(tag)}
+              >
+                {tag}
+              </Text>
+            ))}
+          </Flex>
 
         </Flex>
       </Container>

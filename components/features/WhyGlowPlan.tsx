@@ -1,6 +1,6 @@
 "use client";
 
-import { Container, Section, Card, Heading, Text, Box, Flex, List, ListItem, MotionBox, Stack } from "@/components/ui";
+import { Container, Section, Card, Heading, Text, Box, Flex, List, ListItem, Stack } from "@/components/ui";
 import { cn } from "@/lib/utils/cn";
 import { Calendar, Shield, TrendingUp, Clock, CheckCircle2, Sparkles } from "lucide-react";
 
@@ -40,102 +40,74 @@ export default function WhyGlowPlan() {
       
       <Container className="relative z-10">
         <Box className="grid lg:grid-cols-2 gap-20 items-center">
-          <MotionBox 
-            initial={{ opacity: 0, x: -30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-          >
-            <Stack space={10} className="text-white">
-              <Stack space={6}>
-                <MotionBox 
-                  initial={{ opacity: 0, y: 10 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                >
-                  <Flex align="center" gap={2} className="inline-flex px-4 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20">
-                    <Sparkles size={16} className="text-accent" />
-                    <Text variant="small" as="span" className="font-bold tracking-widest uppercase">Expertise Beauté</Text>
-                  </Flex>
-                </MotionBox>
-                
-                <Heading level={2} variant="hero" className="text-white leading-tight text-balance">
-                  L'allié indispensable de votre <Text as="span" className="text-accent italic font-serif">réussite</Text>.
-                </Heading>
-                
-                <Text variant="lead" className="text-white/70 max-w-lg font-medium text-balance">
-                  GlowPlan a été conçu spécifiquement pour les professionnels de la beauté. Simple, élégant et redoutablement efficace pour propulser votre activité.
-                </Text>
-              </Stack>
-
-              <List spacing="lg">
-                {[
-                  "Zéro frais d'installation", 
-                  "Support client expert 7j/7", 
-                  "Interface mobile-first intuitive"
-                ].map((item, index) => (
-                  <MotionBox 
-                    key={item}
-                    initial={{ opacity: 0, x: -20 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: 0.3 + index * 0.1 }}
-                  >
-                    <ListItem 
-                      icon={
-                        <Box className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center border border-accent/30">
-                          <CheckCircle2 className="text-accent w-4 h-4" />
-                        </Box>
-                      }
-                      className="text-white/90 font-bold"
-                    >
-                      <Text as="span" className="text-lg tracking-wide">{item}</Text>
-                    </ListItem>
-                  </MotionBox>
-                ))}
-              </List>
+          <Stack space={10} className="text-white">
+            <Stack space={6}>
+              <Flex align="center" gap={2} className="inline-flex px-4 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20">
+                <Sparkles size={16} className="text-accent" />
+                <Text variant="small" as="span" className="font-bold tracking-widest uppercase">Expertise Beauté</Text>
+              </Flex>
+              
+              <Heading level={2} variant="hero" className="text-white leading-tight text-balance">
+                L'allié indispensable de votre <Heading as="span" className="text-accent italic font-serif">réussite</Heading>.
+              </Heading>
+              
+              <Text variant="lead" className="text-white/70 max-w-lg font-medium text-balance">
+                GlowPlan a été conçu spécifiquement pour les professionnels de la beauté. Simple, élégant et redoutablement efficace pour propulser votre activité.
+              </Text>
             </Stack>
-          </MotionBox>
+
+            <List spacing="lg">
+              {[
+                "Zéro frais d'installation", 
+                "Support client expert 7j/7", 
+                "Interface mobile-first intuitive"
+              ].map((item) => (
+                <ListItem 
+                  key={item}
+                  icon={
+                    <Box className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center border border-accent/30">
+                      <CheckCircle2 className="text-accent w-4 h-4" />
+                    </Box>
+                  }
+                  className="text-white/90 font-bold"
+                >
+                  <Text as="span" className="text-lg tracking-wide">{item}</Text>
+                </ListItem>
+              ))}
+            </List>
+          </Stack>
 
           <Box className="grid sm:grid-cols-2 gap-6 md:gap-8">
             {features.map((feature, index) => {
               const Icon = feature.icon;
               return (
-                <MotionBox
-                  key={feature.title}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.15, duration: 0.6 }}
+                <Card 
+                  key={feature.title} 
+                  variant="glass" 
+                  padding="lg" 
+                  className={cn(
+                    "group/card h-full transition-all duration-500 hover:bg-white/15",
+                    index % 2 === 1 
+                      ? "lg:translate-y-12 hover:lg:translate-y-10" 
+                      : "hover:-translate-y-2"
+                  )}
                 >
-                  <Card 
-                    key={feature.title} 
-                    variant="glass" 
-                    padding="lg" 
-                    className={cn(
-                      "group/card h-full transition-all duration-500 hover:bg-white/15",
-                      index % 2 === 1 
-                        ? "lg:translate-y-12 hover:lg:translate-y-10" 
-                        : "hover:-translate-y-2"
-                    )}
-                  >
-                    <Flex direction="col" gap={6}>
-                      <Box className={cn(
-                        "w-14 h-14 rounded-2xl flex items-center justify-center transition-transform duration-500 group-hover/card:scale-110 group-hover/card:rotate-3 shadow-lg bg-white/10"
-                      )}>
-                        <Icon className="text-white w-7 h-7" />
-                      </Box>
-                      <Box className="space-y-3">
-                        <Heading level={3} variant="card" className="text-white text-xl">
-                          {feature.title}
-                        </Heading>
-                        <Text variant="small" className="text-white/60 leading-relaxed font-semibold">
-                          {feature.description}
-                        </Text>
-                      </Box>
-                    </Flex>
-                  </Card>
-                </MotionBox>
+                  <Flex direction="col" gap={6}>
+                    <Box className={cn(
+                      "w-14 h-14 rounded-2xl flex items-center justify-center transition-transform duration-500 group-hover/card:scale-110 group-hover/card:rotate-3 shadow-lg bg-white/10"
+                    )}>
+                      <Icon className="text-white w-7 h-7" />
+                    </Box>
+                    <Box className="space-y-3">
+                      <Heading level={3} variant="card" className="text-white text-xl">
+                        {feature.title}
+                      </Heading>
+                      <Text variant="small" className="text-white/60 leading-relaxed font-semibold">
+                        {feature.description}
+                      </Text>
+                    </Box>
+                  </Flex>
+                </Card>
               );
             })}
           </Box>

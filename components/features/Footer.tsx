@@ -1,6 +1,6 @@
 "use client";
 
-import { Container, Logo, Link, Input, Button, Heading, Text, Box, Flex, List, ListItem, Stack, MotionBox } from "@/components/ui";
+import { Container, Logo, Link, Input, Button, Heading, Text, Box, Flex, List, ListItem, Stack } from "@/components/ui";
 import { Facebook, Instagram, Twitter, Linkedin, ArrowRight, Globe, LifeBuoy } from "lucide-react";
 
 const footerSections = [
@@ -43,12 +43,7 @@ export default function Footer() {
       <Container className="relative z-10">
         <Box className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-16 mb-24">
           {/* Brand Column */}
-          <MotionBox 
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="lg:col-span-4"
-          >
+          <Box className="lg:col-span-4">
             <Stack space={10}>
               <Logo variant="light" size="xl" />
               <Text variant="lead" className="text-white/60 leading-relaxed max-w-sm text-balance">
@@ -66,49 +61,36 @@ export default function Footer() {
                 ))}
               </Flex>
             </Stack>
-          </MotionBox>
+          </Box>
 
           {/* Links Columns */}
           <Box className="lg:col-span-5 grid grid-cols-2 md:grid-cols-3 gap-10">
-            {footerSections.map((section, idx) => (
-              <MotionBox 
-                key={section.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: idx * 0.1 }}
-              >
-                <Stack space={8}>
-                  <Heading level={3} className="text-xs font-bold uppercase tracking-[0.2em] text-white/30">
-                    {section.title}
-                  </Heading>
-                  <List spacing="md">
-                    {section.links.map((link) => (
-                      <ListItem key={link.label}>
-                        <Link
-                          href={link.href}
-                          className="hover:text-white transition-colors group flex items-center"
-                        >
-                          <Text variant="small" as="span" className="relative font-semibold text-white/60 group-hover:text-white transition-colors">
-                            {link.label}
-                            <Box as="span" className="absolute -bottom-1 left-0 w-0 h-0.5 bg-accent/50 transition-all duration-300 group-hover:w-full" />
-                          </Text>
-                        </Link>
-                      </ListItem>
-                    ))}
-                  </List>
-                </Stack>
-              </MotionBox>
+            {footerSections.map((section) => (
+              <Stack key={section.title} space={8}>
+                <Heading level={3} className="text-xs font-bold uppercase tracking-[0.2em] text-white/30">
+                  {section.title}
+                </Heading>
+                <List spacing="md">
+                  {section.links.map((link) => (
+                    <ListItem key={link.label}>
+                      <Link
+                        href={link.href}
+                        className="hover:text-white transition-colors group flex items-center"
+                      >
+                        <Text variant="small" as="span" className="relative font-semibold text-white/60 group-hover:text-white transition-colors">
+                          {link.label}
+                          <Box as="span" className="absolute -bottom-1 left-0 w-0 h-0.5 bg-accent/50 transition-all duration-300 group-hover:w-full" />
+                        </Text>
+                      </Link>
+                    </ListItem>
+                  ))}
+                </List>
+              </Stack>
             ))}
           </Box>
 
           {/* Newsletter Column */}
-          <MotionBox 
-            initial={{ opacity: 0, x: 20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            className="lg:col-span-3"
-          >
+          <Box className="lg:col-span-3">
             <Stack space={8}>
               <Stack space={4}>
                 <Heading level={3} className="text-xs font-bold uppercase tracking-[0.2em] text-white/30">
@@ -134,34 +116,28 @@ export default function Footer() {
                 </Button>
               </Box>
             </Stack>
-          </MotionBox>
+          </Box>
         </Box>
 
         {/* Bottom Bar */}
-        <MotionBox 
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-        >
-          <Flex direction="col" align="center" justify="between" className="pt-10 border-t border-white/5 md:flex-row gap-8">
-            <Box className="flex items-center gap-6 order-2 md:order-1">
-              <Text variant="small" className="text-white/20 font-bold tracking-tight">
-                2026 GlowPlan. All rights reserved.
-              </Text>
-            </Box>
-            
-            <Flex wrap="wrap" justify="center" gap={8} className="order-1 md:order-2">
-              <Link href="#" className="flex items-center gap-2 group">
-                <Globe size={14} className="text-white/20 group-hover:text-accent transition-colors" />
-                <Text variant="small" as="span" className="text-[10px] font-bold uppercase tracking-widest text-white/30 group-hover:text-white transition-colors">Français (FR)</Text>
-              </Link>
-              <Link href="#" className="flex items-center gap-2 group">
-                <LifeBuoy size={14} className="text-white/20 group-hover:text-accent transition-colors" />
-                <Text variant="small" as="span" className="text-[10px] font-bold uppercase tracking-widest text-white/30 group-hover:text-white transition-colors">Support Technique</Text>
-              </Link>
-            </Flex>
+        <Flex direction="col" align="center" justify="between" className="pt-10 border-t border-white/5 md:flex-row gap-8">
+          <Box className="flex items-center gap-6 order-2 md:order-1">
+            <Text variant="small" className="text-white/20 font-bold tracking-tight">
+              2026 GlowPlan. All rights reserved.
+            </Text>
+          </Box>
+          
+          <Flex wrap="wrap" justify="center" gap={8} className="order-1 md:order-2">
+            <Link href="#" className="flex items-center gap-2 group">
+              <Globe size={14} className="text-white/20 group-hover:text-accent transition-colors" />
+              <Text variant="small" as="span" className="text-[10px] font-bold uppercase tracking-widest text-white/30 group-hover:text-white transition-colors">Français (FR)</Text>
+            </Link>
+            <Link href="#" className="flex items-center gap-2 group">
+              <LifeBuoy size={14} className="text-white/20 group-hover:text-accent transition-colors" />
+              <Text variant="small" as="span" className="text-[10px] font-bold uppercase tracking-widest text-white/30 group-hover:text-white transition-colors">Support Technique</Text>
+            </Link>
           </Flex>
-        </MotionBox>
+        </Flex>
       </Container>
     </Box>
   );

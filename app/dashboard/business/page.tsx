@@ -6,9 +6,10 @@ import { createClient } from "@/lib/supabase/client";
 import { Loader2, Info, ChevronRight } from "lucide-react";
 import { 
   EstablishmentData, 
-  TABS 
+  TABS,
+  EstablishmentPreviewModal
 } from "@/components/features/dashboard/business";
-import { GeneralInfoTab, UnderConstructionTab, ServicesTab, OpeningHoursTab } from "@/components/features/dashboard/business/tabs";
+import { GeneralInfoTab, GeneralInfoPreview, UnderConstructionTab, ServicesTab, OpeningHoursTab, AppointmentsTab, ReviewsTab } from "@/components/features/dashboard/business/tabs";
 import { useModal } from "@/contexts/ModalContext";
 
 export default function BusinessPage() {
@@ -17,6 +18,7 @@ export default function BusinessPage() {
   const [saving, setSaving] = useState(false);
   const [establishmentId, setEstablishmentId] = useState<string | null>(null);
   const [isProfileComplete, setIsProfileComplete] = useState(false);
+  const [isEditMode, setIsEditMode] = useState<boolean | null>(null); // null = pas encore déterminé
   
   const { showSuccess, showError } = useModal();
 
@@ -61,7 +63,10 @@ export default function BusinessPage() {
 
       if (data) {
         setEstablishmentId(data.id);
-        setIsProfileComplete(data.is_profile_complete || false);
+        const profileComplete = data.is_profile_complete || false;
+        setIsProfileComplete(profileComplete);
+        // Mode aperçu par défaut si le profil est complet, sinon mode édition
+        setIsEditMode(!profileComplete);
         setFormData({
           name: data.name || "",
           siret: data.siret || "",
@@ -83,9 +88,13 @@ export default function BusinessPage() {
           photo_display: data.photo_display || "fill",
           main_photo_url: data.main_photo_url || "",
         });
+      } else {
+        // Pas d'établissement existant, mode édition
+        setIsEditMode(true);
       }
     } catch (error) {
       console.error("Error loading establishment:", error);
+      setIsEditMode(true);
     } finally {
       setLoading(false);
     }
@@ -131,6 +140,7 @@ export default function BusinessPage() {
 
       setIsProfileComplete(isComplete);
       showSuccess("Succès", "Vos informations ont été enregistrées avec succès !");
+      setIsEditMode(false);
     } catch (error) {
       console.error("Error saving establishment:", error);
       showError("Erreur", "Une erreur est survenue lors de l'enregistrement. Veuillez réessayer.");
@@ -193,37 +203,49 @@ export default function BusinessPage() {
 
       {/* Content */}
       {activeTab === "general" ? (
-        <>
-          <GeneralInfoTab formData={formData} updateField={updateField} />
-          
-          {/* Footer Actions */}
-          <div className="w-full flex justify-end mt-4">
-            <Button
-              variant="primary"
-              className="bg-primary hover:bg-primary-dark rounded-xl px-6 lg:px-8 h-10 lg:h-12 text-sm lg:text-base font-semibold shadow-lg shadow-primary/20 cursor-pointer disabled:opacity-50"
-              onClick={handleSave}
-              disabled={saving}
-            >
-              <div className="flex items-center gap-2">
-                {saving ? (
-                  <>
-                    <Loader2 className="animate-spin" size={18} />
-                    <span>Enregistrement...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Enregistrer</span>
-                    <ChevronRight size={18} />
-                  </>
-                )}
-              </div>
-            </Button>
-          </div>
-        </>
+        isEditMode ? (
+          <>
+            <GeneralInfoTab formData={formData} updateField={updateField} />
+            
+            {/* Footer Actions */}
+            <div className="w-full flex justify-end mt-4">
+              <Button
+                variant="primary"
+                className="bg-primary hover:bg-primary-dark rounded-xl px-6 lg:px-8 h-10 lg:h-12 text-sm lg:text-base font-semibold shadow-lg shadow-primary/20 cursor-pointer disabled:opacity-50"
+                onClick={handleSave}
+                disabled={saving}
+              >
+                <div className="flex items-center gap-2">
+                  {saving ? (
+                    <>
+                      <Loader2 className="animate-spin" size={18} />
+                      <span>Enregistrement...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Enregistrer</span>
+                      <ChevronRight size={18} />
+                    </>
+                  )}
+                </div>
+              </Button>
+            </div>
+          </>
+        ) : establishmentId ? (
+          <GeneralInfoPreview 
+            formData={formData} 
+            establishmentId={establishmentId} 
+            onEdit={() => setIsEditMode(true)} 
+          />
+        ) : null
       ) : activeTab === "offres" && establishmentId ? (
         <ServicesTab establishmentId={establishmentId} />
+      ) : activeTab === "sections" && establishmentId ? (
+        <AppointmentsTab establishmentId={establishmentId} />
       ) : activeTab === "horaires" && establishmentId ? (
         <OpeningHoursTab establishmentId={establishmentId} />
+      ) : activeTab === "avis" && establishmentId ? (
+        <ReviewsTab establishmentId={establishmentId} />
       ) : (
         <UnderConstructionTab />
       )}

@@ -47,7 +47,7 @@ export const TABS = [
   { id: "rappels", label: "Rappels et RDV" },
   { id: "horaires", label: "Horaires d'ouverture" },
   { id: "paiement", label: "Paiement et acompte" },
-  { id: "avancee", label: "Avancée" },
+  { id: "avis", label: "Vos avis" },
 ];
 
 export interface ServiceData {

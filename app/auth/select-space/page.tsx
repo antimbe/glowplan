@@ -88,12 +88,12 @@ export default function SelectSpacePage() {
                     </Stack>
                   </Stack>
 
-                  <Link href="/coming-soon" className="w-full">
+                  <Link href="/auth/client/login" className="w-full">
                     <Button 
                       variant="primary" 
                       size="lg" 
                       fullWidth
-                      className="bg-primary hover:bg-primary-dark rounded-2xl font-bold h-14 text-base shadow-xl transition-all duration-500 hover:scale-[1.02]">
+                      className="bg-primary hover:bg-primary-dark rounded-2xl font-bold h-14 text-base shadow-xl transition-all duration-500 hover:scale-[1.02] cursor-pointer">
                       Connexion / Inscription Client
                     </Button>
                   </Link>

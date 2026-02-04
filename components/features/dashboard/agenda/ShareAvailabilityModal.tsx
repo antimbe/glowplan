@@ -27,6 +27,67 @@ interface AvailabilitySlot {
 }
 
 const MONTHS = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+const DAYS = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
+
+const COLOR_FUNCTIONS = ["lab(", "lch(", "oklab(", "oklch("];
+const COLOR_PROPS: (keyof CSSStyleDeclaration)[] = [
+  "color",
+  "backgroundColor",
+  "borderColor",
+  "borderTopColor",
+  "borderRightColor",
+  "borderBottomColor",
+  "borderLeftColor",
+  "outlineColor",
+  "fill",
+  "stroke"
+];
+
+const normalizeColor = (value: string) => {
+  if (!value) return value;
+  const lower = value.toLowerCase();
+  if (!COLOR_FUNCTIONS.some((fn) => lower.includes(fn))) return value;
+  const temp = document.createElement("div");
+  temp.style.color = value;
+  document.body.appendChild(temp);
+  const computed = window.getComputedStyle(temp).color;
+  document.body.removeChild(temp);
+  return computed || value;
+};
+
+const applyComputedStyles = (source: HTMLElement, target: HTMLElement) => {
+  const computed = window.getComputedStyle(source);
+
+  const setStyle = (prop: keyof CSSStyleDeclaration, value?: string | null) => {
+    if (!value) return;
+    (target.style as any)[prop] = value;
+  };
+
+  setStyle("fontFamily", computed.fontFamily);
+  setStyle("fontSize", computed.fontSize);
+  setStyle("fontWeight", computed.fontWeight);
+  setStyle("lineHeight", computed.lineHeight);
+  setStyle("letterSpacing", computed.letterSpacing);
+  setStyle("textTransform", computed.textTransform);
+  setStyle("textAlign", computed.textAlign);
+
+  COLOR_PROPS.forEach((prop) => {
+    const value = computed[prop] as string;
+    if (value) {
+      (target.style as any)[prop] = normalizeColor(value);
+    }
+  });
+
+  const sourceChildren = Array.from(source.children).filter((child): child is HTMLElement => child instanceof HTMLElement);
+  const targetChildren = Array.from(target.children).filter((child): child is HTMLElement => child instanceof HTMLElement);
+
+  sourceChildren.forEach((child, index) => {
+    const targetChild = targetChildren[index];
+    if (targetChild) {
+      applyComputedStyles(child, targetChild);
+    }
+  });
+};
 
 const PERIOD_OPTIONS = [
   { value: "7", label: "7 prochains jours" },
@@ -244,39 +305,68 @@ export default function ShareAvailabilityModal({ isOpen, onClose, establishmentI
     if (!storyRef.current) return;
     
     try {
-      // Cloner l'élément et le mettre dans un conteneur isolé
+      // Créer un iframe isolé sans les styles globaux Tailwind
+      const iframe = document.createElement("iframe");
+      iframe.style.position = "absolute";
+      iframe.style.left = "-9999px";
+      iframe.style.top = "0";
+      iframe.style.width = "320px";
+      iframe.style.height = "640px";
+      iframe.setAttribute("sandbox", "allow-same-origin");
+      document.body.appendChild(iframe);
+
+      const iframeDoc = iframe.contentDocument;
+      if (!iframeDoc) throw new Error("Impossible de créer l'aperçu isolé");
+
+      const rootComputed = window.getComputedStyle(document.documentElement);
+      const storyComputed = window.getComputedStyle(storyRef.current);
+
+      iframeDoc.open();
+      iframeDoc.write("<!doctype html><html><head></head><body></body></html>");
+      iframeDoc.close();
+
+      const htmlStyle = iframeDoc.documentElement.style;
+      htmlStyle.fontSize = rootComputed.fontSize;
+      htmlStyle.lineHeight = rootComputed.lineHeight;
+
+      const bodyStyle = iframeDoc.body.style;
+      bodyStyle.margin = "0";
+      bodyStyle.background = "#f5f5f0";
+      bodyStyle.display = "flex";
+      bodyStyle.alignItems = "center";
+      bodyStyle.justifyContent = "center";
+      bodyStyle.fontFamily = storyComputed.fontFamily;
+      bodyStyle.fontSize = storyComputed.fontSize;
+      bodyStyle.lineHeight = storyComputed.lineHeight;
+      bodyStyle.letterSpacing = storyComputed.letterSpacing;
+      const normalizedColor = normalizeColor(storyComputed.color);
+      bodyStyle.color = normalizedColor;
+      bodyStyle.setProperty("-webkit-font-smoothing", "antialiased");
+
       const clone = storyRef.current.cloneNode(true) as HTMLElement;
-      const container = document.createElement("div");
-      container.style.position = "absolute";
-      container.style.left = "-9999px";
-      container.style.top = "0";
-      container.style.backgroundColor = "#f5f5f0";
-      container.appendChild(clone);
-      document.body.appendChild(container);
-      
-      // Forcer les styles inline sur tous les éléments
-      const allElements = clone.querySelectorAll("*");
-      allElements.forEach((el) => {
-        const htmlEl = el as HTMLElement;
-        const computed = window.getComputedStyle(htmlEl);
-        // Remplacer les couleurs lab() par des couleurs RGB
-        if (computed.color.includes("lab")) {
-          htmlEl.style.color = "#374151";
-        }
-        if (computed.backgroundColor.includes("lab")) {
-          htmlEl.style.backgroundColor = "transparent";
-        }
-      });
-      
+      clone.style.fontFamily = storyComputed.fontFamily;
+      clone.style.fontSize = storyComputed.fontSize;
+      clone.style.lineHeight = storyComputed.lineHeight;
+      clone.style.letterSpacing = storyComputed.letterSpacing;
+      clone.style.color = normalizedColor;
+      iframeDoc.body.appendChild(clone);
+
+      applyComputedStyles(storyRef.current, clone);
+
+      // Attendre que le DOM de l'iframe se mette à jour
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
       const canvas = await html2canvas(clone, {
         backgroundColor: "#f5f5f0",
         scale: 2,
         useCORS: true,
         logging: false,
+        windowWidth: clone.clientWidth,
+        windowHeight: clone.clientHeight,
       });
-      
-      document.body.removeChild(container);
-      
+
+      document.body.removeChild(iframe);
+
       const link = document.createElement("a");
       link.download = `disponibilites-story-${storyIndex + 1}.png`;
       link.href = canvas.toDataURL("image/png");
@@ -457,32 +547,32 @@ export default function ShareAvailabilityModal({ isOpen, onClose, establishmentI
                       border: "1px solid rgba(74, 93, 74, 0.15)"
                     }}>
                       {stories[currentStoryIndex]?.length > 0 ? (
-                        <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                           {stories[currentStoryIndex].map((slot, idx) => (
                             <div key={idx} style={{ 
                               display: "flex", 
-                              alignItems: "center", 
-                              gap: "8px",
-                              padding: "3px 4px",
-                              borderRadius: "4px",
+                              alignItems: "flex-start", 
+                              gap: "10px",
+                              padding: "4px 6px",
+                              borderRadius: "6px",
                               backgroundColor: idx % 2 === 0 ? "rgba(74, 93, 74, 0.06)" : "transparent"
                             }}>
                               <div style={{ 
-                                width: "22px", 
-                                height: "22px", 
-                                borderRadius: "4px", 
+                                width: "24px", 
+                                height: "24px", 
+                                borderRadius: "6px", 
                                 backgroundColor: "#4a5d4a", 
                                 color: "white", 
                                 display: "flex", 
                                 alignItems: "center", 
                                 justifyContent: "center", 
-                                fontSize: "10px", 
+                                fontSize: "11px", 
                                 fontWeight: "700",
                                 flexShrink: 0
                               }}>
                                 {slot.date.getDate()}
                               </div>
-                              <span style={{ fontSize: "10px", color: "#374151", fontWeight: "500" }}>
+                              <span style={{ fontSize: "11px", color: "#374151", fontWeight: "500", lineHeight: "1.3" }}>
                                 {slot.slots.join(" / ")}
                               </span>
                             </div>
