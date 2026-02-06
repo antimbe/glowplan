@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
+import { formatDateFull, formatTime } from "@/lib/utils/formatters";
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,15 +28,6 @@ export async function POST(request: NextRequest) {
     const startDate = new Date(appointment.start_time);
     const endDate = new Date(appointment.end_time);
 
-    const formatDate = (date: Date) => {
-      const days = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
-      const months = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
-      return `${days[date.getDay()]} ${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
-    };
-
-    const formatTime = (date: Date) => {
-      return `${date.getHours().toString().padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}`;
-    };
 
     const clientName = appointment.client_profiles 
       ? `${appointment.client_profiles.first_name} ${appointment.client_profiles.last_name}`
@@ -60,7 +52,7 @@ export async function POST(request: NextRequest) {
               <p><strong>Email :</strong> ${appointment.client_email || "Non renseigné"}</p>
               <p><strong>Téléphone :</strong> ${appointment.client_phone || "Non renseigné"}</p>
               <p><strong>Prestation :</strong> ${appointment.services?.name || "Non spécifiée"}</p>
-              <p><strong>Date :</strong> ${formatDate(startDate)}</p>
+              <p><strong>Date :</strong> ${formatDateFull(startDate)}</p>
               <p><strong>Heure :</strong> ${formatTime(startDate)} - ${formatTime(endDate)}</p>
               <p><strong>Prix :</strong> ${appointment.services?.price || "—"}€</p>
             </div>

@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { Calendar, MapPin, Clock, Loader2, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
+import { MONTHS, DAYS_JS_SHORT, jsDayToDbDay } from "@/lib/utils/formatters";
 
 interface OpeningHour {
   day_of_week: number;
@@ -27,8 +28,6 @@ interface Establishment {
   main_photo_url: string;
 }
 
-const MONTHS = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
-const DAYS = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
 
 export default function BookPage() {
   const params = useParams();
@@ -131,10 +130,7 @@ export default function BookPage() {
       date.setDate(date.getDate() + i);
       date.setHours(0, 0, 0, 0);
 
-      // Convertir getDay() (0=Dimanche, 1=Lundi, ..., 6=Samedi) 
-      // vers le format de la BDD (0=Lundi, 1=Mardi, ..., 6=Dimanche)
-      const jsDay = date.getDay();
-      const dbDayOfWeek = jsDay === 0 ? 6 : jsDay - 1;
+      const dbDayOfWeek = jsDayToDbDay(date.getDay());
       const dayHours = hours.find(h => h.day_of_week === dbDayOfWeek);
 
       if (!dayHours || !dayHours.is_open || !dayHours.open_time || !dayHours.close_time) continue;
@@ -272,7 +268,7 @@ export default function BookPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className="w-14 h-14 rounded-xl bg-primary text-white flex flex-col items-center justify-center">
-                      <span className="text-xs font-medium">{DAYS[slot.date.getDay()]}</span>
+                      <span className="text-xs font-medium">{DAYS_JS_SHORT[slot.date.getDay()]}</span>
                       <span className="text-xl font-bold">{slot.date.getDate()}</span>
                     </div>
                     <div>

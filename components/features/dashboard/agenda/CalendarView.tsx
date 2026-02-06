@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { ChevronLeft, ChevronRight, Plus, Clock, User, Ban } from "lucide-react";
 import { Button } from "@/components/ui";
 import { CalendarViewType, CalendarEvent, AppointmentData, UnavailabilityData, UnavailabilityType } from "./types";
+import { DAYS_DB, MONTHS } from "@/lib/utils/formatters";
 
 const UNAVAILABILITY_TYPE_LABELS: Record<UnavailabilityType, string> = {
   vacation: "Vacances",
@@ -24,9 +25,8 @@ interface CalendarViewProps {
 }
 
 const HOURS = Array.from({ length: 13 }, (_, i) => i + 7); // 7h à 19h (dernier créneau visible)
-const DAYS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
+const DAYS = DAYS_DB.map(d => d.substring(0, 3));
 const DAYS_SHORT = ["L", "M", "M", "J", "V", "S", "D"];
-const MONTHS = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 
 export default function CalendarView({
   events,

@@ -6,6 +6,7 @@ import { Button, Input, Select, FormField, FormModal, Modal } from "@/components
 import { UnavailabilityData, UnavailabilityType } from "./types";
 import { checkUnavailabilityConflicts, ConflictResult, ConflictingAppointment } from "./hooks";
 import { createClient } from "@/lib/supabase/client";
+import { DAYS_JS_SHORT, formatTime } from "@/lib/utils/formatters";
 
 interface UnavailabilityFormProps {
   unavailability?: UnavailabilityData | null;
@@ -200,14 +201,12 @@ export default function UnavailabilityForm({
   };
 
   const formatAppointmentTime = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return `${date.getHours().toString().padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}`;
+    return formatTime(new Date(dateStr));
   };
 
   const formatAppointmentDate = (dateStr: string) => {
     const date = new Date(dateStr);
-    const days = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
-    return `${days[date.getDay()]} ${date.getDate()}/${(date.getMonth() + 1).toString().padStart(2, "0")}`;
+    return `${DAYS_JS_SHORT[date.getDay()]} ${date.getDate()}/${(date.getMonth() + 1).toString().padStart(2, "0")}`;
   };
 
   const isValid = startDate && endDate && startTime && endTime && unavailabilityType;

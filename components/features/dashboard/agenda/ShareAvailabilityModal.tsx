@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Share2, Copy, ExternalLink, Download, ChevronLeft, ChevronRight, Calendar, MapPin, Lightbulb, Link2, X } from "lucide-react";
 import { Button, Select } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
+import { MONTHS, DAYS_JS_SHORT, jsDayToDbDay } from "@/lib/utils/formatters";
 import html2canvas from "html2canvas";
 
 interface ShareAvailabilityModalProps {
@@ -26,8 +27,7 @@ interface AvailabilitySlot {
   slots: string[];
 }
 
-const MONTHS = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
-const DAYS = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
+const DAYS = DAYS_JS_SHORT;
 
 const COLOR_FUNCTIONS = ["lab(", "lch(", "oklab(", "oklch("];
 const COLOR_PROPS: (keyof CSSStyleDeclaration)[] = [
@@ -199,9 +199,8 @@ export default function ShareAvailabilityModal({ isOpen, onClose, establishmentI
       date.setDate(date.getDate() + i);
       date.setHours(0, 0, 0, 0);
 
-      // day_of_week: 0 = dimanche, 1 = lundi, etc.
-      const dayOfWeek = date.getDay();
-      const dayHours = hours.find(h => h.day_of_week === dayOfWeek);
+      const dbDayOfWeek = jsDayToDbDay(date.getDay());
+      const dayHours = hours.find(h => h.day_of_week === dbDayOfWeek);
 
       if (!dayHours || !dayHours.is_open || !dayHours.open_time || !dayHours.close_time) continue;
 

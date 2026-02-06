@@ -7,6 +7,7 @@ import { MapPin, Clock, Phone, Mail, ChevronLeft, Star, Calendar, Check, ArrowRi
 import Link from "next/link";
 import { Button } from "@/components/ui";
 import { cn } from "@/lib/utils/cn";
+import { DAYS_JS, DAYS_JS_SHORT, DAYS_DB, MONTHS, jsDayToDbDay } from "@/lib/utils/formatters";
 
 interface Establishment {
   id: string;
@@ -69,12 +70,6 @@ interface Review {
   } | null;
 }
 
-// Format JavaScript: 0=Dimanche, 1=Lundi, ..., 6=Samedi
-const DAYS_SHORT = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
-const DAYS_FULL = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
-// Format BDD: 0=Lundi, 1=Mardi, ..., 6=Dimanche
-const DAYS_DB = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
-const MONTHS = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 
 type Step = "info" | "datetime" | "recap" | "confirmation";
 
@@ -332,10 +327,7 @@ export default function EstablishmentPage() {
   const loadAvailableSlots = useCallback(async (date: Date, service: Service) => {
     setLoadingSlots(true);
     try {
-      // Convertir getDay() (0=Dimanche, 1=Lundi, ..., 6=Samedi) 
-      // vers le format de la BDD (0=Lundi, 1=Mardi, ..., 6=Dimanche)
-      const jsDay = date.getDay();
-      const dbDayOfWeek = jsDay === 0 ? 6 : jsDay - 1;
+      const dbDayOfWeek = jsDayToDbDay(date.getDay());
       const hours = openingHours.find(h => h.day_of_week === dbDayOfWeek);
 
       if (!hours || !hours.is_open || !hours.open_time || !hours.close_time) {
@@ -538,10 +530,7 @@ export default function EstablishmentPage() {
   };
 
   const isDateAvailable = (date: Date) => {
-    // Convertir getDay() (0=Dimanche, 1=Lundi, ..., 6=Samedi) 
-    // vers le format de la BDD (0=Lundi, 1=Mardi, ..., 6=Dimanche)
-    const jsDay = date.getDay();
-    const dbDayOfWeek = jsDay === 0 ? 6 : jsDay - 1;
+    const dbDayOfWeek = jsDayToDbDay(date.getDay());
     const hours = openingHours.find(h => h.day_of_week === dbDayOfWeek);
     return hours?.is_open ?? false;
   };
@@ -813,7 +802,7 @@ export default function EstablishmentPage() {
                           "bg-gray-100 text-gray-400 cursor-not-allowed"
                         )}
                       >
-                        <div className="text-xs uppercase">{DAYS_SHORT[date.getDay()]}</div>
+                        <div className="text-xs uppercase">{DAYS_JS_SHORT[date.getDay()]}</div>
                         <div className="text-lg font-bold">{date.getDate()}</div>
                         <div className="text-xs">{MONTHS[date.getMonth()].substring(0, 3)}</div>
                       </button>
@@ -872,7 +861,7 @@ export default function EstablishmentPage() {
                     <div className="flex justify-between">
                       <span className="text-gray-500">Date</span>
                       <span className="font-medium">
-                        {DAYS_FULL[selectedSlot.date.getDay()]} {selectedSlot.date.getDate()} {MONTHS[selectedSlot.date.getMonth()]}
+                        {DAYS_JS[selectedSlot.date.getDay()]} {selectedSlot.date.getDate()} {MONTHS[selectedSlot.date.getMonth()]}
                       </span>
                     </div>
                     <div className="flex justify-between">

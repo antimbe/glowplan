@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Star, MessageSquare, Loader2, Eye, EyeOff, Heart } from "lucide-react";
 import { Button } from "@/components/ui";
 import { cn } from "@/lib/utils/cn";
+import { MONTHS_LOWER } from "@/lib/utils/formatters";
 
 interface Review {
   id: string;
@@ -25,7 +26,6 @@ interface ReviewsTabProps {
   establishmentId: string;
 }
 
-const MONTHS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
 
 export default function ReviewsTab({ establishmentId }: ReviewsTabProps) {
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -117,7 +117,7 @@ export default function ReviewsTab({ establishmentId }: ReviewsTabProps) {
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
-    return `${date.getDate()} ${MONTHS[date.getMonth()]} ${date.getFullYear()}`;
+    return `${date.getDate()} ${MONTHS_LOWER[date.getMonth()]} ${date.getFullYear()}`;
   };
 
   const getReviewerName = (review: Review) => {

@@ -7,6 +7,7 @@ import Header from "@/components/features/Header";
 import { Calendar, Heart, User, MapPin, Clock, Check, X, Loader2, Mail, Phone, Instagram, LogOut, Star, MessageSquare, Trash2 } from "lucide-react";
 import { Button, Input } from "@/components/ui";
 import { cn } from "@/lib/utils/cn";
+import { DAYS_JS, MONTHS_LOWER, formatTime as formatTimeUtil } from "@/lib/utils/formatters";
 import Link from "next/link";
 
 interface ClientProfile {
@@ -66,8 +67,6 @@ interface Review {
 
 type Tab = "reservations" | "favorites" | "reviews" | "profile";
 
-const DAYS = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
-const MONTHS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
 
 export default function AccountPage() {
   const router = useRouter();
@@ -311,12 +310,12 @@ export default function AccountPage() {
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
-    return `${date.getDate()} ${MONTHS[date.getMonth()]} ${date.getFullYear()}`;
+    return `${date.getDate()} ${MONTHS_LOWER[date.getMonth()]} ${date.getFullYear()}`;
   };
 
   const formatTime = (dateStr: string) => {
     const date = new Date(dateStr);
-    return `${date.getHours().toString().padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}`;
+    return formatTimeUtil(date);
   };
 
   const upcomingAppointments = appointments.filter(

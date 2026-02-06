@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Calendar, Clock, User, Mail, Phone, Instagram, Check, X, Loader2, AlertCircle, Info, UserCheck, UserX } from "lucide-react";
 import { Button } from "@/components/ui";
 import { cn } from "@/lib/utils/cn";
+import { MONTHS_LOWER } from "@/lib/utils/formatters";
 
 interface Appointment {
   id: string;
@@ -33,7 +34,6 @@ interface AppointmentsTabProps {
   establishmentId: string;
 }
 
-const MONTHS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
 
 export default function AppointmentsTab({ establishmentId }: AppointmentsTabProps) {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -140,7 +140,7 @@ export default function AppointmentsTab({ establishmentId }: AppointmentsTabProp
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
-    return `${date.getDate()} ${MONTHS[date.getMonth()]} ${date.getFullYear()}`;
+    return `${date.getDate()} ${MONTHS_LOWER[date.getMonth()]} ${date.getFullYear()}`;
   };
 
   const formatTime = (dateStr: string) => {

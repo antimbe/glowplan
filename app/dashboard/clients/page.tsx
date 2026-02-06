@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { Button, Input, Select } from "@/components/ui";
 import { cn } from "@/lib/utils/cn";
+import { MONTHS_LOWER } from "@/lib/utils/formatters";
 
 interface ClientStats {
   id: string;
@@ -25,7 +26,7 @@ interface ClientStats {
   is_blocked: boolean;
 }
 
-const MONTHS = ["jan.", "fév.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
+const MONTHS_SHORT = MONTHS_LOWER.map(m => m.substring(0, 4) + ".");
 
 export default function ClientsPage() {
   const [clients, setClients] = useState<ClientStats[]>([]);
@@ -178,7 +179,7 @@ export default function ClientsPage() {
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return "—";
     const date = new Date(dateStr);
-    return `${date.getDate()} ${MONTHS[date.getMonth()]} ${date.getFullYear()}`;
+    return `${date.getDate()} ${MONTHS_SHORT[date.getMonth()]} ${date.getFullYear()}`;
   };
 
   const filteredClients = clients

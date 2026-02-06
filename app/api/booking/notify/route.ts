@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
+import { formatDateFull, formatTime } from "@/lib/utils/formatters";
 
 export async function POST(request: NextRequest) {
   try {
@@ -36,15 +37,6 @@ export async function POST(request: NextRequest) {
     const startDate = new Date(appointment.start_time);
     const endDate = new Date(appointment.end_time);
 
-    const formatDate = (date: Date) => {
-      const days = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
-      const months = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
-      return `${days[date.getDay()]} ${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
-    };
-
-    const formatTime = (date: Date) => {
-      return `${date.getHours().toString().padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}`;
-    };
 
     // Email content for establishment (always sent)
     const establishmentEmailContent = {
@@ -71,7 +63,7 @@ export async function POST(request: NextRequest) {
             <div style="background: white; padding: 20px; border-radius: 10px; margin: 20px 0;">
               <h3 style="margin-top: 0; color: #32422c;">Détails de la réservation</h3>
               <p><strong>Prestation :</strong> ${appointment.services?.name || "Non spécifiée"}</p>
-              <p><strong>Date :</strong> ${formatDate(startDate)}</p>
+              <p><strong>Date :</strong> ${formatDateFull(startDate)}</p>
               <p><strong>Heure :</strong> ${formatTime(startDate)} - ${formatTime(endDate)}</p>
               <p><strong>Prix :</strong> ${appointment.services?.price || "—"}€</p>
             </div>
@@ -106,7 +98,7 @@ export async function POST(request: NextRequest) {
             <div style="background: white; padding: 20px; border-radius: 10px; margin: 20px 0;">
               <h3 style="margin-top: 0; color: #32422c;">Récapitulatif</h3>
               <p><strong>Prestation :</strong> ${appointment.services?.name || "Non spécifiée"}</p>
-              <p><strong>Date :</strong> ${formatDate(startDate)}</p>
+              <p><strong>Date :</strong> ${formatDateFull(startDate)}</p>
               <p><strong>Heure :</strong> ${formatTime(startDate)} - ${formatTime(endDate)}</p>
               <p><strong>Prix :</strong> ${appointment.services?.price || "—"}€</p>
             </div>
