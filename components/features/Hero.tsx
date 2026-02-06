@@ -22,7 +22,7 @@ export default function Hero() {
   };
 
   return (
-    <Section className="relative min-h-[90vh] flex items-center pt-20 overflow-hidden bg-gray-50">
+    <Section className="relative min-h-[90vh] flex items-center pt-28 md:pt-20 overflow-hidden bg-gray-50">
       {/* Background with advanced gradient overlay */}
       <Box 
         className="absolute inset-0 z-0"
