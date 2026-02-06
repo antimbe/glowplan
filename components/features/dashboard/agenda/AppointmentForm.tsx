@@ -213,9 +213,30 @@ export default function AppointmentForm({
     label: `${s.name} - ${s.price}€ (${s.duration} min)` 
   }));
 
-  const handleConfirmAppointment = () => {
-    if (appointment) {
+  const handleConfirmAppointment = async () => {
+    if (!appointment?.id) return;
+    
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from("appointments")
+        .update({ status: "confirmed" })
+        .eq("id", appointment.id);
+
+      if (error) throw error;
+      
+      // Envoyer l'email de confirmation au client
+      await fetch("/api/booking/confirm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ appointmentId: appointment.id }),
+      });
+      
       onSave({ ...appointment, status: "confirmed" });
+    } catch (error) {
+      console.error("Error confirming appointment:", error);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -249,7 +270,7 @@ export default function AppointmentForm({
 
       setCancelModal(false);
       setCancelReason("");
-      onCancel(); // Fermer le formulaire
+      onSave(appointment as AppointmentData); // Rafraîchir le calendrier et fermer
     } catch (error) {
       console.error("Error cancelling appointment:", error);
     } finally {

@@ -85,6 +85,8 @@ export default function AccountPage() {
   const [reviewComment, setReviewComment] = useState("");
   const [submittingReview, setSubmittingReview] = useState(false);
   const [reviewedAppointments, setReviewedAppointments] = useState<Set<string>>(new Set());
+  const [cancelModal, setCancelModal] = useState<Appointment | null>(null);
+  const [cancelReason, setCancelReason] = useState("");
 
   // Profile form state
   const [firstName, setFirstName] = useState("");
@@ -178,10 +180,10 @@ export default function AccountPage() {
     setReviews((userReviewsData || []) as unknown as Review[]);
   };
 
-  const handleCancelAppointment = async (appointmentId: string) => {
-    if (!profile) return;
+  const handleCancelAppointment = async () => {
+    if (!profile || !cancelModal) return;
     
-    setCancelling(appointmentId);
+    setCancelling(cancelModal.id);
     try {
       // Update appointment status
       const { error } = await supabase
@@ -190,10 +192,17 @@ export default function AccountPage() {
           status: "cancelled",
           cancelled_by_client: true,
           cancelled_at: new Date().toISOString(),
+          cancellation_reason: cancelReason || null,
         })
-        .eq("id", appointmentId);
+        .eq("id", cancelModal.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Cancel error:", JSON.stringify(error, null, 2));
+        console.error("Error message:", error.message);
+        console.error("Error code:", error.code);
+        console.error("Error details:", error.details);
+        throw error;
+      }
 
       // Increment cancellation count
       await supabase
@@ -205,12 +214,17 @@ export default function AccountPage() {
       await fetch("/api/booking/cancel", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ appointmentId }),
+        body: JSON.stringify({ 
+          appointmentId: cancelModal.id,
+          reason: cancelReason || null,
+        }),
       });
 
       // Refresh data
       await loadData(profile.id);
       setProfile({ ...profile, cancellation_count: (profile.cancellation_count || 0) + 1 });
+      setCancelModal(null);
+      setCancelReason("");
     } catch (error) {
       console.error("Error cancelling appointment:", error);
     } finally {
@@ -422,11 +436,10 @@ export default function AccountPage() {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => handleCancelAppointment(apt.id)}
-                                  disabled={cancelling === apt.id}
+                                  onClick={() => setCancelModal(apt)}
                                   className="text-red-500 hover:text-red-600 hover:bg-red-50"
                                 >
-                                  {cancelling === apt.id ? "Annulation..." : "Annuler"}
+                                  Annuler
                                 </Button>
                               </div>
                             </div>
@@ -797,6 +810,71 @@ export default function AccountPage() {
                   </span>
                 ) : (
                   "Publier l'avis"
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal d'annulation */}
+      {cancelModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6">
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Annuler la réservation</h3>
+            <p className="text-gray-600 mb-4">
+              Êtes-vous sûr de vouloir annuler votre rendez-vous chez <strong>{cancelModal.establishments?.name}</strong> ?
+            </p>
+            
+            <div className="bg-gray-50 rounded-xl p-4 mb-4">
+              <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
+                <Calendar size={14} />
+                <span>{formatDate(cancelModal.start_time)}</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <Clock size={14} />
+                <span>{formatTime(cancelModal.start_time)}</span>
+              </div>
+              <p className="text-sm font-medium text-gray-900 mt-2">{cancelModal.services?.name}</p>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Motif de l&apos;annulation <span className="text-gray-400">(optionnel)</span>
+              </label>
+              <textarea
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                placeholder="Indiquez la raison de votre annulation..."
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
+                rows={3}
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setCancelModal(null);
+                  setCancelReason("");
+                }}
+                className="flex-1"
+              >
+                Retour
+              </Button>
+              <Button
+                variant="danger"
+                onClick={handleCancelAppointment}
+                disabled={cancelling === cancelModal.id}
+                className="flex-1"
+              >
+                {cancelling === cancelModal.id ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="animate-spin" size={18} />
+                    Annulation...
+                  </span>
+                ) : (
+                  "Confirmer l'annulation"
                 )}
               </Button>
             </div>
