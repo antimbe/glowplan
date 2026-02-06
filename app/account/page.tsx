@@ -390,20 +390,20 @@ export default function AccountPage() {
                       <div className="space-y-4 mb-8">
                         {upcomingAppointments.map((apt) => (
                           <div key={apt.id} className="border border-gray-200 rounded-xl p-4">
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <h3 className="font-semibold text-gray-900">{apt.establishments?.name}</h3>
-                                <p className="text-sm text-gray-500">{apt.services?.name}</p>
-                                <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
+                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-semibold text-gray-900 truncate">{apt.establishments?.name}</h3>
+                                <p className="text-sm text-gray-500 truncate">{apt.services?.name}</p>
+                                <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-2 text-sm text-gray-500">
                                   <span className="flex items-center gap-1">
-                                    <Calendar size={14} />
-                                    {formatDate(apt.start_time)}
+                                    <Calendar size={14} className="flex-shrink-0" />
+                                    <span className="truncate">{formatDate(apt.start_time)}</span>
                                   </span>
                                   <span className="flex items-center gap-1">
-                                    <Clock size={14} />
+                                    <Clock size={14} className="flex-shrink-0" />
                                     {formatTime(apt.start_time)} - {formatTime(apt.end_time)}
                                   </span>
-                                  <span>({apt.services?.duration} min)</span>
+                                  <span className="hidden sm:inline">({apt.services?.duration} min)</span>
                                 </div>
                                 <div className="mt-2">
                                   <span className={cn(
@@ -418,15 +418,17 @@ export default function AccountPage() {
                                   </span>
                                 </div>
                               </div>
-                              <div className="text-right">
+                              <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-100">
                                 <p className="text-lg font-bold text-primary">{apt.services?.price}€</p>
-                                <button
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
                                   onClick={() => handleCancelAppointment(apt.id)}
                                   disabled={cancelling === apt.id}
-                                  className="text-red-500 hover:text-red-600 text-sm font-medium mt-2 cursor-pointer disabled:opacity-50"
+                                  className="text-red-500 hover:text-red-600 hover:bg-red-50"
                                 >
                                   {cancelling === apt.id ? "Annulation..." : "Annuler"}
-                                </button>
+                                </Button>
                               </div>
                             </div>
                           </div>
@@ -447,37 +449,41 @@ export default function AccountPage() {
                               "border rounded-xl p-4",
                               apt.status === "cancelled" ? "border-red-200 bg-red-50/50" : "border-gray-200"
                             )}>
-                              <div className="flex justify-between items-start">
-                                <div>
-                                  <h3 className="font-semibold text-gray-900">{apt.establishments?.name}</h3>
-                                  <p className="text-sm text-gray-500">{apt.services?.name}</p>
-                                  <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
+                              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+                                <div className="flex-1 min-w-0">
+                                  <h3 className="font-semibold text-gray-900 truncate">{apt.establishments?.name}</h3>
+                                  <p className="text-sm text-gray-500 truncate">{apt.services?.name}</p>
+                                  <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-2 text-sm text-gray-500">
                                     <span>{formatDate(apt.start_time)}</span>
                                     <span>{formatTime(apt.start_time)}</span>
                                   </div>
-                                  {apt.status === "cancelled" && (
-                                    <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-red-100 text-red-700 mt-2">
-                                      <X size={12} />
-                                      Annulé
-                                    </span>
-                                  )}
-                                  {hasReviewed && (
-                                    <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-green-100 text-green-700 mt-2">
-                                      <Check size={12} />
-                                      Avis laissé
-                                    </span>
-                                  )}
+                                  <div className="flex flex-wrap gap-2 mt-2">
+                                    {apt.status === "cancelled" && (
+                                      <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-red-100 text-red-700">
+                                        <X size={12} />
+                                        Annulé
+                                      </span>
+                                    )}
+                                    {hasReviewed && (
+                                      <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-green-100 text-green-700">
+                                        <Check size={12} />
+                                        Avis laissé
+                                      </span>
+                                    )}
+                                  </div>
                                 </div>
-                                <div className="text-right">
+                                <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-100">
                                   <p className="text-lg font-bold text-gray-400">{apt.services?.price}€</p>
                                   {canReview && (
-                                    <button
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
                                       onClick={() => handleOpenReviewModal(apt)}
-                                      className="text-primary hover:text-primary-dark text-sm font-medium mt-2 cursor-pointer flex items-center gap-1"
+                                      className="text-primary hover:text-primary-dark hover:bg-primary/5"
                                     >
-                                      <Star size={14} />
+                                      <Star size={14} className="mr-1" />
                                       Laisser un avis
-                                    </button>
+                                    </Button>
                                   )}
                                 </div>
                               </div>

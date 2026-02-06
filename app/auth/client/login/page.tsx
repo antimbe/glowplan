@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Container, Section, Heading, Text, Box, Stack, Flex, MotionBox, Button, Card, Logo, Input } from "@/components/ui";
@@ -9,7 +9,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useModal } from "@/contexts/ModalContext";
 
-export default function ClientLoginPage() {
+function ClientLoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectUrl = searchParams.get("redirect");
@@ -180,8 +180,8 @@ export default function ClientLoginPage() {
                   <Stack space={5} align="center" className="w-full">
                     {!isLogin && (
                       <>
-                        <Flex gap={4} className="w-full">
-                          <Stack space={2} align="center" className="flex-1 text-center">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+                          <Stack space={2} align="center" className="text-center">
                             <Text className="text-[10px] font-bold text-primary/40 uppercase tracking-[0.2em]">Prénom *</Text>
                             <Input 
                               type="text"
@@ -193,7 +193,7 @@ export default function ClientLoginPage() {
                               className="bg-gray-50/50 border-gray-100 rounded-xl h-12 px-4 focus:bg-white focus:ring-2 focus:ring-primary/5 transition-all text-base font-medium text-center"
                             />
                           </Stack>
-                          <Stack space={2} align="center" className="flex-1 text-center">
+                          <Stack space={2} align="center" className="text-center">
                             <Text className="text-[10px] font-bold text-primary/40 uppercase tracking-[0.2em]">Nom *</Text>
                             <Input 
                               type="text"
@@ -205,7 +205,7 @@ export default function ClientLoginPage() {
                               className="bg-gray-50/50 border-gray-100 rounded-xl h-12 px-4 focus:bg-white focus:ring-2 focus:ring-primary/5 transition-all text-base font-medium text-center"
                             />
                           </Stack>
-                        </Flex>
+                        </div>
 
                         <Stack space={2} align="center" className="w-full text-center">
                           <Text className="text-[10px] font-bold text-primary/40 uppercase tracking-[0.2em]">Téléphone (optionnel)</Text>
@@ -327,5 +327,17 @@ export default function ClientLoginPage() {
         </Stack>
       </Container>
     </Section>
+  );
+}
+
+export default function ClientLoginPage() {
+  return (
+    <Suspense fallback={
+      <Section className="relative min-h-screen flex items-center justify-center bg-primary">
+        <Loader2 className="animate-spin text-white" size={32} />
+      </Section>
+    }>
+      <ClientLoginContent />
+    </Suspense>
   );
 }

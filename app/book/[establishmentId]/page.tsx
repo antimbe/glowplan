@@ -131,8 +131,11 @@ export default function BookPage() {
       date.setDate(date.getDate() + i);
       date.setHours(0, 0, 0, 0);
 
-      const dayOfWeek = date.getDay();
-      const dayHours = hours.find(h => h.day_of_week === dayOfWeek);
+      // Convertir getDay() (0=Dimanche, 1=Lundi, ..., 6=Samedi) 
+      // vers le format de la BDD (0=Lundi, 1=Mardi, ..., 6=Dimanche)
+      const jsDay = date.getDay();
+      const dbDayOfWeek = jsDay === 0 ? 6 : jsDay - 1;
+      const dayHours = hours.find(h => h.day_of_week === dbDayOfWeek);
 
       if (!dayHours || !dayHours.is_open || !dayHours.open_time || !dayHours.close_time) continue;
 

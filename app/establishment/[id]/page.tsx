@@ -69,8 +69,11 @@ interface Review {
   } | null;
 }
 
+// Format JavaScript: 0=Dimanche, 1=Lundi, ..., 6=Samedi
 const DAYS_SHORT = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
 const DAYS_FULL = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
+// Format BDD: 0=Lundi, 1=Mardi, ..., 6=Dimanche
+const DAYS_DB = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 const MONTHS = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 
 type Step = "info" | "datetime" | "recap" | "confirmation";
@@ -329,8 +332,11 @@ export default function EstablishmentPage() {
   const loadAvailableSlots = useCallback(async (date: Date, service: Service) => {
     setLoadingSlots(true);
     try {
-      const dayOfWeek = date.getDay();
-      const hours = openingHours.find(h => h.day_of_week === dayOfWeek);
+      // Convertir getDay() (0=Dimanche, 1=Lundi, ..., 6=Samedi) 
+      // vers le format de la BDD (0=Lundi, 1=Mardi, ..., 6=Dimanche)
+      const jsDay = date.getDay();
+      const dbDayOfWeek = jsDay === 0 ? 6 : jsDay - 1;
+      const hours = openingHours.find(h => h.day_of_week === dbDayOfWeek);
 
       if (!hours || !hours.is_open || !hours.open_time || !hours.close_time) {
         setAvailableSlots([]);
@@ -532,8 +538,11 @@ export default function EstablishmentPage() {
   };
 
   const isDateAvailable = (date: Date) => {
-    const dayOfWeek = date.getDay();
-    const hours = openingHours.find(h => h.day_of_week === dayOfWeek);
+    // Convertir getDay() (0=Dimanche, 1=Lundi, ..., 6=Samedi) 
+    // vers le format de la BDD (0=Lundi, 1=Mardi, ..., 6=Dimanche)
+    const jsDay = date.getDay();
+    const dbDayOfWeek = jsDay === 0 ? 6 : jsDay - 1;
+    const hours = openingHours.find(h => h.day_of_week === dbDayOfWeek);
     return hours?.is_open ?? false;
   };
 
@@ -630,10 +639,10 @@ export default function EstablishmentPage() {
 
             {/* Reviews Section */}
             {step === "info" && (
-              <div className="bg-white rounded-2xl p-6 border border-gray-100 mb-6">
-                <div className="flex items-center justify-between mb-4">
+              <div className="bg-white rounded-2xl p-4 sm:p-6 border border-gray-100 mb-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
                   <h2 className="text-lg font-bold text-gray-900">Avis clients</h2>
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                     {averageRating !== null && (
                       <div className="flex items-center gap-2">
                         <div className="flex items-center gap-1">
@@ -661,7 +670,8 @@ export default function EstablishmentPage() {
                         className="cursor-pointer"
                       >
                         <MessageSquare size={16} className="mr-1" />
-                        Donner mon avis
+                        <span className="hidden sm:inline">Donner mon avis</span>
+                        <span className="sm:hidden">Avis</span>
                       </Button>
                     )}
                   </div>
@@ -1158,7 +1168,7 @@ export default function EstablishmentPage() {
                   <div className="space-y-1.5 ml-7">
                     {getSortedHours().map((hour) => (
                       <div key={hour.day_of_week} className="flex justify-between text-sm">
-                        <span className="text-gray-600">{DAYS_FULL[hour.day_of_week]}</span>
+                        <span className="text-gray-600">{DAYS_DB[hour.day_of_week]}</span>
                         <span className={cn(
                           "font-medium",
                           hour.is_open ? "text-gray-900" : "text-red-500"

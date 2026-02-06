@@ -190,20 +190,21 @@ function SearchContent() {
       <Header />
 
       {/* Search Bar */}
-      <div className="bg-white border-b border-gray-100 pt-24">
+      <div className="bg-white border-b border-gray-100 pt-20 sm:pt-24">
         <div className="max-w-6xl mx-auto px-4 py-4">
-          <div className="flex items-center gap-2 bg-gray-50 rounded-full px-4 py-3 max-w-2xl mx-auto">
-            <Search size={20} className="text-gray-400" />
+          {/* Desktop Search Bar */}
+          <div className="hidden sm:flex items-center gap-2 bg-gray-50 rounded-full px-4 py-3 max-w-2xl mx-auto">
+            <Search size={20} className="text-gray-400 flex-shrink-0" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
               placeholder="Prestation, établissement..."
-              className="flex-1 bg-transparent outline-none"
+              className="flex-1 bg-transparent outline-none min-w-0"
             />
-            <div className="w-px h-6 bg-gray-300" />
-            <MapPin size={20} className="text-gray-400" />
+            <div className="w-px h-6 bg-gray-300 flex-shrink-0" />
+            <MapPin size={20} className="text-gray-400 flex-shrink-0" />
             <input
               type="text"
               value={locationQuery}
@@ -212,7 +213,37 @@ function SearchContent() {
               placeholder="Ville"
               className="w-28 sm:w-40 bg-transparent outline-none"
             />
-            <Button size="md" onClick={handleSearch} className="rounded-full cursor-pointer">
+            <Button size="md" onClick={handleSearch} className="rounded-full cursor-pointer flex-shrink-0">
+              Rechercher
+            </Button>
+          </div>
+
+          {/* Mobile Search Bar */}
+          <div className="sm:hidden space-y-3">
+            <div className="flex items-center gap-2 bg-gray-50 rounded-xl px-4 py-3">
+              <Search size={20} className="text-gray-400 flex-shrink-0" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                placeholder="Prestation, établissement..."
+                className="flex-1 bg-transparent outline-none min-w-0"
+              />
+            </div>
+            <div className="flex items-center gap-2 bg-gray-50 rounded-xl px-4 py-3">
+              <MapPin size={20} className="text-gray-400 flex-shrink-0" />
+              <input
+                type="text"
+                value={locationQuery}
+                onChange={(e) => setLocationQuery(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                placeholder="Ville"
+                className="flex-1 bg-transparent outline-none min-w-0"
+              />
+            </div>
+            <Button size="md" onClick={handleSearch} fullWidth className="rounded-xl cursor-pointer">
+              <Search size={18} className="mr-2" />
               Rechercher
             </Button>
           </div>
