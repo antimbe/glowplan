@@ -17,12 +17,12 @@ import {
 const navigationItems = [
   { 
     label: "Mon établissement", 
-    href: "/dashboard/etablissement", 
+    href: "/dashboard/construction?page=etablissement", 
     icon: Building2 
   },
   { 
     label: "Portefeuille", 
-    href: "/dashboard/portefeuille", 
+    href: "/dashboard/construction?page=portefeuille", 
     icon: Wallet 
   },
   { 
@@ -43,7 +43,7 @@ const navigationItems = [
   },
   { 
     label: "Mes abonnements", 
-    href: "/dashboard/abonnements", 
+    href: "/dashboard/construction?page=abonnements", 
     icon: CreditCard 
   },
 ];

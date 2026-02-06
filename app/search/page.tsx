@@ -3,9 +3,10 @@
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { MapPin, Star, Search, Heart, Calendar } from "lucide-react";
+import { MapPin, Star, Search, Heart, Calendar, LogIn, UserPlus } from "lucide-react";
 import { Card, CardContent, Badge, Button, Link, Heading, Text, Box, Flex, Stack, MotionBox } from "@/components/ui";
 import Header from "@/components/features/Header";
+import NextLink from "next/link";
 
 interface Establishment {
   id: string;
@@ -15,6 +16,9 @@ interface Establishment {
   main_photo_url: string | null;
   description: string | null;
   min_price?: number;
+  isFavorite?: boolean;
+  average_rating?: number | null;
+  review_count?: number;
 }
 
 function SearchContent() {
@@ -27,12 +31,81 @@ function SearchContent() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState(query);
   const [locationQuery, setLocationQuery] = useState(location);
+  const [clientProfileId, setClientProfileId] = useState<string | null>(null);
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  const [loginPromptEstablishmentId, setLoginPromptEstablishmentId] = useState<string | null>(null);
 
   const supabase = createClient();
 
   useEffect(() => {
+    loadClientProfile();
+  }, []);
+
+  useEffect(() => {
     searchEstablishments();
   }, [query, location]);
+
+  const loadClientProfile = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data: clientProfile } = await supabase
+      .from("client_profiles")
+      .select("id")
+      .eq("user_id", user.id)
+      .single();
+
+    if (clientProfile) {
+      setClientProfileId(clientProfile.id);
+
+      // Charger les favoris du client
+      const { data: favoritesData } = await supabase
+        .from("favorites")
+        .select("establishment_id")
+        .eq("client_id", clientProfile.id);
+
+      if (favoritesData) {
+        setFavorites(new Set(favoritesData.map(f => f.establishment_id)));
+      }
+    }
+  };
+
+  const handleToggleFavorite = async (establishmentId: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!clientProfileId) {
+      setLoginPromptEstablishmentId(establishmentId);
+      setShowLoginPrompt(true);
+      return;
+    }
+
+    const isFav = favorites.has(establishmentId);
+
+    try {
+      if (isFav) {
+        await supabase
+          .from("favorites")
+          .delete()
+          .eq("client_id", clientProfileId)
+          .eq("establishment_id", establishmentId);
+        setFavorites(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(establishmentId);
+          return newSet;
+        });
+      } else {
+        await supabase.from("favorites").insert({
+          client_id: clientProfileId,
+          establishment_id: establishmentId,
+        });
+        setFavorites(prev => new Set(prev).add(establishmentId));
+      }
+    } catch (error) {
+      console.error("Error toggling favorite:", error);
+    }
+  };
 
   const searchEstablishments = async () => {
     setLoading(true);
@@ -46,39 +119,54 @@ function SearchContent() {
           activity_sectors, 
           main_photo_url, 
           description,
-          services(price)
-        `)
-        .eq("is_profile_complete", true);
+          services(price),
+          reviews(rating)
+        `);
 
       // Build search conditions
-      const conditions: string[] = [];
+      const allConditions: string[] = [];
       
       if (query) {
-        conditions.push(`name.ilike.%${query}%`);
-        conditions.push(`activity_sectors.cs.{${query}}`);
-        conditions.push(`description.ilike.%${query}%`);
+        allConditions.push(`name.ilike.%${query}%`);
+        allConditions.push(`description.ilike.%${query}%`);
       }
 
       if (location) {
-        queryBuilder = queryBuilder.or(`city.ilike.%${location}%,postal_code.ilike.%${location}%`);
+        allConditions.push(`city.ilike.%${location}%`);
+        allConditions.push(`postal_code.ilike.%${location}%`);
       }
 
-      if (conditions.length > 0) {
-        queryBuilder = queryBuilder.or(conditions.join(","));
+      // Apply filters only if there are conditions
+      if (allConditions.length > 0) {
+        queryBuilder = queryBuilder.or(allConditions.join(","));
       }
 
       const { data, error } = await queryBuilder.limit(20);
 
+      console.log("Search query:", query, "location:", location);
+      console.log("Search data:", data);
+      console.log("Search error:", error);
+
       if (error) throw error;
 
-      // Calculate min price for each establishment
-      const resultsWithPrice = (data || []).map((est: any) => ({
-        ...est,
-        min_price: est.services?.length > 0 
-          ? Math.min(...est.services.map((s: any) => s.price))
-          : null,
-        services: undefined,
-      }));
+      // Calculate min price and average rating for each establishment
+      const resultsWithPrice = (data || []).map((est: any) => {
+        const reviewCount = est.reviews?.length || 0;
+        const avgRating = reviewCount > 0
+          ? Math.round((est.reviews.reduce((sum: number, r: any) => sum + r.rating, 0) / reviewCount) * 10) / 10
+          : null;
+        
+        return {
+          ...est,
+          min_price: est.services?.length > 0 
+            ? Math.min(...est.services.map((s: any) => s.price))
+            : null,
+          average_rating: avgRating,
+          review_count: reviewCount,
+          services: undefined,
+          reviews: undefined,
+        };
+      });
 
       setResults(resultsWithPrice);
     } catch (error) {
@@ -151,7 +239,12 @@ function SearchContent() {
         ) : results.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {results.map((establishment) => (
-              <EstablishmentCard key={establishment.id} establishment={establishment} />
+              <EstablishmentCard 
+                key={establishment.id} 
+                establishment={establishment} 
+                isFavorite={favorites.has(establishment.id)}
+                onToggleFavorite={handleToggleFavorite}
+              />
             ))}
           </div>
         ) : (
@@ -167,11 +260,59 @@ function SearchContent() {
           </div>
         )}
       </div>
+
+      {/* Modal de prompt de connexion pour les favoris */}
+      {showLoginPrompt && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center">
+                <Heart size={24} className="text-red-500" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">Ajouter aux favoris</h2>
+                <p className="text-gray-500 text-sm">Connectez-vous pour sauvegarder vos établissements préférés</p>
+              </div>
+            </div>
+
+            <p className="text-sm text-gray-600 mb-6">
+              Créez un compte ou connectez-vous pour ajouter cet établissement à vos favoris et retrouver facilement vos adresses préférées.
+            </p>
+
+            <div className="flex flex-col gap-2">
+              <NextLink href={`/auth/client/login?redirect=/search${query ? `?q=${query}` : ""}${location ? `${query ? "&" : "?"}location=${location}` : ""}`}>
+                <Button variant="primary" className="w-full cursor-pointer">
+                  <LogIn size={18} className="mr-2" />
+                  Se connecter
+                </Button>
+              </NextLink>
+              <NextLink href={`/auth/client/login?redirect=/search${query ? `?q=${query}` : ""}${location ? `${query ? "&" : "?"}location=${location}` : ""}&signup=true`}>
+                <Button variant="outline" className="w-full cursor-pointer">
+                  <UserPlus size={18} className="mr-2" />
+                  Créer un compte
+                </Button>
+              </NextLink>
+              <button
+                onClick={() => setShowLoginPrompt(false)}
+                className="text-sm text-gray-500 hover:text-gray-700 mt-2 cursor-pointer"
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-function EstablishmentCard({ establishment }: { establishment: Establishment }) {
+interface EstablishmentCardProps {
+  establishment: Establishment;
+  isFavorite: boolean;
+  onToggleFavorite: (establishmentId: string, e: React.MouseEvent) => void;
+}
+
+function EstablishmentCard({ establishment, isFavorite, onToggleFavorite }: EstablishmentCardProps) {
   return (
     <Link href={`/establishment/${establishment.id}`} className="block cursor-pointer">
       <Card 
@@ -199,13 +340,14 @@ function EstablishmentCard({ establishment }: { establishment: Establishment }) 
           <Button 
             variant="ghost" 
             size="sm" 
-            className="absolute top-4 right-4 p-2 rounded-full bg-white/90 backdrop-blur-md text-gray-900 hover:text-red-500 hover:bg-white transition-all shadow-sm h-10 w-10 min-w-0 z-10 cursor-pointer"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-            }}
+            className={`absolute top-4 right-4 p-2 rounded-full backdrop-blur-md transition-all shadow-sm h-10 w-10 min-w-0 z-10 cursor-pointer ${
+              isFavorite 
+                ? "bg-red-50 text-red-500 hover:bg-red-100" 
+                : "bg-white/90 text-gray-900 hover:text-red-500 hover:bg-white"
+            }`}
+            onClick={(e) => onToggleFavorite(establishment.id, e)}
           >
-            <Heart size={18} strokeWidth={2.5} />
+            <Heart size={18} strokeWidth={2.5} className={isFavorite ? "fill-red-500" : ""} />
           </Button>
 
           {/* Quick Info Overlay - Services on hover */}
@@ -228,10 +370,17 @@ function EstablishmentCard({ establishment }: { establishment: Establishment }) 
               <Heading level={3} variant="card" className="group-hover:text-primary transition-colors line-clamp-1 flex-1 text-base">
                 {establishment.name}
               </Heading>
-              <Flex align="center" gap={1.5} className="bg-accent/10 px-2.5 py-1 rounded-lg flex-shrink-0">
-                <Star size={14} className="text-accent fill-accent" />
-                <Text variant="small" as="span" className="font-extrabold text-accent leading-none">4.8</Text>
-              </Flex>
+              {establishment.average_rating !== null && establishment.average_rating !== undefined ? (
+                <Flex align="center" gap={1.5} className="bg-accent/10 px-2.5 py-1 rounded-lg flex-shrink-0">
+                  <Star size={14} className="text-accent fill-accent" />
+                  <Text variant="small" as="span" className="font-extrabold text-accent leading-none">{establishment.average_rating}</Text>
+                </Flex>
+              ) : (
+                <Flex align="center" gap={1.5} className="bg-gray-100 px-2.5 py-1 rounded-lg flex-shrink-0">
+                  <Star size={14} className="text-gray-400" />
+                  <Text variant="small" as="span" className="font-medium text-gray-400 leading-none text-xs">Nouveau</Text>
+                </Flex>
+              )}
             </Flex>
             
             <Flex align="center" gap={1.5}>

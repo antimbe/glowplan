@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Button, Tabs } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
 import { Loader2, Info, ChevronRight } from "lucide-react";
@@ -13,6 +14,7 @@ import { GeneralInfoTab, GeneralInfoPreview, UnderConstructionTab, ServicesTab, 
 import { useModal } from "@/contexts/ModalContext";
 
 export default function BusinessPage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState("general");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -53,13 +55,52 @@ export default function BusinessPage() {
   const loadEstablishment = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        router.push("/auth/pro/login");
+        return;
+      }
+
+      // Vérifier le type d'utilisateur dans les métadonnées
+      const userType = user.user_metadata?.user_type;
 
       const { data } = await supabase
         .from("establishments")
         .select("*")
         .eq("user_id", user.id)
         .single();
+
+      // Si pas d'établissement
+      if (!data) {
+        // Si c'est un pro sans établissement, le laisser créer son établissement
+        if (userType === "pro") {
+          // Créer automatiquement un établissement vide pour ce pro
+          const { data: newEstablishment, error: createError } = await supabase
+            .from("establishments")
+            .insert({
+              user_id: user.id,
+              name: "",
+              is_profile_complete: false,
+            })
+            .select()
+            .single();
+
+          if (createError) {
+            console.error("Error creating establishment:", createError);
+            router.push("/auth/pro/login");
+            return;
+          }
+
+          setEstablishmentId(newEstablishment.id);
+          setIsProfileComplete(false);
+          setIsEditMode(true);
+          setLoading(false);
+          return;
+        }
+        
+        // Sinon c'est un client - rediriger vers /account
+        router.push("/account");
+        return;
+      }
 
       if (data) {
         setEstablishmentId(data.id);

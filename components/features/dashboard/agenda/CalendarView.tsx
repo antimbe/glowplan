@@ -180,6 +180,9 @@ export default function CalendarView({
       ? event.title 
       : (unavailabilityData?.reason || event.title || typeLabel);
     
+    const appointmentData = isAppointment ? event.data as AppointmentData : null;
+    const isPending = isAppointment && appointmentData?.status === "pending";
+    
     if (compact) {
       return (
         <div
@@ -187,11 +190,13 @@ export default function CalendarView({
           onClick={(e) => { e.stopPropagation(); onEventClick(event); }}
           className={`${
             isAppointment 
-              ? "bg-gradient-to-r from-primary to-primary/80 border-l-2 border-primary-dark" 
+              ? isPending
+                ? "bg-gradient-to-r from-orange-500 to-orange-400 border-l-2 border-orange-600"
+                : "bg-gradient-to-r from-primary to-primary/80 border-l-2 border-primary-dark"
               : "bg-gradient-to-r from-red-500 to-red-400 border-l-2 border-red-600"
           } text-white text-[10px] lg:text-xs px-1.5 py-0.5 rounded-md truncate cursor-pointer hover:shadow-md transition-all`}
         >
-          {isAppointment ? event.title : typeLabel}
+          {isAppointment ? (isPending ? `⏳ ${event.title}` : event.title) : typeLabel}
         </div>
       );
     }
@@ -205,12 +210,15 @@ export default function CalendarView({
         onClick={(e) => { e.stopPropagation(); onEventClick(event); }}
         className={`${
           isAppointment 
-            ? "bg-gradient-to-r from-primary to-primary/80 border-l-3 border-primary-dark" 
+            ? isPending
+              ? "bg-gradient-to-r from-orange-500 to-orange-400 border-l-3 border-orange-600"
+              : "bg-gradient-to-r from-primary to-primary/80 border-l-3 border-primary-dark"
             : "bg-gradient-to-r from-red-500 to-red-400 border-l-3 border-red-600"
         } text-white text-xs px-2.5 py-1.5 rounded-lg cursor-pointer hover:shadow-lg hover:scale-[1.02] transition-all mb-1`}
       >
         <div className="font-semibold truncate flex items-center gap-1">
           {isAppointment ? <User size={10} /> : <Ban size={10} />}
+          {isPending && <span className="text-[10px]">⏳</span>}
           {displayTitle}
         </div>
         {!isAppointment && (
@@ -291,6 +299,8 @@ export default function CalendarView({
     const heightPercent = (duration / 60) * 100;
     
     const unavailabilityData = event.data as UnavailabilityData | undefined;
+    const appointmentData = isAppointment ? event.data as AppointmentData : null;
+    const isPending = isAppointment && appointmentData?.status === "pending";
     const typeLabel = unavailabilityData?.unavailability_type 
       ? UNAVAILABILITY_TYPE_LABELS[unavailabilityData.unavailability_type] 
       : "Indisponible";
@@ -302,11 +312,13 @@ export default function CalendarView({
       <div
         key={event.id}
         onClick={(e) => { e.stopPropagation(); onEventClick(event); }}
-        className={`absolute left-0.5 right-0.5 z-10 ${
+        className={`absolute left-0.5 right-0.5 ${
           isAppointment 
-            ? "bg-gradient-to-r from-primary to-primary/80 border-l-2 border-primary-dark" 
-            : "bg-gradient-to-r from-red-500 to-red-400 border-l-2 border-red-600"
-        } text-white text-[10px] lg:text-xs px-1.5 py-0.5 rounded-md cursor-pointer hover:shadow-lg hover:z-20 transition-all overflow-hidden`}
+            ? isPending
+              ? "z-20 bg-gradient-to-r from-orange-500 to-orange-400 border-l-2 border-orange-600 hover:z-30"
+              : "z-20 bg-gradient-to-r from-primary to-primary/80 border-l-2 border-primary-dark hover:z-30"
+            : "z-10 bg-gradient-to-r from-red-500 to-red-400 border-l-2 border-red-600"
+        } text-white text-[10px] lg:text-xs px-1.5 py-0.5 rounded-md cursor-pointer hover:shadow-lg transition-all overflow-hidden`}
         style={{
           top: `${topPercent}%`,
           height: `${heightPercent}%`,
@@ -315,6 +327,7 @@ export default function CalendarView({
       >
         <div className="font-semibold truncate flex items-center gap-1">
           {isAppointment ? <User size={10} /> : <Ban size={10} />}
+          {isPending && <span>⏳</span>}
           {displayTitle}
         </div>
         {!isAppointment && (

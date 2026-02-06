@@ -53,12 +53,8 @@ export default function GeneralInfoPreview({ formData, establishmentId, onEdit }
         .order("day_of_week");
 
       if (data) {
-        // Réorganiser pour commencer par Lundi (day_of_week = 1)
-        const sorted = [...data].sort((a, b) => {
-          const aDay = a.day_of_week === 0 ? 7 : a.day_of_week;
-          const bDay = b.day_of_week === 0 ? 7 : b.day_of_week;
-          return aDay - bDay;
-        });
+        // Trier par day_of_week (0=Lundi, 6=Dimanche)
+        const sorted = [...data].sort((a, b) => a.day_of_week - b.day_of_week);
         const normalizedHours = sorted.map(h => ({
           ...h,
           open_time: h.open_time ? h.open_time.substring(0, 5) : null,
@@ -97,9 +93,8 @@ export default function GeneralInfoPreview({ formData, establishmentId, onEdit }
   };
 
   const getDayName = (dayOfWeek: number) => {
-    // Convertir: 0=Dimanche -> index 6, 1=Lundi -> index 0, etc.
-    const index = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-    return DAYS[index];
+    // 0=Lundi, 1=Mardi, ..., 6=Dimanche
+    return DAYS[dayOfWeek];
   };
 
   return (

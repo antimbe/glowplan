@@ -28,13 +28,13 @@ export default function DashboardLayout({
       }
 
       // Check if user is a client (not allowed in pro dashboard)
-      const { data: clientProfile } = await supabase
+      const { data: clientProfiles } = await supabase
         .from("client_profiles")
         .select("id")
         .eq("user_id", user.id)
-        .single();
+        .limit(1);
 
-      if (clientProfile) {
+      if (clientProfiles && clientProfiles.length > 0) {
         // User is a client, redirect to client account
         router.push("/account");
         return;

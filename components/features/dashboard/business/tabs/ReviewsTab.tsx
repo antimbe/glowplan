@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Star, MessageSquare, Loader2, Eye, EyeOff } from "lucide-react";
+import { Star, MessageSquare, Loader2, Eye, EyeOff, Heart } from "lucide-react";
 import { Button } from "@/components/ui";
 import { cn } from "@/lib/utils/cn";
 
@@ -14,10 +14,6 @@ interface Review {
   is_visible: boolean;
   is_verified: boolean;
   created_at: string;
-  client_profiles?: {
-    first_name: string;
-    last_name: string;
-  } | null;
   appointments?: {
     services: {
       name: string;
@@ -36,27 +32,36 @@ export default function ReviewsTab({ establishmentId }: ReviewsTabProps) {
   const [loading, setLoading] = useState(true);
   const [averageRating, setAverageRating] = useState<number | null>(null);
   const [updating, setUpdating] = useState<string | null>(null);
+  const [favoritesCount, setFavoritesCount] = useState<number>(0);
 
   const supabase = createClient();
 
   useEffect(() => {
     loadReviews();
+    loadFavoritesCount();
   }, [establishmentId]);
 
   const loadReviews = async () => {
+    if (!establishmentId) {
+      setLoading(false);
+      return;
+    }
+    
     setLoading(true);
     try {
       const { data, error } = await supabase
         .from("reviews")
         .select(`
           id, rating, comment, client_name, is_visible, is_verified, created_at,
-          client_profiles(first_name, last_name),
           appointments(services(name))
         `)
         .eq("establishment_id", establishmentId)
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase error details:", error.message, error.code, error.details);
+        throw error;
+      }
 
       const reviewsData = (data || []) as unknown as Review[];
       setReviews(reviewsData);
@@ -69,6 +74,24 @@ export default function ReviewsTab({ establishmentId }: ReviewsTabProps) {
       console.error("Error loading reviews:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadFavoritesCount = async () => {
+    if (!establishmentId) return;
+    
+    try {
+      console.log("Loading favorites for establishment:", establishmentId);
+      const { count, error, data } = await supabase
+        .from("favorites")
+        .select("*", { count: "exact" })
+        .eq("establishment_id", establishmentId);
+
+      console.log("Favorites result:", { count, error, data });
+      if (error) throw error;
+      setFavoritesCount(count || 0);
+    } catch (error) {
+      console.error("Error loading favorites count:", error);
     }
   };
 
@@ -98,17 +121,19 @@ export default function ReviewsTab({ establishmentId }: ReviewsTabProps) {
   };
 
   const getReviewerName = (review: Review) => {
-    if (review.client_profiles) {
-      return `${review.client_profiles.first_name} ${review.client_profiles.last_name?.charAt(0)}.`;
-    }
     return review.client_name || "Client anonyme";
   };
 
-  const ratingDistribution = [5, 4, 3, 2, 1].map(rating => ({
-    rating,
-    count: reviews.filter(r => r.rating === rating).length,
-    percentage: reviews.length > 0 ? (reviews.filter(r => r.rating === rating).length / reviews.length) * 100 : 0,
-  }));
+  // Regrouper les notes par plages (ex: 4.5-5 = "5 étoiles", 3.5-4 = "4 étoiles", etc.)
+  const ratingDistribution = [5, 4, 3, 2, 1].map(rating => {
+    // Compter les avis dans la plage [rating-0.5, rating]
+    const count = reviews.filter(r => r.rating > rating - 1 && r.rating <= rating).length;
+    return {
+      rating,
+      count,
+      percentage: reviews.length > 0 ? (count / reviews.length) * 100 : 0,
+    };
+  });
 
   if (loading) {
     return (
@@ -120,6 +145,19 @@ export default function ReviewsTab({ establishmentId }: ReviewsTabProps) {
 
   return (
     <div className="space-y-6">
+      {/* Favorites Counter */}
+      <div className="bg-gradient-to-r from-pink-50 to-red-50 rounded-2xl p-5 border border-pink-100">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-pink-500 to-red-500 flex items-center justify-center">
+            <Heart size={24} className="text-white fill-white" />
+          </div>
+          <div>
+            <p className="text-sm text-gray-600">Ajouté en favoris par</p>
+            <p className="text-2xl font-bold text-gray-900">{favoritesCount} client{favoritesCount > 1 ? "s" : ""}</p>
+          </div>
+        </div>
+      </div>
+
       {/* Header with Stats */}
       <div className="bg-white rounded-2xl p-6 border border-gray-100">
         <h2 className="text-xl font-bold text-gray-900 mb-6">Vos avis clients</h2>
@@ -129,18 +167,26 @@ export default function ReviewsTab({ establishmentId }: ReviewsTabProps) {
             {/* Average Rating */}
             <div className="text-center lg:text-left">
               <div className="text-5xl font-bold text-primary mb-2">{averageRating}</div>
-              <div className="flex items-center justify-center lg:justify-start gap-1 mb-2">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <Star
-                    key={star}
-                    size={20}
-                    className={cn(
-                      star <= Math.round(averageRating || 0)
-                        ? "text-yellow-500 fill-yellow-500"
-                        : "text-gray-300"
-                    )}
-                  />
-                ))}
+              <div className="flex items-center justify-center lg:justify-start gap-0.5 mb-2">
+                {[1, 2, 3, 4, 5].map((star) => {
+                  const avg = Number(averageRating) || 0;
+                  const isFullStar = star <= Math.floor(avg);
+                  const isHalfStar = !isFullStar && star === Math.ceil(avg) && avg % 1 !== 0;
+                  
+                  return (
+                    <div key={star} className="relative w-5 h-5">
+                      <Star size={20} className="absolute text-gray-300" />
+                      {isFullStar && (
+                        <Star size={20} className="absolute text-yellow-500 fill-yellow-500" />
+                      )}
+                      {isHalfStar && (
+                        <div className="absolute overflow-hidden w-2.5">
+                          <Star size={20} className="text-yellow-500 fill-yellow-500" />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
               <p className="text-gray-500 text-sm">{reviews.length} avis au total</p>
             </div>
@@ -204,17 +250,25 @@ export default function ReviewsTab({ establishmentId }: ReviewsTabProps) {
 
                   {/* Rating */}
                   <div className="flex items-center gap-1 mb-2">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Star
-                        key={star}
-                        size={16}
-                        className={cn(
-                          star <= review.rating
-                            ? "text-yellow-500 fill-yellow-500"
-                            : "text-gray-300"
-                        )}
-                      />
-                    ))}
+                    {[1, 2, 3, 4, 5].map((star) => {
+                      const rating = Number(review.rating);
+                      const isFullStar = star <= Math.floor(rating);
+                      const isHalfStar = !isFullStar && star === Math.ceil(rating) && rating % 1 !== 0;
+                      
+                      return (
+                        <div key={star} className="relative">
+                          <Star size={16} className="text-gray-300" />
+                          {isFullStar && (
+                            <Star size={16} className="absolute inset-0 text-yellow-500 fill-yellow-500" />
+                          )}
+                          {isHalfStar && (
+                            <div className="absolute inset-0 overflow-hidden w-[50%]">
+                              <Star size={16} className="text-yellow-500 fill-yellow-500" />
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
 
                   {/* Service */}

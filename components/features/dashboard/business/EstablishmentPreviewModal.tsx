@@ -31,7 +31,7 @@ interface EstablishmentPreviewModalProps {
   formData: EstablishmentData;
 }
 
-const DAYS = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
+const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
 export default function EstablishmentPreviewModal({ 
   isOpen, 

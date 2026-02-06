@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Calendar, Clock, User, Mail, Phone, Instagram, Check, X, Loader2, AlertCircle } from "lucide-react";
+import { Calendar, Clock, User, Mail, Phone, Instagram, Check, X, Loader2, AlertCircle, Info, UserCheck, UserX } from "lucide-react";
 import { Button } from "@/components/ui";
 import { cn } from "@/lib/utils/cn";
 
@@ -17,7 +17,11 @@ interface Appointment {
   client_email: string | null;
   client_phone: string | null;
   client_instagram: string | null;
+  client_profile_id: string | null;
   notes: string | null;
+  cancelled_at?: string | null;
+  cancelled_by_client?: boolean | null;
+  cancellation_reason?: string | null;
   services: {
     name: string;
     price: number;
@@ -51,7 +55,8 @@ export default function AppointmentsTab({ establishmentId }: AppointmentsTabProp
       const { data, error } = await supabase
         .from("appointments")
         .select(`
-          id, start_time, end_time, status, client_name, client_first_name, client_last_name, client_email, client_phone, client_instagram, notes,
+          id, start_time, end_time, status, client_name, client_first_name, client_last_name, client_email, client_phone, client_instagram, client_profile_id, notes,
+          cancelled_at, cancelled_by_client, cancellation_reason,
           services(name, price, duration)
         `)
         .eq("establishment_id", establishmentId)
@@ -103,6 +108,7 @@ export default function AppointmentsTab({ establishmentId }: AppointmentsTabProp
           status: "cancelled",
           cancelled_by_client: false,
           cancelled_at: new Date().toISOString(),
+          cancellation_reason: cancelReason || null,
         })
         .eq("id", cancelModal.id);
 
@@ -119,7 +125,9 @@ export default function AppointmentsTab({ establishmentId }: AppointmentsTabProp
       });
 
       setAppointments(prev =>
-        prev.map(apt => apt.id === cancelModal.id ? { ...apt, status: "cancelled" } : apt)
+        prev.map(apt => apt.id === cancelModal.id 
+          ? { ...apt, status: "cancelled", cancellation_reason: cancelReason || null, cancelled_at: new Date().toISOString(), cancelled_by_client: false }
+          : apt)
       );
       setCancelModal(null);
       setCancelReason("");
@@ -219,11 +227,29 @@ export default function AppointmentsTab({ establishmentId }: AppointmentsTabProp
                 <div className="flex-1">
                   {/* Client Info */}
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                    <div className={cn(
+                      "w-10 h-10 rounded-full flex items-center justify-center font-bold",
+                      apt.client_profile_id 
+                        ? "bg-primary/10 text-primary" 
+                        : "bg-gray-100 text-gray-500"
+                    )}>
                       {getClientName(apt).charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <h3 className="font-semibold text-gray-900">{getClientName(apt)}</h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-gray-900">{getClientName(apt)}</h3>
+                        {apt.client_profile_id ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-primary/10 text-primary">
+                            <UserCheck size={10} />
+                            Client
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-500">
+                            <UserX size={10} />
+                            Guest
+                          </span>
+                        )}
+                      </div>
                       <p className="text-sm text-gray-500">{apt.services?.name || "Prestation non spécifiée"}</p>
                     </div>
                   </div>
@@ -260,6 +286,12 @@ export default function AppointmentsTab({ establishmentId }: AppointmentsTabProp
 
                   {apt.notes && (
                     <p className="text-sm text-gray-500 mt-2 italic">Note: {apt.notes}</p>
+                  )}
+                  {apt.status === "cancelled" && apt.cancellation_reason && (
+                    <p className="flex items-center gap-2 text-sm text-red-600 mt-2">
+                      <Info size={14} />
+                      Motif d'annulation : {apt.cancellation_reason}
+                    </p>
                   )}
                 </div>
 

@@ -61,6 +61,7 @@ export function useAgenda() {
         .from("appointments")
         .select("*, service:services(name, duration, price)")
         .eq("establishment_id", establishmentId)
+        .neq("status", "cancelled")
         .gte("start_time", startDate.toISOString())
         .lte("start_time", endDate.toISOString())
         .order("start_time");

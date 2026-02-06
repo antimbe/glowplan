@@ -2,10 +2,19 @@
 
 import { createClient } from "@/lib/supabase/client";
 
+export interface ConflictingAppointment {
+  id: string;
+  client_name: string;
+  client_email?: string;
+  start_time: string;
+  end_time: string;
+}
+
 export interface ConflictResult {
   hasConflict: boolean;
   type: "unavailability" | "appointment" | "overlap" | null;
   message: string | null;
+  conflictingAppointments?: ConflictingAppointment[];
 }
 
 export async function checkAppointmentConflicts(
@@ -133,7 +142,7 @@ export async function checkUnavailabilityConflicts(
   // Vérifier les RDV existants sur cette plage (strict: < et > pour permettre les événements consécutifs)
   const { data: appointments } = await supabase
     .from("appointments")
-    .select("id, client_name, start_time, end_time")
+    .select("id, client_name, client_email, start_time, end_time")
     .eq("establishment_id", establishmentId)
     .neq("status", "cancelled")
     .lt("start_time", endTime.toISOString())
@@ -144,7 +153,8 @@ export async function checkUnavailabilityConflicts(
     return {
       hasConflict: true,
       type: "appointment",
-      message: `Attention : ${count} rendez-vous existant${count > 1 ? "s" : ""} sur cette période. Voulez-vous quand même créer cette indisponibilité ?`,
+      message: `Attention : ${count} rendez-vous existant${count > 1 ? "s" : ""} sur cette période.`,
+      conflictingAppointments: appointments as ConflictingAppointment[],
     };
   }
 

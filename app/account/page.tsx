@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Header from "@/components/features/Header";
-import { Calendar, Heart, User, MapPin, Clock, Check, X, Loader2, Mail, Phone, Instagram, LogOut, Star, MessageSquare } from "lucide-react";
+import { Calendar, Heart, User, MapPin, Clock, Check, X, Loader2, Mail, Phone, Instagram, LogOut, Star, MessageSquare, Trash2 } from "lucide-react";
 import { Button, Input } from "@/components/ui";
 import { cn } from "@/lib/utils/cn";
 import Link from "next/link";
@@ -51,7 +51,20 @@ interface Favorite {
   } | null;
 }
 
-type Tab = "reservations" | "favorites" | "profile";
+interface Review {
+  id: string;
+  rating: number;
+  comment: string | null;
+  created_at: string;
+  establishment_id: string;
+  establishments: {
+    id: string;
+    name: string;
+    city: string;
+  } | null;
+}
+
+type Tab = "reservations" | "favorites" | "reviews" | "profile";
 
 const DAYS = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
 const MONTHS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
@@ -64,6 +77,8 @@ export default function AccountPage() {
   const [profile, setProfile] = useState<ClientProfile | null>(null);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [favorites, setFavorites] = useState<Favorite[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [deletingReview, setDeletingReview] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [cancelling, setCancelling] = useState<string | null>(null);
   const [reviewModal, setReviewModal] = useState<Appointment | null>(null);
@@ -150,6 +165,18 @@ export default function AccountPage() {
       .eq("client_id", clientId);
 
     setFavorites((favoritesData || []) as unknown as Favorite[]);
+
+    // Load user reviews
+    const { data: userReviewsData } = await supabase
+      .from("reviews")
+      .select(`
+        id, rating, comment, created_at, establishment_id,
+        establishments(id, name, city)
+      `)
+      .eq("client_profile_id", clientId)
+      .order("created_at", { ascending: false });
+
+    setReviews((userReviewsData || []) as unknown as Review[]);
   };
 
   const handleCancelAppointment = async (appointmentId: string) => {
@@ -200,6 +227,21 @@ export default function AccountPage() {
       setFavorites(favorites.filter(f => f.id !== favoriteId));
     } catch (error) {
       console.error("Error removing favorite:", error);
+    }
+  };
+
+  const handleDeleteReview = async (reviewId: string) => {
+    if (!profile) return;
+
+    setDeletingReview(reviewId);
+    try {
+      const { error } = await supabase.from("reviews").delete().eq("id", reviewId);
+      if (error) throw error;
+      setReviews(reviews.filter(r => r.id !== reviewId));
+    } catch (error) {
+      console.error("Error deleting review:", error);
+    } finally {
+      setDeletingReview(null);
     }
   };
 
@@ -319,6 +361,7 @@ export default function AccountPage() {
               {[
                 { key: "reservations", label: "Mes réservations", icon: Calendar },
                 { key: "favorites", label: "Mes favoris", icon: Heart },
+                { key: "reviews", label: "Mes avis", icon: Star },
                 { key: "profile", label: "Mon profil", icon: User },
               ].map((tab) => (
                 <button
@@ -509,6 +552,77 @@ export default function AccountPage() {
                       <Link href="/search">
                         <Button variant="primary" className="cursor-pointer">
                           Explorer les établissements
+                        </Button>
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Reviews Tab */}
+              {activeTab === "reviews" && (
+                <div>
+                  {reviews.length > 0 ? (
+                    <div className="space-y-4">
+                      {reviews.map((review) => (
+                        <div key={review.id} className="border border-gray-200 rounded-xl p-4">
+                          <div className="flex items-start justify-between mb-3">
+                            <div>
+                              <Link href={`/establishment/${review.establishment_id}`}>
+                                <h3 className="font-semibold text-gray-900 hover:text-primary transition-colors cursor-pointer">
+                                  {review.establishments?.name}
+                                </h3>
+                              </Link>
+                              <div className="flex items-center gap-1 text-sm text-gray-500 mt-1">
+                                <MapPin size={14} />
+                                <span>{review.establishments?.city}</span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <Star
+                                  key={star}
+                                  size={16}
+                                  className={cn(
+                                    star <= review.rating
+                                      ? "text-yellow-500 fill-yellow-500"
+                                      : "text-gray-300"
+                                  )}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                          {review.comment && (
+                            <p className="text-gray-600 text-sm mb-2">{review.comment}</p>
+                          )}
+                          <div className="flex items-center justify-between mt-2">
+                            <p className="text-gray-400 text-xs">
+                              Publié le {formatDate(review.created_at)}
+                            </p>
+                            <button
+                              onClick={() => handleDeleteReview(review.id)}
+                              disabled={deletingReview === review.id}
+                              className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700 transition-colors cursor-pointer disabled:opacity-50"
+                            >
+                              {deletingReview === review.id ? (
+                                <Loader2 size={14} className="animate-spin" />
+                              ) : (
+                                <Trash2 size={14} />
+                              )}
+                              Supprimer
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <Star size={48} className="mx-auto text-gray-300 mb-4" />
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Aucun avis</h3>
+                      <p className="text-gray-500 mb-4">Vous n'avez pas encore laissé d'avis</p>
+                      <Link href="/search">
+                        <Button variant="primary" className="cursor-pointer">
+                          Trouver un établissement
                         </Button>
                       </Link>
                     </div>

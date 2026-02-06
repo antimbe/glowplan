@@ -30,7 +30,7 @@ export default function SettingsSection({ formData, updateField }: TabProps) {
                 />
               </div>
               <p className="text-primary/60 text-xs mt-2">
-                Les demandes seront automatiquement confirmées pour les clients réguliers (2+ visites).
+                Les demandes seront automatiquement confirmées.
               </p>
             </div>
           </div>

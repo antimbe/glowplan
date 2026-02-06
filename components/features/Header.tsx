@@ -17,7 +17,7 @@ export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isClient, setIsClient] = useState(false);
+  const [isPro, setIsPro] = useState(false);
   const supabase = createClient();
 
   useEffect(() => {
@@ -31,13 +31,23 @@ export default function Header() {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setIsLoggedIn(true);
-        // Check if client
-        const { data: clientProfile } = await supabase
-          .from("client_profiles")
-          .select("id")
-          .eq("user_id", user.id)
-          .single();
-        setIsClient(!!clientProfile);
+        
+        // Vérifier le type d'utilisateur : métadonnées OU présence d'établissement
+        const userType = user.user_metadata?.user_type;
+        
+        if (userType === "pro") {
+          setIsPro(true);
+        } else if (userType === "client") {
+          setIsPro(false);
+        } else {
+          // Fallback : vérifier si a un établissement
+          const { data: establishment } = await supabase
+            .from("establishments")
+            .select("id")
+            .eq("user_id", user.id)
+            .single();
+          setIsPro(!!establishment);
+        }
       }
     };
     checkAuth();
@@ -87,7 +97,7 @@ export default function Header() {
 
           {/* Desktop CTA */}
           <Box className="hidden md:block">
-            <Link href={isLoggedIn && isClient ? "/account" : isLoggedIn ? "/dashboard" : "/auth/select-space"}>
+            <Link href={isLoggedIn ? (isPro ? "/dashboard" : "/account") : "/auth/select-space"}>
               <Button 
                 variant="white" 
                 size="sm" 
@@ -127,7 +137,7 @@ export default function Header() {
                 </Link>
               ))}
               <Box className="pt-6 border-t border-white/10">
-                <Link href={isLoggedIn && isClient ? "/account" : isLoggedIn ? "/dashboard" : "/auth/select-space"} onClick={() => setMobileMenuOpen(false)}>
+                <Link href={isLoggedIn ? (isPro ? "/dashboard" : "/account") : "/auth/select-space"} onClick={() => setMobileMenuOpen(false)}>
                   <Button variant="white" fullWidth size="lg" className="gap-3 font-bold cursor-pointer">
                     <User size={20} strokeWidth={2.5} />
                     <Text as="span">Mon compte</Text>

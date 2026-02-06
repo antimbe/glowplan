@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { User, Mail, Phone, FileText, Clock, Trash2, AlertTriangle } from "lucide-react";
+import { User, Mail, Phone, FileText, Clock, X, AlertTriangle, Loader2 } from "lucide-react";
 import { Button, Input, Textarea, Select, FormField, FormModal, Modal } from "@/components/ui";
 import { AppointmentData } from "./types";
 import { checkAppointmentConflicts, ConflictResult } from "./hooks";
@@ -49,6 +49,9 @@ export default function AppointmentForm({
     open: false,
     conflict: null,
   });
+  const [cancelModal, setCancelModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelling, setCancelling] = useState(false);
   const [date, setDate] = useState(
     selectedDate ? selectedDate.toISOString().split("T")[0] : new Date().toISOString().split("T")[0]
   );
@@ -140,6 +143,12 @@ export default function AppointmentForm({
       };
 
       if (appointment?.id) {
+        // Sauvegarder les anciennes valeurs pour l'email de notification
+        const oldStartDate = new Date(appointment.start_time);
+        const oldEndDate = new Date(appointment.end_time);
+        const oldService = services.find(s => s.id === appointment.service_id);
+        const newService = services.find(s => s.id === formData.service_id);
+
         const { data, error } = await supabase
           .from("appointments")
           .update(appointmentData)
@@ -148,6 +157,36 @@ export default function AppointmentForm({
           .single();
 
         if (error) throw error;
+
+        // Vérifier si des changements ont été faits et envoyer un email
+        const dateChanged = oldStartDate.toDateString() !== startDateTime.toDateString();
+        const timeChanged = oldStartDate.getTime() !== startDateTime.getTime() || oldEndDate.getTime() !== endDateTime.getTime();
+        const serviceChanged = appointment.service_id !== formData.service_id;
+
+        if (dateChanged || timeChanged || serviceChanged) {
+          const formatDateStr = (d: Date) => `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+          const formatTimeStr = (d: Date) => `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
+
+          await fetch("/api/booking/update", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              appointmentId: appointment.id,
+              changes: {
+                date: dateChanged,
+                oldDate: formatDateStr(oldStartDate),
+                newDate: formatDateStr(startDateTime),
+                time: timeChanged,
+                oldTime: `${formatTimeStr(oldStartDate)} - ${formatTimeStr(oldEndDate)}`,
+                newTime: `${formatTimeStr(startDateTime)} - ${formatTimeStr(endDateTime)}`,
+                service: serviceChanged,
+                oldService: oldService?.name || "Non spécifiée",
+                newService: newService?.name || "Non spécifiée",
+              },
+            }),
+          });
+        }
+
         onSave(data);
       } else {
         const { data, error } = await supabase
@@ -174,28 +213,78 @@ export default function AppointmentForm({
     label: `${s.name} - ${s.price}€ (${s.duration} min)` 
   }));
 
+  const handleConfirmAppointment = () => {
+    if (appointment) {
+      onSave({ ...appointment, status: "confirmed" });
+    }
+  };
+
+  const handleCancelAppointment = async () => {
+    if (!appointment?.id) return;
+    
+    setCancelling(true);
+    try {
+      // Mettre à jour le statut du RDV
+      const { error } = await supabase
+        .from("appointments")
+        .update({ 
+          status: "cancelled",
+          cancelled_by_client: false,
+          cancelled_at: new Date().toISOString(),
+          cancellation_reason: cancelReason || null,
+        })
+        .eq("id", appointment.id);
+
+      if (error) throw error;
+
+      // Envoyer l'email d'annulation
+      await fetch("/api/booking/cancel-by-pro", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          appointmentId: appointment.id,
+          reason: cancelReason || null,
+        }),
+      });
+
+      setCancelModal(false);
+      setCancelReason("");
+      onCancel(); // Fermer le formulaire
+    } catch (error) {
+      console.error("Error cancelling appointment:", error);
+    } finally {
+      setCancelling(false);
+    }
+  };
+
   const footer = (
-    <div className="flex justify-between">
-      {appointment && onDelete ? (
-        <Button variant="danger" onClick={onDelete} className="px-4">
-          <Trash2 size={16} className="mr-2" />
-          Supprimer
+    <div className="flex flex-wrap items-center gap-2">
+      {appointment && (appointment.status === "pending" || appointment.status === "confirmed") && (
+        <Button variant="danger" onClick={() => setCancelModal(true)} size="sm">
+          <X size={14} className="mr-1" />
+          Annuler le RDV
         </Button>
-      ) : <div />}
-      <div className="flex gap-3">
-        <Button variant="outline" onClick={onCancel} className="px-5">
-          Annuler
-        </Button>
+      )}
+      <div className="flex-1" />
+      {appointment?.status === "pending" && (
         <Button
           variant="primary"
-          onClick={() => handleSubmit()}
-          disabled={!isValid || saving}
-          loading={saving}
-          className="px-6"
+          onClick={handleConfirmAppointment}
+          disabled={saving}
+          size="sm"
         >
-          {appointment ? "Modifier" : "Créer le RDV"}
+          Confirmer le RDV
         </Button>
-      </div>
+      )}
+      <Button
+        variant="primary"
+        onClick={() => handleSubmit()}
+        disabled={!isValid || saving}
+        loading={saving}
+        size="sm"
+      >
+        {appointment ? "Modifier" : "Créer le RDV"}
+      </Button>
     </div>
   );
 
@@ -340,6 +429,53 @@ export default function AppointmentForm({
           }
         }}
       />
+
+      {/* Modal d'annulation */}
+      {cancelModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full mx-4 shadow-xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                <AlertTriangle className="text-red-600" size={20} />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900">Annuler le rendez-vous</h3>
+            </div>
+            <p className="text-gray-600 mb-4">
+              Êtes-vous sûr de vouloir annuler ce rendez-vous ? Un email sera envoyé au client pour l'informer.
+            </p>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Motif d'annulation (optionnel)
+              </label>
+              <Textarea
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                placeholder="Ex: Indisponibilité, urgence personnelle..."
+                rows={2}
+                fullWidth
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => { setCancelModal(false); setCancelReason(""); }}
+                size="sm"
+              >
+                Retour
+              </Button>
+              <Button 
+                variant="danger" 
+                onClick={handleCancelAppointment}
+                disabled={cancelling}
+                size="sm"
+              >
+                {cancelling ? <Loader2 className="animate-spin mr-1" size={14} /> : null}
+                Confirmer l'annulation
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

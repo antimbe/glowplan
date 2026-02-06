@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Container, Section, Heading, Text, Box, Stack, Flex, MotionBox, Button, Card, Logo, Input } from "@/components/ui";
 import { ArrowLeft, User, Loader2 } from "lucide-react";
@@ -11,7 +11,11 @@ import { useModal } from "@/contexts/ModalContext";
 
 export default function ClientLoginPage() {
   const router = useRouter();
-  const [isLogin, setIsLogin] = useState(true);
+  const searchParams = useSearchParams();
+  const redirectUrl = searchParams.get("redirect");
+  const signupMode = searchParams.get("signup") === "true";
+  
+  const [isLogin, setIsLogin] = useState(!signupMode);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
@@ -67,7 +71,7 @@ export default function ClientLoginPage() {
           });
         }
 
-        router.push("/search");
+        router.push(redirectUrl || "/search");
       } else {
         if (password !== confirmPassword) {
           throw new Error("Les mots de passe ne correspondent pas");
@@ -80,17 +84,17 @@ export default function ClientLoginPage() {
           email,
           password,
           options: {
-            emailRedirectTo: `${location.origin}/auth/callback?type=client`,
             data: {
               user_type: "client",
               first_name: firstName,
               last_name: lastName,
+              phone: phone || null,
             },
           },
         });
         if (error) throw error;
 
-        // Créer le profil client
+        // Créer le profil client immédiatement (confirmation email désactivée)
         if (data.user) {
           await supabase.from("client_profiles").insert({
             user_id: data.user.id,
@@ -99,10 +103,12 @@ export default function ClientLoginPage() {
             phone: phone || null,
             user_type: "client",
           });
+          
+          router.push(redirectUrl || "/search");
+        } else {
+          showSuccess("Inscription réussie", "Vous pouvez maintenant vous connecter !");
+          setIsLogin(true);
         }
-
-        showSuccess("Inscription réussie", "Vérifiez votre email pour confirmer votre inscription !");
-        setIsLogin(true);
       }
     } catch (err: any) {
       setError(err.message || "Une erreur est survenue");

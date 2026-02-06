@@ -11,8 +11,8 @@ interface OpeningHoursTabProps {
   establishmentId: string;
 }
 
-const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
-  const hours = Math.floor(i / 2);
+const TIME_OPTIONS = Array.from({ length: 27 }, (_, i) => {
+  const hours = 7 + Math.floor(i / 2);
   const minutes = (i % 2) * 30;
   return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
 });

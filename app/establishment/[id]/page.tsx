@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { MapPin, Clock, Phone, Mail, ChevronLeft, Star, Calendar, Check, ArrowRight, Instagram, User, FileText, Heart } from "lucide-react";
+import { MapPin, Clock, Phone, Mail, ChevronLeft, Star, Calendar, Check, ArrowRight, Instagram, User, FileText, Heart, UserPlus, LogIn, MessageSquare, X } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui";
 import { cn } from "@/lib/utils/cn";
 
@@ -21,6 +22,7 @@ interface Establishment {
   general_conditions: string | null;
   show_conditions_online: boolean;
   auto_confirm_appointments: boolean;
+  hide_exact_address: boolean;
 }
 
 interface Service {
@@ -103,6 +105,15 @@ export default function EstablishmentPage() {
   });
 
   const [clientProfileId, setClientProfileId] = useState<string | null>(null);
+  const [blockedError, setBlockedError] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  const [togglingFavorite, setTogglingFavorite] = useState(false);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewComment, setReviewComment] = useState("");
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const [hasAlreadyReviewed, setHasAlreadyReviewed] = useState(false);
 
   const supabase = createClient();
 
@@ -125,14 +136,125 @@ export default function EstablishmentPage() {
 
     if (clientProfile) {
       setClientProfileId(clientProfile.id);
+      // Ne pas pré-remplir si le prénom est "Client" (valeur par défaut des comptes migrés)
+      const isDefaultName = clientProfile.first_name === "Client" && !clientProfile.last_name;
       setClientInfo({
-        firstName: clientProfile.first_name || "",
+        firstName: isDefaultName ? "" : (clientProfile.first_name || ""),
         lastName: clientProfile.last_name || "",
         email: user.email || "",
         phone: clientProfile.phone || "",
         instagram: clientProfile.instagram || "",
         notes: "",
       });
+
+      // Vérifier si l'établissement est en favoris
+      const { data: favoriteData } = await supabase
+        .from("favorites")
+        .select("id")
+        .eq("client_id", clientProfile.id)
+        .eq("establishment_id", establishmentId)
+        .single();
+
+      setIsFavorite(!!favoriteData);
+
+      // Vérifier si le client a déjà laissé un avis
+      const { data: existingReview } = await supabase
+        .from("reviews")
+        .select("id")
+        .eq("client_profile_id", clientProfile.id)
+        .eq("establishment_id", establishmentId)
+        .single();
+
+      setHasAlreadyReviewed(!!existingReview);
+    }
+  };
+
+  const handleOpenReviewModal = () => {
+    if (!clientProfileId) {
+      setShowLoginPrompt(true);
+      return;
+    }
+    setShowReviewModal(true);
+  };
+
+  const handleSubmitReview = async () => {
+    if (!clientProfileId || reviewRating === 0) return;
+
+    setSubmittingReview(true);
+    try {
+      const { error } = await supabase.from("reviews").insert({
+        establishment_id: establishmentId,
+        client_profile_id: clientProfileId,
+        rating: reviewRating,
+        comment: reviewComment || null,
+        client_name: `${clientInfo.firstName} ${clientInfo.lastName}`,
+        is_visible: true,
+        is_verified: false,
+      });
+
+      if (error) throw error;
+
+      // Recharger les avis
+      const { data: reviewsData } = await supabase
+        .from("reviews")
+        .select(`
+          id, rating, comment, client_name, created_at,
+          client_profiles(first_name, last_name)
+        `)
+        .eq("establishment_id", establishmentId)
+        .eq("is_visible", true)
+        .order("created_at", { ascending: false });
+
+      if (reviewsData) {
+        setReviews(reviewsData as unknown as Review[]);
+        const avg = reviewsData.reduce((sum, r) => sum + r.rating, 0) / reviewsData.length;
+        setAverageRating(Math.round(avg * 10) / 10);
+      }
+
+      setShowReviewModal(false);
+      setReviewRating(0);
+      setReviewComment("");
+      setHasAlreadyReviewed(true);
+    } catch (error) {
+      console.error("Error submitting review:", error);
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
+  const handleToggleFavorite = async () => {
+    // Si pas connecté en tant que client, afficher le prompt de connexion
+    if (!clientProfileId) {
+      setShowLoginPrompt(true);
+      return;
+    }
+
+    setTogglingFavorite(true);
+    try {
+      if (isFavorite) {
+        // Retirer des favoris
+        await supabase
+          .from("favorites")
+          .delete()
+          .eq("client_id", clientProfileId)
+          .eq("establishment_id", establishmentId);
+        setIsFavorite(false);
+      } else {
+        // Ajouter aux favoris
+        const { error } = await supabase.from("favorites").insert({
+          client_id: clientProfileId,
+          establishment_id: establishmentId,
+        });
+        if (error) {
+          console.error("Error adding favorite:", error);
+          return;
+        }
+        setIsFavorite(true);
+      }
+    } catch (error) {
+      console.error("Error toggling favorite:", error);
+    } finally {
+      setTogglingFavorite(false);
     }
   };
 
@@ -328,6 +450,22 @@ export default function EstablishmentPage() {
 
     setSubmitting(true);
     try {
+      // Vérifier si le client est bloqué par cet établissement
+      if (clientProfileId) {
+        const { data: blockedData } = await supabase
+          .from("blocked_clients")
+          .select("id")
+          .eq("establishment_id", establishmentId)
+          .eq("client_profile_id", clientProfileId)
+          .single();
+
+        if (blockedData) {
+          setBlockedError(true);
+          setSubmitting(false);
+          return;
+        }
+      }
+
       const startTime = selectedSlot.date;
       const endTime = new Date(startTime.getTime() + selectedService.duration * 60000);
 
@@ -349,6 +487,19 @@ export default function EstablishmentPage() {
       }).select().single();
 
       if (error) throw error;
+
+      // Mettre à jour le profil client si les infos ont changé (pour les comptes migrés)
+      if (clientProfileId) {
+        await supabase
+          .from("client_profiles")
+          .update({
+            first_name: clientInfo.firstName,
+            last_name: clientInfo.lastName,
+            phone: clientInfo.phone || null,
+            instagram: clientInfo.instagram || null,
+          })
+          .eq("id", clientProfileId);
+      }
 
       // Send notification emails via API route
       await fetch("/api/booking/notify", {
@@ -419,9 +570,12 @@ export default function EstablishmentPage() {
     );
   }
 
-  const fullAddress = [establishment.address, establishment.postal_code, establishment.city]
-    .filter(Boolean)
-    .join(", ");
+  // Si hide_exact_address est activé, n'afficher que la ville
+  const fullAddress = establishment.hide_exact_address
+    ? establishment.city || ""
+    : [establishment.address, establishment.postal_code, establishment.city]
+        .filter(Boolean)
+        .join(", ");
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -474,30 +628,44 @@ export default function EstablishmentPage() {
             </div>
 
             {/* Reviews Section */}
-            {reviews.length > 0 && step === "info" && (
+            {step === "info" && (
               <div className="bg-white rounded-2xl p-6 border border-gray-100 mb-6">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-bold text-gray-900">Avis clients</h2>
-                  {averageRating !== null && (
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-1">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <Star
-                            key={star}
-                            size={16}
-                            className={cn(
-                              star <= Math.round(averageRating)
-                                ? "text-yellow-500 fill-yellow-500"
-                                : "text-gray-300"
-                            )}
-                          />
-                        ))}
+                  <div className="flex items-center gap-3">
+                    {averageRating !== null && (
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star
+                              key={star}
+                              size={16}
+                              className={cn(
+                                star <= Math.round(averageRating)
+                                  ? "text-yellow-500 fill-yellow-500"
+                                  : "text-gray-300"
+                              )}
+                            />
+                          ))}
+                        </div>
+                        <span className="font-bold text-gray-900">{averageRating}</span>
+                        <span className="text-gray-500 text-sm">({reviews.length} avis)</span>
                       </div>
-                      <span className="font-bold text-gray-900">{averageRating}</span>
-                      <span className="text-gray-500 text-sm">({reviews.length} avis)</span>
-                    </div>
-                  )}
+                    )}
+                    {!hasAlreadyReviewed && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleOpenReviewModal}
+                        className="cursor-pointer"
+                      >
+                        <MessageSquare size={16} className="mr-1" />
+                        Donner mon avis
+                      </Button>
+                    )}
+                  </div>
                 </div>
+                {reviews.length > 0 ? (
                 <div className="space-y-4">
                   {reviews.slice(0, 5).map((review) => {
                     const reviewerName = review.client_profiles
@@ -513,18 +681,22 @@ export default function EstablishmentPage() {
                             </div>
                             <span className="font-medium text-gray-900">{reviewerName}</span>
                           </div>
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-0.5">
                             {[1, 2, 3, 4, 5].map((star) => (
-                              <Star
-                                key={star}
-                                size={12}
-                                className={cn(
-                                  star <= review.rating
-                                    ? "text-yellow-500 fill-yellow-500"
-                                    : "text-gray-300"
-                                )}
-                              />
+                              <div key={star} className="relative w-3 h-3">
+                                {/* Étoile de fond (grise) */}
+                                <Star size={12} className="absolute text-gray-300" />
+                                {/* Étoile remplie (jaune) - pleine, demi ou vide */}
+                                {star <= review.rating ? (
+                                  <Star size={12} className="absolute text-yellow-500 fill-yellow-500" />
+                                ) : star - 0.5 <= review.rating ? (
+                                  <div className="absolute overflow-hidden w-1.5">
+                                    <Star size={12} className="text-yellow-500 fill-yellow-500" />
+                                  </div>
+                                ) : null}
+                              </div>
                             ))}
+                            <span className="ml-1 text-xs font-medium text-gray-600">{review.rating}</span>
                           </div>
                         </div>
                         {review.comment && (
@@ -537,6 +709,13 @@ export default function EstablishmentPage() {
                     );
                   })}
                 </div>
+                ) : (
+                  <div className="text-center py-6">
+                    <MessageSquare size={32} className="mx-auto text-gray-300 mb-2" />
+                    <p className="text-gray-500 text-sm">Aucun avis pour le moment</p>
+                    <p className="text-gray-400 text-xs mt-1">Soyez le premier à donner votre avis !</p>
+                  </div>
+                )}
               </div>
             )}
 
@@ -694,6 +873,53 @@ export default function EstablishmentPage() {
                   </div>
                 </div>
 
+                {/* Suggestion de connexion/inscription si non connecté */}
+                {!clientProfileId && (
+                  <div className="bg-gradient-to-r from-primary/5 to-primary/10 rounded-xl p-4 mb-6 border border-primary/20">
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <UserPlus size={20} className="text-primary" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-900 mb-1">Créez un compte pour profiter de plus d'avantages</h3>
+                        <p className="text-sm text-gray-600 mb-3">
+                          Suivez vos réservations, recevez des rappels et accumulez des points fidélité.
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          <Link href={`/auth/client/login?redirect=/establishment/${establishmentId}`}>
+                            <Button variant="primary" size="sm" className="cursor-pointer">
+                              <LogIn size={16} className="mr-1" />
+                              Se connecter
+                            </Button>
+                          </Link>
+                          <Link href={`/auth/client/login?redirect=/establishment/${establishmentId}&signup=true`}>
+                            <Button variant="outline" size="sm" className="cursor-pointer">
+                              <UserPlus size={16} className="mr-1" />
+                              Créer un compte
+                            </Button>
+                          </Link>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-2">
+                          Ou continuez en tant qu'invité ci-dessous
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Badge si connecté */}
+                {clientProfileId && (
+                  <div className="bg-green-50 rounded-xl p-3 mb-6 border border-green-200 flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                      <Check size={16} className="text-green-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-green-800">Connecté en tant que {clientInfo.firstName} {clientInfo.lastName}</p>
+                      <p className="text-xs text-green-600">Vos informations sont pré-remplies</p>
+                    </div>
+                  </div>
+                )}
+
                 <h2 className="text-lg font-bold text-gray-900 mb-4">Vos informations</h2>
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
@@ -801,10 +1027,37 @@ export default function EstablishmentPage() {
                   </div>
                 )}
 
+                {/* Message d'erreur si client bloqué */}
+                {blockedError && (
+                  <div className="bg-red-50 border border-red-200 rounded-xl p-4 mt-4">
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                        <User size={20} className="text-red-600" />
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-red-800 mb-1">Réservation impossible</h4>
+                        <p className="text-sm text-red-600 mb-2">
+                          Vous ne pouvez pas effectuer de réservation auprès de cet établissement.
+                        </p>
+                        <p className="text-sm text-red-600">
+                          Si vous pensez qu'il s'agit d'une erreur, veuillez contacter directement l'établissement 
+                          {establishment.phone && (
+                            <span> au <a href={`tel:${establishment.phone}`} className="font-semibold underline">{establishment.phone}</a></span>
+                          )}
+                          {establishment.email && (
+                            <span> ou par email à <a href={`mailto:${establishment.email}`} className="font-semibold underline">{establishment.email}</a></span>
+                          )}
+                          .
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <Button
                   variant="primary"
                   onClick={handleSubmitBooking}
-                  disabled={!clientInfo.firstName || !clientInfo.lastName || !clientInfo.email || !clientInfo.phone || submitting}
+                  disabled={!clientInfo.firstName || !clientInfo.lastName || !clientInfo.email || !clientInfo.phone || submitting || blockedError}
                   className="w-full mt-6 py-4 text-base"
                 >
                   {submitting ? (
@@ -849,8 +1102,21 @@ export default function EstablishmentPage() {
                     <span className="text-sm">{establishment.city}</span>
                   </div>
                 </div>
-                <button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                  <Heart size={20} className="text-gray-400" />
+                <button 
+                  onClick={handleToggleFavorite}
+                  disabled={togglingFavorite}
+                  className={cn(
+                    "p-2 rounded-full transition-colors cursor-pointer",
+                    isFavorite ? "bg-red-50 hover:bg-red-100" : "hover:bg-gray-100"
+                  )}
+                >
+                  <Heart 
+                    size={20} 
+                    className={cn(
+                      "transition-colors",
+                      isFavorite ? "text-red-500 fill-red-500" : "text-gray-400"
+                    )} 
+                  />
                 </button>
               </div>
 
@@ -905,6 +1171,166 @@ export default function EstablishmentPage() {
           </div>
         </div>
       </div>
+
+      {/* Modal de prompt de connexion pour les favoris */}
+      {showLoginPrompt && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center">
+                <Heart size={24} className="text-red-500" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">Ajouter aux favoris</h2>
+                <p className="text-gray-500 text-sm">Connectez-vous pour sauvegarder vos établissements préférés</p>
+              </div>
+            </div>
+
+            <p className="text-sm text-gray-600 mb-6">
+              Créez un compte ou connectez-vous pour ajouter cet établissement à vos favoris et retrouver facilement vos adresses préférées.
+            </p>
+
+            <div className="flex flex-col gap-2">
+              <Link href={`/auth/client/login?redirect=/establishment/${establishmentId}`}>
+                <Button variant="primary" className="w-full cursor-pointer">
+                  <LogIn size={18} className="mr-2" />
+                  Se connecter
+                </Button>
+              </Link>
+              <Link href={`/auth/client/login?redirect=/establishment/${establishmentId}&signup=true`}>
+                <Button variant="outline" className="w-full cursor-pointer">
+                  <UserPlus size={18} className="mr-2" />
+                  Créer un compte
+                </Button>
+              </Link>
+              <button
+                onClick={() => setShowLoginPrompt(false)}
+                className="text-sm text-gray-500 hover:text-gray-700 mt-2 cursor-pointer"
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal pour laisser un avis */}
+      {showReviewModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-yellow-50 flex items-center justify-center">
+                  <Star size={24} className="text-yellow-500" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">Donner mon avis</h2>
+                  <p className="text-gray-500 text-sm">{establishment?.name}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowReviewModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
+              >
+                <X size={20} className="text-gray-400" />
+              </button>
+            </div>
+
+            {/* Note avec demi-étoiles */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Votre note <span className="text-red-500">*</span>
+              </label>
+              <div className="flex items-center gap-1">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <div key={star} className="relative flex">
+                    {/* Demi-étoile gauche */}
+                    <button
+                      onClick={() => setReviewRating(star - 0.5)}
+                      className="w-4 h-8 overflow-hidden cursor-pointer"
+                    >
+                      <Star
+                        size={32}
+                        className={cn(
+                          "transition-colors",
+                          star - 0.5 <= reviewRating
+                            ? "text-yellow-500 fill-yellow-500"
+                            : "text-gray-300 hover:text-yellow-300"
+                        )}
+                      />
+                    </button>
+                    {/* Demi-étoile droite */}
+                    <button
+                      onClick={() => setReviewRating(star)}
+                      className="w-4 h-8 overflow-hidden cursor-pointer"
+                    >
+                      <Star
+                        size={32}
+                        className={cn(
+                          "transition-colors -ml-4",
+                          star <= reviewRating
+                            ? "text-yellow-500 fill-yellow-500"
+                            : "text-gray-300 hover:text-yellow-300"
+                        )}
+                      />
+                    </button>
+                  </div>
+                ))}
+                <span className="ml-2 text-lg font-bold text-gray-700">{reviewRating > 0 ? reviewRating : "-"}</span>
+              </div>
+              {reviewRating > 0 && (
+                <p className="text-sm text-gray-500 mt-2">
+                  {reviewRating <= 1 && "Très insatisfait"}
+                  {reviewRating > 1 && reviewRating <= 2 && "Insatisfait"}
+                  {reviewRating > 2 && reviewRating <= 3 && "Correct"}
+                  {reviewRating > 3 && reviewRating <= 4 && "Satisfait"}
+                  {reviewRating > 4 && "Très satisfait"}
+                </p>
+              )}
+            </div>
+
+            {/* Commentaire */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Votre commentaire (optionnel)
+              </label>
+              <textarea
+                value={reviewComment}
+                onChange={(e) => setReviewComment(e.target.value)}
+                placeholder="Partagez votre expérience..."
+                rows={4}
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all resize-none"
+              />
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setShowReviewModal(false)}
+                className="flex-1 cursor-pointer"
+              >
+                Annuler
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleSubmitReview}
+                disabled={reviewRating === 0 || submittingReview}
+                className="flex-1 cursor-pointer"
+              >
+                {submittingReview ? (
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
+                    <span>Envoi...</span>
+                  </div>
+                ) : (
+                  "Publier mon avis"
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

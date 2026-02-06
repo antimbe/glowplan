@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Clock, FileText, Ban, Trash2, Tag } from "lucide-react";
+import { Clock, FileText, Ban, Trash2, Tag, Calendar, User, AlertTriangle, Check } from "lucide-react";
 import { Button, Input, Select, FormField, FormModal, Modal } from "@/components/ui";
 import { UnavailabilityData, UnavailabilityType } from "./types";
-import { checkUnavailabilityConflicts, ConflictResult } from "./hooks";
+import { checkUnavailabilityConflicts, ConflictResult, ConflictingAppointment } from "./hooks";
 import { createClient } from "@/lib/supabase/client";
 
 interface UnavailabilityFormProps {
@@ -67,15 +67,21 @@ export default function UnavailabilityForm({
   );
   const [reason, setReason] = useState(unavailability?.reason || "");
   const [saving, setSaving] = useState(false);
-  const [conflictModal, setConflictModal] = useState<{ open: boolean; conflict: ConflictResult | null; forceCreate: boolean }>({
+  const [conflictModal, setConflictModal] = useState<{ 
+    open: boolean; 
+    conflict: ConflictResult | null; 
+    selectedAppointments: string[];
+    customCancelReason: string;
+  }>({
     open: false,
     conflict: null,
-    forceCreate: false,
+    selectedAppointments: [],
+    customCancelReason: "",
   });
 
   const supabase = createClient();
 
-  const handleSubmit = async (skipConflictCheck = false) => {
+  const handleSubmit = async (skipConflictCheck = false, appointmentsToCancel: string[] = [], customReason?: string) => {
     if (!startDate || !endDate || !startTime || !endTime) return;
 
     const startDateTime = new Date(`${startDate}T${startTime}:00`);
@@ -93,15 +99,51 @@ export default function UnavailabilityForm({
       
       if (conflict.hasConflict) {
         setSaving(false);
-        // Pour les RDV existants, on peut forcer la création
-        const canForce = conflict.type === "appointment";
-        setConflictModal({ open: true, conflict, forceCreate: canForce });
+        if (conflict.type === "appointment" && conflict.conflictingAppointments) {
+          setConflictModal({ 
+            open: true, 
+            conflict, 
+            selectedAppointments: [],
+            customCancelReason: "",
+          });
+        } else {
+          setConflictModal({ open: true, conflict, selectedAppointments: [], customCancelReason: "" });
+        }
         return;
       }
     }
 
     setSaving(true);
     try {
+      // Annuler les rendez-vous sélectionnés
+      if (appointmentsToCancel.length > 0) {
+        // Utiliser le motif personnalisé s'il existe, sinon le motif automatique
+        const defaultReason = `Indisponibilité du professionnel : ${UNAVAILABILITY_TYPES.find(t => t.value === unavailabilityType)?.label || unavailabilityType}${reason ? ` - ${reason}` : ""}`;
+        const cancelReason = customReason || defaultReason;
+
+        for (const aptId of appointmentsToCancel) {
+          await supabase
+            .from("appointments")
+            .update({ 
+              status: "cancelled",
+              cancelled_by_client: false,
+              cancelled_at: new Date().toISOString(),
+              cancellation_reason: cancelReason,
+            })
+            .eq("id", aptId);
+
+          // Envoyer email d'annulation
+          await fetch("/api/booking/cancel-by-pro", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ 
+              appointmentId: aptId,
+              reason: cancelReason,
+            }),
+          });
+        }
+      }
+
       const unavailabilityData = {
         establishment_id: establishmentId,
         start_time: startDateTime.toISOString(),
@@ -137,6 +179,35 @@ export default function UnavailabilityForm({
     } finally {
       setSaving(false);
     }
+  };
+
+  const toggleAppointmentSelection = (aptId: string) => {
+    setConflictModal(prev => ({
+      ...prev,
+      selectedAppointments: prev.selectedAppointments.includes(aptId)
+        ? prev.selectedAppointments.filter(id => id !== aptId)
+        : [...prev.selectedAppointments, aptId]
+    }));
+  };
+
+  const selectAllAppointments = () => {
+    const allIds = conflictModal.conflict?.conflictingAppointments?.map(a => a.id) || [];
+    setConflictModal(prev => ({ ...prev, selectedAppointments: allIds }));
+  };
+
+  const deselectAllAppointments = () => {
+    setConflictModal(prev => ({ ...prev, selectedAppointments: [] }));
+  };
+
+  const formatAppointmentTime = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return `${date.getHours().toString().padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}`;
+  };
+
+  const formatAppointmentDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const days = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
+    return `${days[date.getDay()]} ${date.getDate()}/${(date.getMonth() + 1).toString().padStart(2, "0")}`;
   };
 
   const isValid = startDate && endDate && startTime && endTime && unavailabilityType;
@@ -262,24 +333,150 @@ export default function UnavailabilityForm({
       </div>
     </FormModal>
 
-      <Modal
-        isOpen={conflictModal.open}
-        onClose={() => setConflictModal({ open: false, conflict: null, forceCreate: false })}
-        title="Conflit détecté"
-        message={conflictModal.conflict?.message || ""}
-        variant={conflictModal.conflict?.type === "appointment" ? "warning" : "error"}
-        confirmText={conflictModal.forceCreate ? "Créer quand même" : "Compris"}
-        cancelText={conflictModal.forceCreate ? "Annuler" : undefined}
-        showCancel={conflictModal.forceCreate}
-        onConfirm={() => {
-          if (conflictModal.forceCreate) {
-            setConflictModal({ open: false, conflict: null, forceCreate: false });
-            handleSubmit(true);
-          } else {
-            setConflictModal({ open: false, conflict: null, forceCreate: false });
-          }
-        }}
-      />
+      {/* Modal de conflit avec indisponibilité existante */}
+      {conflictModal.open && conflictModal.conflict?.type !== "appointment" && (
+        <Modal
+          isOpen={true}
+          onClose={() => setConflictModal({ open: false, conflict: null, selectedAppointments: [], customCancelReason: "" })}
+          title="Conflit détecté"
+          message={conflictModal.conflict?.message || ""}
+          variant="error"
+          confirmText="Compris"
+          onConfirm={() => setConflictModal({ open: false, conflict: null, selectedAppointments: [], customCancelReason: "" })}
+        />
+      )}
+
+      {/* Modal de gestion des rendez-vous en conflit */}
+      {conflictModal.open && conflictModal.conflict?.type === "appointment" && conflictModal.conflict.conflictingAppointments && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center">
+                <AlertTriangle size={24} className="text-amber-600" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">Rendez-vous en conflit</h2>
+                <p className="text-gray-500 text-sm">
+                  {conflictModal.conflict.conflictingAppointments.length} rendez-vous sur cette période
+                </p>
+              </div>
+            </div>
+
+            <p className="text-sm text-gray-600 mb-4">
+              Que souhaitez-vous faire avec ces rendez-vous ?
+            </p>
+
+            {/* Liste des rendez-vous */}
+            <div className="flex-1 overflow-y-auto mb-4 max-h-[200px]">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-xs text-gray-500">Sélectionnez les rendez-vous à annuler</span>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={selectAllAppointments}
+                    className="text-xs text-primary hover:underline cursor-pointer"
+                  >
+                    Tout sélectionner
+                  </button>
+                  <span className="text-gray-300">|</span>
+                  <button 
+                    onClick={deselectAllAppointments}
+                    className="text-xs text-gray-500 hover:underline cursor-pointer"
+                  >
+                    Tout désélectionner
+                  </button>
+                </div>
+              </div>
+              <div className="space-y-2">
+                {conflictModal.conflict.conflictingAppointments.map((apt) => (
+                  <div 
+                    key={apt.id}
+                    onClick={() => toggleAppointmentSelection(apt.id)}
+                    className={`p-3 rounded-xl border cursor-pointer transition-all ${
+                      conflictModal.selectedAppointments.includes(apt.id)
+                        ? "border-red-300 bg-red-50"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+                          conflictModal.selectedAppointments.includes(apt.id)
+                            ? "border-red-500 bg-red-500"
+                            : "border-gray-300"
+                        }`}>
+                          {conflictModal.selectedAppointments.includes(apt.id) && (
+                            <Check size={12} className="text-white" />
+                          )}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <User size={14} className="text-gray-400" />
+                            <span className="font-medium text-gray-900">{apt.client_name}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
+                            <Calendar size={12} />
+                            <span>{formatAppointmentDate(apt.start_time)}</span>
+                            <Clock size={12} />
+                            <span>{formatAppointmentTime(apt.start_time)} - {formatAppointmentTime(apt.end_time)}</span>
+                          </div>
+                        </div>
+                      </div>
+                      {conflictModal.selectedAppointments.includes(apt.id) && (
+                        <span className="text-xs text-red-600 font-medium">Sera annulé</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Motif personnalisé - affiché seulement si des rendez-vous sont sélectionnés */}
+            {conflictModal.selectedAppointments.length > 0 && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Motif d'annulation (optionnel)
+                </label>
+                <textarea
+                  value={conflictModal.customCancelReason}
+                  onChange={(e) => setConflictModal(prev => ({ ...prev, customCancelReason: e.target.value }))}
+                  placeholder="Laissez vide pour utiliser le motif automatique (type d'indisponibilité)"
+                  rows={2}
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all resize-none text-sm"
+                />
+                <p className="text-xs text-gray-400 mt-1">
+                  Ce motif sera communiqué aux clients par email
+                </p>
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="flex flex-col gap-2 pt-4 border-t border-gray-100">
+              <Button
+                variant="primary"
+                onClick={() => {
+                  const toCancel = conflictModal.selectedAppointments;
+                  const customReason = conflictModal.customCancelReason;
+                  setConflictModal({ open: false, conflict: null, selectedAppointments: [], customCancelReason: "" });
+                  handleSubmit(true, toCancel, customReason || undefined);
+                }}
+                className="w-full"
+              >
+                {conflictModal.selectedAppointments.length > 0 
+                  ? `Créer et annuler ${conflictModal.selectedAppointments.length} rendez-vous`
+                  : "Créer sans annuler de rendez-vous"
+                }
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setConflictModal({ open: false, conflict: null, selectedAppointments: [], customCancelReason: "" })}
+                className="w-full"
+              >
+                Annuler
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
