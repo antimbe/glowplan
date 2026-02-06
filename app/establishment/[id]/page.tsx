@@ -582,13 +582,14 @@ export default function EstablishmentPage() {
       {/* Header */}
       <div className="bg-white border-b border-gray-100">
         <div className="max-w-6xl mx-auto px-4 py-4">
-          <button
+          <Button
+            variant="ghost"
             onClick={() => router.back()}
-            className="flex items-center gap-2 text-gray-500 hover:text-primary transition-colors cursor-pointer"
+            className="flex items-center gap-2 text-gray-500 hover:text-primary"
           >
             <ChevronLeft size={20} />
             <span>Retour à la recherche</span>
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -762,17 +763,18 @@ export default function EstablishmentPage() {
 
             {step === "datetime" && selectedService && (
               <div className="bg-white rounded-2xl p-6 border border-gray-100">
-                <button
+                <Button
+                  variant="ghost"
                   onClick={() => {
                     setStep("info");
                     setSelectedDate(null);
                     setSelectedSlot(null);
                   }}
-                  className="flex items-center gap-2 text-gray-500 hover:text-primary mb-4 transition-colors cursor-pointer"
+                  className="flex items-center gap-2 text-gray-500 hover:text-primary mb-4"
                 >
                   <ChevronLeft size={18} />
                   <span>Modifier la prestation</span>
-                </button>
+                </Button>
 
                 <div className="bg-gray-50 rounded-xl p-4 mb-6">
                   <div className="flex justify-between items-center">
@@ -841,13 +843,14 @@ export default function EstablishmentPage() {
 
             {step === "recap" && selectedService && selectedSlot && (
               <div className="bg-white rounded-2xl p-6 border border-gray-100">
-                <button
+                <Button
+                  variant="ghost"
                   onClick={() => setStep("datetime")}
-                  className="flex items-center gap-2 text-gray-500 hover:text-primary mb-4 transition-colors cursor-pointer"
+                  className="flex items-center gap-2 text-gray-500 hover:text-primary mb-4"
                 >
                   <ChevronLeft size={18} />
                   <span>Modifier la date</span>
-                </button>
+                </Button>
 
                 <div className="bg-gray-50 rounded-xl p-4 mb-6">
                   <h3 className="font-semibold text-gray-900 mb-3">Récapitulatif</h3>
@@ -1102,11 +1105,13 @@ export default function EstablishmentPage() {
                     <span className="text-sm">{establishment.city}</span>
                   </div>
                 </div>
-                <button 
+                <Button 
+                  variant="ghost"
+                  size="sm"
                   onClick={handleToggleFavorite}
                   disabled={togglingFavorite}
                   className={cn(
-                    "p-2 rounded-full transition-colors cursor-pointer",
+                    "p-2 rounded-full min-w-0 h-auto",
                     isFavorite ? "bg-red-50 hover:bg-red-100" : "hover:bg-gray-100"
                   )}
                 >
@@ -1117,7 +1122,7 @@ export default function EstablishmentPage() {
                       isFavorite ? "text-red-500 fill-red-500" : "text-gray-400"
                     )} 
                   />
-                </button>
+                </Button>
               </div>
 
               {/* Rating */}
@@ -1203,12 +1208,14 @@ export default function EstablishmentPage() {
                   Créer un compte
                 </Button>
               </Link>
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => setShowLoginPrompt(false)}
-                className="text-sm text-gray-500 hover:text-gray-700 mt-2 cursor-pointer"
+                className="text-gray-500 hover:text-gray-700 mt-2"
               >
                 Annuler
-              </button>
+              </Button>
             </div>
           </div>
         </div>

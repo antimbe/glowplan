@@ -7,7 +7,7 @@ import {
   Loader2, Euro, Clock, XCircle, MoreVertical, UserCheck,
   ChevronDown, Filter
 } from "lucide-react";
-import { Button, Input } from "@/components/ui";
+import { Button, Input, Select } from "@/components/ui";
 import { cn } from "@/lib/utils/cn";
 
 interface ClientStats {
@@ -248,16 +248,16 @@ export default function ClientsPage() {
           />
         </div>
         <div className="flex gap-2">
-          <select
+          <Select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as any)}
-            className="h-12 px-4 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-700 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none cursor-pointer"
-          >
-            <option value="last_visit">Dernière visite</option>
-            <option value="name">Nom</option>
-            <option value="visits">Nb de visites</option>
-            <option value="spent">Dépenses</option>
-          </select>
+            options={[
+              { value: "last_visit", label: "Dernière visite" },
+              { value: "name", label: "Nom" },
+              { value: "visits", label: "Nb de visites" },
+              { value: "spent", label: "Dépenses" },
+            ]}
+          />
         </div>
       </div>
 
@@ -375,19 +375,22 @@ export default function ClientsPage() {
                           <Mail size={16} />
                         </a>
                         <div className="relative">
-                          <button
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={() => setActionMenuOpen(actionMenuOpen === client.id ? null : client.id)}
-                            className="w-8 h-8 rounded-lg bg-gray-100 text-gray-600 flex items-center justify-center hover:bg-gray-200 transition-colors cursor-pointer"
+                            className="w-8 h-8 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 p-0 min-w-0"
                           >
                             <MoreVertical size={16} />
-                          </button>
+                          </Button>
                           {actionMenuOpen === client.id && (
                             <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-10">
-                              <button
+                              <Button
+                                variant="ghost"
                                 onClick={() => handleBlockClient(client.client_profile_id, !client.is_blocked)}
                                 disabled={blockingClient === client.client_profile_id}
                                 className={cn(
-                                  "w-full px-4 py-2 text-left text-sm flex items-center gap-2 hover:bg-gray-50 cursor-pointer",
+                                  "w-full px-4 py-2 text-left text-sm flex items-center gap-2 hover:bg-gray-50 justify-start rounded-none",
                                   client.is_blocked ? "text-green-600" : "text-red-600"
                                 )}
                               >
@@ -397,7 +400,7 @@ export default function ClientsPage() {
                                   <Ban size={14} />
                                 )}
                                 {client.is_blocked ? "Débloquer" : "Bloquer"}
-                              </button>
+                              </Button>
                             </div>
                           )}
                         </div>
