@@ -45,6 +45,13 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
+  // Optimize dashboard entry - redirect /dashboard to /dashboard/business for speed
+  if (user && request.nextUrl.pathname === '/dashboard') {
+    const url = request.nextUrl.clone()
+    url.pathname = '/dashboard/business'
+    return NextResponse.redirect(url)
+  }
+
   // IMPORTANT: You *must* return the supabaseResponse object as it is. If you're
   // creating a new response object with NextResponse.next() make sure to:
   // 1. Pass the request in it, like so:
