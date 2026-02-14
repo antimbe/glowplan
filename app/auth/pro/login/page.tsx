@@ -44,6 +44,9 @@ export default function ProLoginPage() {
           password,
           options: {
             emailRedirectTo: `${location.origin}/auth/callback`,
+            data: {
+              user_type: "pro",
+            },
           },
         });
         if (error) throw error;
