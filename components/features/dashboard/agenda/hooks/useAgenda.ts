@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { CalendarEvent, AppointmentData, UnavailabilityData, CalendarViewType } from "../types";
+import { AGENDA_CONFIG } from "../constants";
 
 export function useAgenda() {
   const [loading, setLoading] = useState(true);
@@ -10,6 +11,7 @@ export function useAgenda() {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<CalendarViewType>("week");
+  const lastRequestId = useRef(0);
 
   const supabase = createClient();
 
@@ -37,42 +39,51 @@ export function useAgenda() {
   const loadEvents = useCallback(async () => {
     if (!establishmentId) return;
 
+    const requestId = ++lastRequestId.current;
+
     try {
       let startDate = new Date(currentDate);
       let endDate = new Date(currentDate);
 
       if (view === "day") {
         startDate.setHours(0, 0, 0, 0);
+        endDate = new Date(startDate);
         endDate.setHours(23, 59, 59, 999);
       } else if (view === "week") {
+        // Find Monday of current week
         const day = startDate.getDay();
-        const diff = startDate.getDate() - day + (day === 0 ? -6 : 1);
+        const diff = startDate.getDate() - (day === 0 ? 6 : day - 1);
         startDate.setDate(diff);
         startDate.setHours(0, 0, 0, 0);
+
         endDate = new Date(startDate);
-        endDate.setDate(endDate.getDate() + 6);
+        endDate.setDate(startDate.getDate() + 6);
         endDate.setHours(23, 59, 59, 999);
       } else {
-        startDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+        startDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1, 0, 0, 0, 0);
         endDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0, 23, 59, 59, 999);
       }
 
-      const { data: appointments } = await supabase
-        .from("appointments")
-        .select("*, service:services(name, duration, price)")
-        .eq("establishment_id", establishmentId)
-        .neq("status", "cancelled")
-        .gte("start_time", startDate.toISOString())
-        .lte("start_time", endDate.toISOString())
-        .order("start_time");
+      const [appointmentsResponse, unavailabilitiesResponse] = await Promise.all([
+        supabase
+          .from("appointments")
+          .select("*, service:services(name, duration, price)")
+          .eq("establishment_id", establishmentId)
+          .neq("status", "cancelled")
+          .gte("start_time", startDate.toISOString())
+          .lte("start_time", endDate.toISOString())
+          .order("start_time"),
+        supabase
+          .from("unavailabilities")
+          .select("*")
+          .eq("establishment_id", establishmentId)
+          .lte("start_time", endDate.toISOString())
+          .gte("end_time", startDate.toISOString())
+          .order("start_time")
+      ]);
 
-      const { data: unavailabilities } = await supabase
-        .from("unavailabilities")
-        .select("*")
-        .eq("establishment_id", establishmentId)
-        .lte("start_time", endDate.toISOString())
-        .gte("end_time", startDate.toISOString())
-        .order("start_time");
+      const { data: appointments } = appointmentsResponse;
+      const { data: unavailabilities } = unavailabilitiesResponse;
 
       const calendarEvents: CalendarEvent[] = [];
 
@@ -101,6 +112,8 @@ export function useAgenda() {
           });
         });
       }
+
+      if (requestId !== lastRequestId.current) return;
 
       setEvents(calendarEvents);
     } catch (error) {

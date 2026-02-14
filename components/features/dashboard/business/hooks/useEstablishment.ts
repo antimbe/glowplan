@@ -73,24 +73,12 @@ export function useEstablishment() {
             }
 
             if (!data) {
-                if (userType === "pro") {
-                    const { data: newEstablishment, error: createError } = await supabase
-                        .from("establishments")
-                        .insert({
-                            user_id: user.id,
-                            name: "",
-                            is_profile_complete: false,
-                        })
-                        .select()
-                        .single();
-
-                    if (createError) throw createError;
-
-                    setEstablishmentId(newEstablishment.id);
-                    setIsProfileComplete(false);
-                    setIsEditMode(true);
-                } else {
+                if (userType !== "pro") {
                     router.push("/account");
+                } else {
+                    // Just set edit mode to force user to enter info
+                    setIsEditMode(true);
+                    setIsProfileComplete(false);
                 }
                 return;
             }
@@ -171,7 +159,7 @@ export function useEstablishment() {
         }
     };
 
-    const updateField = (field: keyof EstablishmentData, value: any) => {
+    const updateField = <K extends keyof EstablishmentData>(field: K, value: EstablishmentData[K]) => {
         setFormData(prev => ({ ...prev, [field]: value }));
     };
 

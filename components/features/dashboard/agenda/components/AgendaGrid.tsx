@@ -1,6 +1,5 @@
-"use client";
-
-import { CalendarEvent } from "../types";
+import { CalendarEvent, CalendarViewType } from "../types";
+import { AGENDA_CONFIG } from "../constants";
 import TimeSlot from "./TimeSlot";
 
 interface AgendaGridProps {
@@ -8,7 +7,6 @@ interface AgendaGridProps {
     hours: number[];
     isSlotUnavailable: (date: Date, hour: number) => CalendarEvent | undefined;
     getEventsStartingAtHour: (date: Date, hour: number) => CalendarEvent[];
-    renderEventPositioned: (event: CalendarEvent, hour: number, height: number, date: Date) => React.ReactNode;
     onSlotClick: (date: Date) => void;
     onEventClick: (event: CalendarEvent) => void;
     isToday: (date: Date) => boolean;
@@ -20,7 +18,6 @@ export default function AgendaGrid({
     hours,
     isSlotUnavailable,
     getEventsStartingAtHour,
-    renderEventPositioned,
     onSlotClick,
     onEventClick,
     isToday,
@@ -28,7 +25,10 @@ export default function AgendaGrid({
 }: AgendaGridProps) {
     return (
         <div className="flex flex-col h-full">
-            <div className="grid grid-cols-[60px_1fr] border-b border-gray-100 bg-gray-50/50">
+            <div
+                className="grid border-b border-gray-100 bg-gray-50/50"
+                style={{ gridTemplateColumns: `${AGENDA_CONFIG.TIME_COLUMN_WIDTH_PX}px 1fr` }}
+            >
                 <div className="h-14" />
                 <div className="h-14 flex items-center justify-center font-semibold text-gray-700 border-l border-gray-100">
                     {isToday(currentDate) && (
@@ -47,6 +47,7 @@ export default function AgendaGrid({
                         <TimeSlot
                             key={hour}
                             hour={hour}
+                            currentDay={currentDate}
                             unavailableSlot={unavailableSlot}
                             slotEvents={slotEvents}
                             onSlotClick={(h) => {
@@ -55,7 +56,6 @@ export default function AgendaGrid({
                                 onSlotClick(slotDate);
                             }}
                             onEventClick={onEventClick}
-                            renderEventPositioned={(e, h) => renderEventPositioned(e, h, 70, currentDate)}
                         />
                     );
                 })}

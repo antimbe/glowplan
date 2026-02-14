@@ -10,81 +10,34 @@ import { cn } from "@/lib/utils/cn";
 import { DAYS_JS, MONTHS_LOWER, formatTime as formatTimeUtil } from "@/lib/utils/formatters";
 import Link from "next/link";
 
-interface ClientProfile {
-  id: string;
-  user_id: string;
-  first_name: string;
-  last_name: string;
-  phone: string | null;
-  instagram: string | null;
-  cancellation_count: number;
-}
-
-interface Appointment {
-  id: string;
-  start_time: string;
-  end_time: string;
-  status: string;
-  notes: string | null;
-  establishment_id: string;
-  establishments: {
-    id: string;
-    name: string;
-    city: string;
-  } | null;
-  services: {
-    name: string;
-    price: number;
-    duration: number;
-  } | null;
-  has_review?: boolean;
-}
-
-interface Favorite {
-  id: string;
-  establishment_id: string;
-  establishments: {
-    id: string;
-    name: string;
-    city: string;
-    main_photo_url: string | null;
-    activity_sectors: string[];
-  } | null;
-}
-
-interface Review {
-  id: string;
-  rating: number;
-  comment: string | null;
-  created_at: string;
-  establishment_id: string;
-  establishments: {
-    id: string;
-    name: string;
-    city: string;
-  } | null;
-}
-
-type Tab = "reservations" | "favorites" | "reviews" | "profile";
-
+import { useAccountData } from "@/components/features/account/hooks/useAccountData";
+import { ClientProfile, Appointment, Favorite, Review, AccountTab } from "@/components/features/account/types";
 
 export default function AccountPage() {
-  const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<Tab>("reservations");
-  const [user, setUser] = useState<any>(null);
-  const [profile, setProfile] = useState<ClientProfile | null>(null);
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [favorites, setFavorites] = useState<Favorite[]>([]);
-  const [reviews, setReviews] = useState<Review[]>([]);
+  const {
+    loading,
+    user,
+    profile,
+    appointments,
+    favorites,
+    reviews,
+    activeTab,
+    setActiveTab,
+    cancelAppointment,
+    removeFavorite,
+    deleteReview,
+    addReview,
+    updateProfile,
+    signOut,
+    cancelling,
+    saving,
+  } = useAccountData();
+
   const [deletingReview, setDeletingReview] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [cancelling, setCancelling] = useState<string | null>(null);
   const [reviewModal, setReviewModal] = useState<Appointment | null>(null);
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
   const [submittingReview, setSubmittingReview] = useState(false);
-  const [reviewedAppointments, setReviewedAppointments] = useState<Set<string>>(new Set());
   const [cancelModal, setCancelModal] = useState<Appointment | null>(null);
   const [cancelReason, setCancelReason] = useState("");
 
@@ -97,165 +50,28 @@ export default function AccountPage() {
   const supabase = createClient();
 
   useEffect(() => {
-    checkAuth();
-  }, []);
-
-  const checkAuth = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
-      router.push("/auth/client/login");
-      return;
+    if (profile) {
+      setFirstName(profile.first_name);
+      setLastName(profile.last_name);
+      setPhone(profile.phone || "");
+      setInstagram(profile.instagram || "");
     }
-
-    setUser(user);
-
-    // Check if user is a client
-    const { data: clientProfile } = await supabase
-      .from("client_profiles")
-      .select("*")
-      .eq("user_id", user.id)
-      .single();
-
-    if (!clientProfile) {
-      // Not a client, redirect to pro dashboard or login
-      router.push("/auth/select-space");
-      return;
-    }
-
-    setProfile(clientProfile);
-    setFirstName(clientProfile.first_name);
-    setLastName(clientProfile.last_name);
-    setPhone(clientProfile.phone || "");
-    setInstagram(clientProfile.instagram || "");
-
-    await loadData(clientProfile.id);
-    setLoading(false);
-  };
-
-  const loadData = async (clientId: string) => {
-    // Load appointments
-    const { data: appointmentsData } = await supabase
-      .from("appointments")
-      .select(`
-        id, start_time, end_time, status, notes, establishment_id,
-        establishments(id, name, city),
-        services(name, price, duration)
-      `)
-      .eq("client_profile_id", clientId)
-      .order("start_time", { ascending: false });
-
-    // Load reviews to check which appointments have been reviewed
-    const { data: reviewsData } = await supabase
-      .from("reviews")
-      .select("appointment_id")
-      .eq("client_profile_id", clientId);
-
-    const reviewedIds = new Set((reviewsData || []).map(r => r.appointment_id).filter(Boolean));
-    setReviewedAppointments(reviewedIds as Set<string>);
-
-    setAppointments((appointmentsData || []) as unknown as Appointment[]);
-
-    // Load favorites
-    const { data: favoritesData } = await supabase
-      .from("favorites")
-      .select(`
-        id, establishment_id,
-        establishments(id, name, city, main_photo_url, activity_sectors)
-      `)
-      .eq("client_id", clientId);
-
-    setFavorites((favoritesData || []) as unknown as Favorite[]);
-
-    // Load user reviews
-    const { data: userReviewsData } = await supabase
-      .from("reviews")
-      .select(`
-        id, rating, comment, created_at, establishment_id,
-        establishments(id, name, city)
-      `)
-      .eq("client_profile_id", clientId)
-      .order("created_at", { ascending: false });
-
-    setReviews((userReviewsData || []) as unknown as Review[]);
-  };
+  }, [profile]);
 
   const handleCancelAppointment = async () => {
-    if (!profile || !cancelModal) return;
-    
-    setCancelling(cancelModal.id);
-    try {
-      // Update appointment status
-      const { error } = await supabase
-        .from("appointments")
-        .update({
-          status: "cancelled",
-          cancelled_by_client: true,
-          cancelled_at: new Date().toISOString(),
-          cancellation_reason: cancelReason || null,
-        })
-        .eq("id", cancelModal.id);
-
-      if (error) {
-        console.error("Cancel error:", JSON.stringify(error, null, 2));
-        console.error("Error message:", error.message);
-        console.error("Error code:", error.code);
-        console.error("Error details:", error.details);
-        throw error;
-      }
-
-      // Increment cancellation count
-      await supabase
-        .from("client_profiles")
-        .update({ cancellation_count: (profile.cancellation_count || 0) + 1 })
-        .eq("id", profile.id);
-
-      // Send notification to establishment
-      await fetch("/api/booking/cancel", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          appointmentId: cancelModal.id,
-          reason: cancelReason || null,
-        }),
-      });
-
-      // Refresh data
-      await loadData(profile.id);
-      setProfile({ ...profile, cancellation_count: (profile.cancellation_count || 0) + 1 });
-      setCancelModal(null);
-      setCancelReason("");
-    } catch (error) {
-      console.error("Error cancelling appointment:", error);
-    } finally {
-      setCancelling(null);
-    }
+    if (!cancelModal) return;
+    await cancelAppointment(cancelModal.id);
+    setCancelModal(null);
   };
 
   const handleRemoveFavorite = async (favoriteId: string) => {
-    if (!profile) return;
-
-    try {
-      await supabase.from("favorites").delete().eq("id", favoriteId);
-      setFavorites(favorites.filter(f => f.id !== favoriteId));
-    } catch (error) {
-      console.error("Error removing favorite:", error);
-    }
+    await removeFavorite(favoriteId);
   };
 
   const handleDeleteReview = async (reviewId: string) => {
-    if (!profile) return;
-
     setDeletingReview(reviewId);
-    try {
-      const { error } = await supabase.from("reviews").delete().eq("id", reviewId);
-      if (error) throw error;
-      setReviews(reviews.filter(r => r.id !== reviewId));
-    } catch (error) {
-      console.error("Error deleting review:", error);
-    } finally {
-      setDeletingReview(null);
-    }
+    await deleteReview(reviewId);
+    setDeletingReview(null);
   };
 
   const handleOpenReviewModal = (apt: Appointment) => {
@@ -269,20 +85,12 @@ export default function AccountPage() {
 
     setSubmittingReview(true);
     try {
-      const { error } = await supabase.from("reviews").insert({
-        establishment_id: reviewModal.establishment_id,
-        client_profile_id: profile.id,
+      await addReview({
         appointment_id: reviewModal.id,
+        establishment_id: reviewModal.establishment_id,
         rating: reviewRating,
         comment: reviewComment || null,
-        client_name: `${profile.first_name} ${profile.last_name}`,
-        is_verified: true,
-        is_visible: true,
       });
-
-      if (error) throw error;
-
-      setReviewedAppointments(prev => new Set([...prev, reviewModal.id]));
       setReviewModal(null);
     } catch (error) {
       console.error("Error submitting review:", error);
@@ -292,34 +100,12 @@ export default function AccountPage() {
   };
 
   const handleUpdateProfile = async () => {
-    if (!profile) return;
-
-    setSaving(true);
-    try {
-      const { error } = await supabase
-        .from("client_profiles")
-        .update({
-          first_name: firstName,
-          last_name: lastName,
-          phone: phone || null,
-          instagram: instagram || null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", profile.id);
-
-      if (error) throw error;
-
-      setProfile({ ...profile, first_name: firstName, last_name: lastName, phone, instagram });
-    } catch (error) {
-      console.error("Error updating profile:", error);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push("/");
+    await updateProfile({
+      first_name: firstName,
+      last_name: lastName,
+      phone: phone || null,
+      instagram: instagram || null,
+    });
   };
 
   const formatDate = (dateStr: string) => {
@@ -379,7 +165,7 @@ export default function AccountPage() {
               ].map((tab) => (
                 <button
                   key={tab.key}
-                  onClick={() => setActiveTab(tab.key as Tab)}
+                  onClick={() => setActiveTab(tab.key as AccountTab)}
                   className={cn(
                     "flex-1 flex items-center justify-center gap-2 py-4 text-sm font-medium transition-colors cursor-pointer",
                     activeTab === tab.key
@@ -422,12 +208,12 @@ export default function AccountPage() {
                                   <span className={cn(
                                     "inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full",
                                     apt.status === "confirmed" ? "bg-green-100 text-green-700" :
-                                    apt.status === "pending" ? "bg-yellow-100 text-yellow-700" :
-                                    "bg-gray-100 text-gray-700"
+                                      apt.status === "pending" ? "bg-yellow-100 text-yellow-700" :
+                                        "bg-gray-100 text-gray-700"
                                   )}>
                                     <Check size={12} />
-                                    {apt.status === "confirmed" ? "RDV Confirmé" : 
-                                     apt.status === "pending" ? "En attente" : apt.status}
+                                    {apt.status === "confirmed" ? "RDV Confirmé" :
+                                      apt.status === "pending" ? "En attente" : apt.status}
                                   </span>
                                 </div>
                               </div>
@@ -454,8 +240,8 @@ export default function AccountPage() {
                       <h2 className="text-lg font-bold text-gray-900 mb-4">Historique</h2>
                       <div className="space-y-4">
                         {pastAppointments.map((apt) => {
-                          const canReview = apt.status !== "cancelled" && !reviewedAppointments.has(apt.id);
-                          const hasReviewed = reviewedAppointments.has(apt.id);
+                          const canReview = apt.status !== "cancelled" && !apt.has_review;
+                          const hasReviewed = apt.has_review;
                           return (
                             <div key={apt.id} className={cn(
                               "border rounded-xl p-4",
@@ -476,7 +262,7 @@ export default function AccountPage() {
                                         Annulé
                                       </span>
                                     )}
-                                    {hasReviewed && (
+                                    {apt.has_review && (
                                       <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-green-100 text-green-700">
                                         <Check size={12} />
                                         Avis laissé
@@ -729,7 +515,7 @@ export default function AccountPage() {
                     <div className="pt-6 border-t border-gray-200">
                       <Button
                         variant="outline"
-                        onClick={handleLogout}
+                        onClick={signOut}
                         className="w-full text-red-500 border-red-200 hover:bg-red-50 cursor-pointer"
                       >
                         <LogOut size={18} />
@@ -825,7 +611,7 @@ export default function AccountPage() {
             <p className="text-gray-600 mb-4">
               Êtes-vous sûr de vouloir annuler votre rendez-vous chez <strong>{cancelModal.establishments?.name}</strong> ?
             </p>
-            
+
             <div className="bg-gray-50 rounded-xl p-4 mb-4">
               <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
                 <Calendar size={14} />

@@ -23,7 +23,7 @@ export interface EstablishmentData {
 
 export interface TabProps {
   formData: EstablishmentData;
-  updateField: (field: keyof EstablishmentData, value: any) => void;
+  updateField: <K extends keyof EstablishmentData>(field: K, value: EstablishmentData[K]) => void;
 }
 
 export const ACTIVITY_SECTORS = [

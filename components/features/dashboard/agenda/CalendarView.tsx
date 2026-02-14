@@ -1,19 +1,12 @@
 "use client";
 
 import { useMemo } from "react";
-import { Clock, User, Ban } from "lucide-react";
-import { CalendarViewType, CalendarEvent, AppointmentData, UnavailabilityData, UnavailabilityType } from "./types";
+import { CalendarViewType, CalendarEvent } from "./types";
 import { DAYS_DB, MONTHS } from "@/lib/utils/formatters";
+import { AGENDA_CONFIG } from "./constants";
 import AgendaHeader from "./components/AgendaHeader";
 import AgendaGrid from "./components/AgendaGrid";
-
-const UNAVAILABILITY_TYPE_LABELS: Record<UnavailabilityType, string> = {
-  vacation: "Vacances",
-  training: "Formation",
-  illness: "Maladie",
-  event: "Événement",
-  other: "Indisponible",
-};
+import TimeSlot from "./components/TimeSlot";
 
 interface CalendarViewProps {
   events: CalendarEvent[];
@@ -25,9 +18,11 @@ interface CalendarViewProps {
   onSlotClick: (date: Date) => void;
 }
 
-const HOURS = Array.from({ length: 13 }, (_, i) => i + 7); // 7h à 19h
+const HOURS = Array.from(
+  { length: AGENDA_CONFIG.END_HOUR - AGENDA_CONFIG.START_HOUR + 1 },
+  (_, i) => i + AGENDA_CONFIG.START_HOUR
+);
 const DAYS = DAYS_DB.map(d => d.substring(0, 3));
-const DAYS_SHORT = ["L", "M", "M", "J", "V", "S", "D"];
 
 export default function CalendarView({
   events,
@@ -125,48 +120,56 @@ export default function CalendarView({
 
   const isToday = (date: Date) => date.toDateString() === new Date().toDateString();
 
-  const renderEventPositioned = (event: CalendarEvent, slotHour: number, cellHeight: number, currentDay: Date) => {
-    const isAppointment = event.type === "appointment";
-    const start = new Date(event.start);
-    const end = new Date(event.end);
-
-    let startMinutes = start.getHours() * 60 + start.getMinutes();
-    let endMinutes = end.getHours() * 60 + end.getMinutes();
-
-    if (!isAppointment) {
-      const dayStart = new Date(currentDay).setHours(0, 0, 0, 0);
-      const eventStartDay = new Date(event.start).setHours(0, 0, 0, 0);
-      const eventEndDay = new Date(event.end).setHours(0, 0, 0, 0);
-      if (dayStart === eventStartDay) endMinutes = 20 * 60;
-      else if (dayStart === eventEndDay) startMinutes = 7 * 60;
-      else { startMinutes = 7 * 60; endMinutes = 20 * 60; }
-    }
-
-    const topPercent = ((startMinutes - slotHour * 60) / 60) * 100;
-    const heightPercent = ((endMinutes - startMinutes) / 60) * 100;
-
-    const data = event.data as any;
-    const typeLabel = !isAppointment ? (UNAVAILABILITY_TYPE_LABELS[data.unavailability_type] || "Indisponible") : "";
-
+  const renderWeekView = () => {
+    const weekDays = getWeekDays();
     return (
-      <div
-        key={event.id}
-        onClick={(e) => { e.stopPropagation(); onEventClick(event); }}
-        className={`absolute left-0.5 right-0.5 rounded-md cursor-pointer hover:shadow-lg transition-all overflow-hidden ${isAppointment ? "bg-gradient-to-r from-primary to-primary/80 border-l-2 border-primary-dark z-20" : "bg-gradient-to-r from-red-500 to-red-400 border-l-2 border-red-600 z-10"
-          } text-white text-[10px] lg:text-xs px-1.5 py-0.5`}
-        style={{ top: `${topPercent}%`, height: `${heightPercent}%`, minHeight: '20px' }}
-      >
-        <div className="font-semibold truncate flex items-center gap-1">
-          {isAppointment ? <User size={10} /> : <Ban size={10} />}
-          {event.title || typeLabel}
+      <div className="flex flex-col h-full">
+        <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-gray-100 bg-gray-50/50">
+          <div className="h-14" />
+          {weekDays.map((day, i) => (
+            <div key={i} className="h-14 flex flex-col items-center justify-center font-semibold text-gray-700 border-l border-gray-100">
+              <span className="text-[10px] uppercase text-gray-400">{DAYS[day.getDay() === 0 ? 6 : day.getDay() - 1]}</span>
+              <div className="flex items-center gap-1">
+                <span className={`text-lg ${isToday(day) ? "bg-primary text-white w-7 h-7 rounded-full flex items-center justify-center -mb-1" : ""}`}>{day.getDate()}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="flex-1 overflow-y-auto">
+          {HOURS.map((hour) => (
+            <div key={hour} className="grid grid-cols-[60px_repeat(7,1fr)] group">
+              <div className="text-[10px] text-gray-400 text-right pr-3 pt-2 font-medium border-b border-gray-50 h-[70px]">
+                {hour.toString().padStart(2, "0")}:00
+              </div>
+              {weekDays.map((day, i) => {
+                const unavailableSlot = isSlotUnavailable(day, hour);
+                const slotEvents = getEventsStartingAtHour(day, hour);
+                return (
+                  <div key={i} className="border-l border-b border-gray-50 relative h-[70px]">
+                    <TimeSlot
+                      hour={hour}
+                      currentDay={day}
+                      unavailableSlot={unavailableSlot}
+                      slotEvents={slotEvents}
+                      showTimeColumn={false}
+                      onSlotClick={(h) => {
+                        const slotDate = new Date(day);
+                        slotDate.setHours(h, 0, 0, 0);
+                        onSlotClick(slotDate);
+                      }}
+                      onEventClick={onEventClick}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          ))}
         </div>
       </div>
     );
   };
 
   const renderMonthView = () => {
-    // ... Gardé pour l'instant dans le fichier pour simplicité du portage ...
-    // Note: On pourrait aussi l'extraire si besoin plus tard.
     const monthDays = getMonthDays();
     return (
       <div className="flex flex-col h-full">
@@ -207,16 +210,13 @@ export default function CalendarView({
             hours={HOURS}
             isSlotUnavailable={isSlotUnavailable}
             getEventsStartingAtHour={getEventsStartingAtHour}
-            renderEventPositioned={renderEventPositioned}
             onSlotClick={onSlotClick}
             onEventClick={onEventClick}
             isToday={isToday}
             MONTHS={MONTHS}
           />
         )}
-        {view === "week" && (
-          <div className="p-4 text-center text-gray-400">Vue semaine en cours de raccordement... (Utilisez "Jour")</div>
-        )}
+        {view === "week" && renderWeekView()}
         {view === "month" && renderMonthView()}
       </div>
     </div>

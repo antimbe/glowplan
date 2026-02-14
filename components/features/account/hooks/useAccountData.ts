@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { User } from "@supabase/supabase-js";
 import { ClientProfile, Appointment, Favorite, Review, AccountTab } from "../types";
 
 interface UseAccountDataReturn {
   loading: boolean;
-  user: any;
+  user: User | null;
   profile: ClientProfile | null;
   appointments: Appointment[];
   favorites: Favorite[];
@@ -18,6 +19,7 @@ interface UseAccountDataReturn {
   cancelAppointment: (appointmentId: string) => Promise<void>;
   removeFavorite: (favoriteId: string) => Promise<void>;
   deleteReview: (reviewId: string) => Promise<void>;
+  addReview: (data: { appointment_id: string; establishment_id: string; rating: number; comment: string | null }) => Promise<void>;
   updateProfile: (data: Partial<ClientProfile>) => Promise<void>;
   signOut: () => Promise<void>;
   cancelling: string | null;
@@ -28,7 +30,8 @@ export function useAccountData(): UseAccountDataReturn {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<AccountTab>("reservations");
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const lastRequestId = useRef(0);
   const [profile, setProfile] = useState<ClientProfile | null>(null);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [favorites, setFavorites] = useState<Favorite[]>([]);
@@ -40,6 +43,7 @@ export function useAccountData(): UseAccountDataReturn {
 
   const loadData = useCallback(async () => {
     setLoading(true);
+    const requestId = ++lastRequestId.current;
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -48,31 +52,45 @@ export function useAccountData(): UseAccountDataReturn {
       }
       setUser(user);
 
-      // Load profile
+      // Load profile first to get IDs for other queries
       const { data: profileData } = await supabase
         .from("client_profiles")
         .select("*")
         .eq("user_id", user.id)
         .single();
 
+      if (requestId !== lastRequestId.current) return;
+
       if (profileData) {
         setProfile(profileData);
 
-        // Load appointments
-        const { data: appointmentsData } = await supabase
-          .from("appointments")
-          .select(`
+        // Load appointments, favorites and reviews in parallel
+        const [
+          { data: appointmentsData },
+          { data: favoritesData },
+          { data: reviewsData }
+        ] = await Promise.all([
+          supabase.from("appointments").select(`
             id, start_time, end_time, status, notes, establishment_id,
             establishments(id, name, city),
             services(name, price, duration)
-          `)
-          .eq("client_profile_id", profileData.id)
-          .order("start_time", { ascending: false });
+          `).eq("client_profile_id", profileData.id).order("start_time", { ascending: false }),
+          supabase.from("favorites").select(`
+            id, establishment_id,
+            establishments(id, name, city, main_photo_url, activity_sectors)
+          `).eq("user_id", user.id),
+          supabase.from("reviews").select(`
+            id, rating, comment, created_at, establishment_id,
+            establishments(id, name, city)
+          `).eq("client_profile_id", profileData.id).order("created_at", { ascending: false })
+        ]);
 
-        // Check which appointments have reviews
+        // Check which appointments have reviews (already loaded appointmentsData)
         if (appointmentsData) {
+          // This one is still a bit of a waterfall because of nested review checks
+          // but at least the main query is parallelized.
           const appointmentsWithReviewStatus = await Promise.all(
-            appointmentsData.map(async (apt) => {
+            appointmentsData.map(async (apt: any) => {
               const { data: reviewData } = await supabase
                 .from("reviews")
                 .select("id")
@@ -84,27 +102,7 @@ export function useAccountData(): UseAccountDataReturn {
           setAppointments(appointmentsWithReviewStatus as unknown as Appointment[]);
         }
 
-        // Load favorites
-        const { data: favoritesData } = await supabase
-          .from("favorites")
-          .select(`
-            id, establishment_id,
-            establishments(id, name, city, main_photo_url, activity_sectors)
-          `)
-          .eq("user_id", user.id);
-
         setFavorites((favoritesData || []) as unknown as Favorite[]);
-
-        // Load reviews
-        const { data: reviewsData } = await supabase
-          .from("reviews")
-          .select(`
-            id, rating, comment, created_at, establishment_id,
-            establishments(id, name, city)
-          `)
-          .eq("client_profile_id", profileData.id)
-          .order("created_at", { ascending: false });
-
         setReviews((reviewsData || []) as unknown as Review[]);
       }
     } catch (error) {
@@ -136,6 +134,24 @@ export function useAccountData(): UseAccountDataReturn {
       setFavorites(prev => prev.filter(f => f.id !== favoriteId));
     } catch (error) {
       console.error("Error removing favorite:", error);
+    }
+  };
+
+  const addReview = async (data: { appointment_id: string; establishment_id: string; rating: number; comment: string | null }) => {
+    if (!profile) return;
+    try {
+      const { error } = await supabase.from("reviews").insert({
+        ...data,
+        client_profile_id: profile.id,
+        client_name: `${profile.first_name} ${profile.last_name}`,
+        is_verified: true,
+        is_visible: true,
+      });
+
+      if (error) throw error;
+      await loadData();
+    } catch (error) {
+      console.error("Error adding review:", error);
     }
   };
 
@@ -189,6 +205,7 @@ export function useAccountData(): UseAccountDataReturn {
     cancelAppointment,
     removeFavorite,
     deleteReview,
+    addReview,
     updateProfile,
     signOut,
     cancelling,
