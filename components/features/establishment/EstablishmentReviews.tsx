@@ -19,15 +19,13 @@ interface Review {
 interface EstablishmentReviewsProps {
     reviews: Review[];
     averageRating: number | null;
-    hasAlreadyReviewed: boolean;
-    handleOpenReviewModal: () => void;
+    onAddReview?: () => void;
 }
 
 export function EstablishmentReviews({
     reviews,
     averageRating,
-    hasAlreadyReviewed,
-    handleOpenReviewModal
+    onAddReview
 }: EstablishmentReviewsProps) {
     return (
         <div className="bg-white rounded-2xl p-4 sm:p-6 border border-gray-100 mb-6">
@@ -53,11 +51,11 @@ export function EstablishmentReviews({
                             <span className="text-gray-500 text-sm">({reviews.length} avis)</span>
                         </div>
                     )}
-                    {!hasAlreadyReviewed && (
+                    {onAddReview && (
                         <Button
                             variant="outline"
                             size="sm"
-                            onClick={handleOpenReviewModal}
+                            onClick={onAddReview}
                             className="cursor-pointer"
                         >
                             <MessageSquare size={16} className="mr-1" />

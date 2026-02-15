@@ -1,32 +1,44 @@
 "use client";
 
-import { MapPin, Clock, Heart, Star } from "lucide-react";
-import { Button } from "@/components/ui";
+import { useState } from "react";
+import { MapPin, Clock } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { DAYS_DB } from "@/lib/utils/formatters";
-import { OpeningHour } from "../booking/types";
+import { OpeningHour, Service, ClientInfo, BookingStep, AvailableSlot } from "../booking/types";
+import { BookingTunnel } from "../booking/BookingTunnel";
+import { Establishment } from "./types";
 
 interface EstablishmentSidebarProps {
-    establishment: any;
-    averageRating: number | null;
-    reviewCount: number;
-    fullAddress: string;
+    establishment: Establishment;
+    services: Service[];
     openingHours: OpeningHour[];
-    isFavorite: boolean;
-    togglingFavorite: boolean;
-    handleToggleFavorite: () => void;
+    onBookingComplete: () => void;
+    blockedError: boolean;
 }
 
 export function EstablishmentSidebar({
     establishment,
-    averageRating,
-    reviewCount,
-    fullAddress,
+    services,
     openingHours,
-    isFavorite,
-    togglingFavorite,
-    handleToggleFavorite
+    onBookingComplete,
+    blockedError
 }: EstablishmentSidebarProps) {
+    const [step, setStep] = useState<BookingStep>("service");
+    const [selectedService, setSelectedService] = useState<Service | null>(null);
+    const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+    const [selectedSlot, setSelectedSlot] = useState<AvailableSlot | null>(null);
+    const [availableSlots, setAvailableSlots] = useState<AvailableSlot[]>([]);
+    const [loadingSlots, setLoadingSlots] = useState(false);
+
+    const [clientInfo, setClientInfo] = useState<ClientInfo>({
+        firstName: "",
+        lastName: "",
+        email: "",
+        phone: "",
+        instagram: "",
+        notes: "",
+    });
+
     const getSortedHours = () => {
         return [...openingHours].sort((a, b) => {
             const aDay = a.day_of_week === 0 ? 7 : a.day_of_week;
@@ -44,74 +56,75 @@ export function EstablishmentSidebar({
         return result;
     };
 
+    const handleSubmitBooking = async () => {
+        // Logique de soumission simplifiée pour le walkthrough
+        // En réalité, on appellerait une API ou une fonction passée en prop
+        onBookingComplete();
+    };
+
     return (
-        <div className="bg-white rounded-2xl p-6 border border-gray-100 sticky top-6">
-            {/* Establishment Name & Location */}
-            <div className="flex items-start justify-between mb-4">
-                <div>
-                    <h1 className="text-xl font-bold text-gray-900">{establishment.name}</h1>
-                    <div className="flex items-center gap-1 text-gray-500 mt-1">
-                        <MapPin size={14} />
-                        <span className="text-sm">{establishment.city}</span>
-                    </div>
+        <div className="space-y-6 sticky top-24">
+            {/* Booking Card */}
+            <div className="bg-white rounded-3xl border border-gray-100 shadow-xl overflow-hidden">
+                <div className="bg-primary p-4 text-white text-center">
+                    <p className="text-xs font-black uppercase tracking-widest opacity-80">Réservation en direct</p>
                 </div>
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleToggleFavorite}
-                    disabled={togglingFavorite}
-                    className={cn(
-                        "p-2 rounded-full min-w-0 h-auto",
-                        isFavorite ? "bg-red-50 hover:bg-red-100" : "hover:bg-gray-100"
-                    )}
-                >
-                    <Heart
-                        size={20}
-                        className={cn(
-                            "transition-colors",
-                            isFavorite ? "text-red-500 fill-red-500" : "text-gray-400"
-                        )}
-                    />
-                </Button>
+                <BookingTunnel
+                    step={step === "service" ? "info" : step}
+                    setStep={(s) => setStep(s === "info" ? "service" : s)}
+                    services={services}
+                    selectedService={selectedService}
+                    setSelectedService={setSelectedService}
+                    selectedDate={selectedDate}
+                    setSelectedDate={setSelectedDate}
+                    selectedSlot={selectedSlot}
+                    setSelectedSlot={setSelectedSlot}
+                    availableSlots={availableSlots}
+                    loadingSlots={loadingSlots}
+                    clientInfo={clientInfo}
+                    setClientInfo={setClientInfo}
+                    clientProfileId={null} // À passer via props si besoin
+                    submitting={false}
+                    handleSubmitBooking={handleSubmitBooking}
+                    blockedError={blockedError}
+                    establishment={establishment}
+                    openingHours={openingHours}
+                />
             </div>
 
-            {/* Rating */}
-            <div className="flex items-center gap-2 text-sm text-gray-500 mb-6">
-                {averageRating !== null ? (
-                    <>
-                        <div className="flex items-center gap-1 bg-yellow-50 px-2.5 py-1 rounded-lg">
-                            <Star size={14} className="text-yellow-500 fill-yellow-500" />
-                            <span className="font-bold text-yellow-700">{averageRating}</span>
+            {/* Info Card */}
+            <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm">
+                <div className="space-y-6">
+                    {/* Address */}
+                    <div className="flex items-start gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 shrink-0">
+                            <MapPin size={20} />
                         </div>
-                        <span className="text-gray-400">({reviewCount} avis)</span>
-                    </>
-                ) : (
-                    <span className="italic text-gray-400">Aucun avis pour le moment</span>
-                )}
-            </div>
-
-            <div className="space-y-6">
-                {/* Address */}
-                {fullAddress && (
-                    <div className="flex items-start gap-3 py-4 border-t border-gray-100">
-                        <MapPin size={18} className="text-gray-400 mt-0.5 flex-shrink-0" />
-                        <span className="text-sm text-gray-600 leading-relaxed">{fullAddress}</span>
+                        <div>
+                            <p className="text-xs font-black uppercase tracking-widest text-gray-400 mb-1">Localisation</p>
+                            <p className="text-sm font-bold text-gray-900 leading-relaxed">
+                                {establishment.address}<br />
+                                {establishment.postal_code} {establishment.city}
+                            </p>
+                        </div>
                     </div>
-                )}
 
-                {/* Opening Hours */}
-                {openingHours.length > 0 && (
-                    <div className="py-4 border-t border-gray-100">
-                        <div className="flex items-center gap-3 mb-4">
-                            <Clock size={18} className="text-gray-400" />
-                            <span className="text-sm font-bold text-gray-900 uppercase tracking-wider">Horaires</span>
+                    {/* Opening Hours */}
+                    <div className="pt-6 border-t border-gray-50">
+                        <div className="flex items-center gap-4 mb-4">
+                            <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 shrink-0">
+                                <Clock size={20} />
+                            </div>
+                            <div>
+                                <p className="text-xs font-black uppercase tracking-widest text-gray-400">Horaires</p>
+                            </div>
                         </div>
                         <div className="space-y-2.5">
                             {getSortedHours().map((hour) => (
                                 <div key={hour.day_of_week} className="flex justify-between text-sm">
-                                    <span className="text-gray-500">{DAYS_DB[hour.day_of_week]}</span>
+                                    <span className="text-gray-500 font-medium">{DAYS_DB[hour.day_of_week]}</span>
                                     <span className={cn(
-                                        "font-medium",
+                                        "font-bold",
                                         hour.is_open ? "text-gray-900" : "text-red-500"
                                     )}>
                                         {formatHours(hour)}
@@ -120,7 +133,7 @@ export function EstablishmentSidebar({
                             ))}
                         </div>
                     </div>
-                )}
+                </div>
             </div>
         </div>
     );

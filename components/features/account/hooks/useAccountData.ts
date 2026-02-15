@@ -4,9 +4,9 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { User } from "@supabase/supabase-js";
-import { ClientProfile, Appointment, Favorite, Review, AccountTab } from "../types";
+import { AccountTab, Appointment, Favorite, Review, ClientProfile } from "../types";
 
-interface UseAccountDataReturn {
+export interface UseAccountDataReturn {
   loading: boolean;
   user: User | null;
   profile: ClientProfile | null;
@@ -24,102 +24,93 @@ interface UseAccountDataReturn {
   signOut: () => Promise<void>;
   cancelling: string | null;
   saving: boolean;
+  submittingReview: boolean;
+  deletingReview: string | null;
 }
 
 export function useAccountData(): UseAccountDataReturn {
-  const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<AccountTab>("reservations");
   const [user, setUser] = useState<User | null>(null);
-  const lastRequestId = useRef(0);
   const [profile, setProfile] = useState<ClientProfile | null>(null);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [favorites, setFavorites] = useState<Favorite[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [activeTab, setActiveTab] = useState<AccountTab>("reservations");
+
   const [cancelling, setCancelling] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const [deletingReview, setDeletingReview] = useState<string | null>(null);
 
   const supabase = createClient();
+  const router = useRouter();
+  const lastLoadId = useRef(0);
 
   const loadData = useCallback(async () => {
-    setLoading(true);
-    const requestId = ++lastRequestId.current;
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        router.push("/auth/client/login");
-        return;
+    const requestId = ++lastLoadId.current;
+
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    if (!authUser) {
+      if (requestId === lastLoadId.current) {
+        setUser(null);
+        setLoading(false);
       }
-      setUser(user);
+      return;
+    }
 
-      // Load profile first to get IDs for other queries
-      const { data: profileData } = await supabase
-        .from("client_profiles")
-        .select("*")
-        .eq("user_id", user.id)
-        .single();
+    if (requestId === lastLoadId.current) {
+      setUser(authUser);
+    }
 
-      if (requestId !== lastRequestId.current) return;
+    // Parallel fetching
+    const [profileRes, appointmentsRes] = await Promise.all([
+      supabase.from("client_profiles").select("*").eq("user_id", authUser.id).single(),
+      supabase.from("appointments")
+        .select(`
+          *,
+          establishments(name, city),
+          services(name, price, duration)
+        `)
+        .eq("user_id", authUser.id)
+        .order("start_time", { ascending: false })
+    ]);
 
-      if (profileData) {
-        setProfile(profileData);
+    if (requestId !== lastLoadId.current) return;
 
-        // Load appointments, favorites and reviews in parallel
-        const [
-          { data: appointmentsData },
-          { data: favoritesData },
-          { data: reviewsData }
-        ] = await Promise.all([
-          supabase.from("appointments").select(`
-            id, start_time, end_time, status, notes, establishment_id,
-            establishments(id, name, city),
-            services(name, price, duration)
-          `).eq("client_profile_id", profileData.id).order("start_time", { ascending: false }),
-          supabase.from("favorites").select(`
-            id, establishment_id,
-            establishments(id, name, city, main_photo_url, activity_sectors)
-          `).eq("user_id", user.id),
-          supabase.from("reviews").select(`
-            id, rating, comment, created_at, establishment_id,
-            establishments(id, name, city)
-          `).eq("client_profile_id", profileData.id).order("created_at", { ascending: false })
-        ]);
+    if (profileRes.data) {
+      setProfile(profileRes.data);
 
-        // Check which appointments have reviews (already loaded appointmentsData)
-        if (appointmentsData) {
-          // This one is still a bit of a waterfall because of nested review checks
-          // but at least the main query is parallelized.
-          const appointmentsWithReviewStatus = await Promise.all(
-            appointmentsData.map(async (apt: any) => {
-              const { data: reviewData } = await supabase
-                .from("reviews")
-                .select("id")
-                .eq("appointment_id", apt.id)
-                .single();
-              return { ...apt, has_review: !!reviewData };
-            })
-          );
-          setAppointments(appointmentsWithReviewStatus as unknown as Appointment[]);
-        }
+      const [favoritesRes, reviewsRes] = await Promise.all([
+        supabase.from("favorites")
+          .select("*, establishments(name, city, main_photo_url)")
+          .eq("client_id", profileRes.data.id),
+        supabase.from("reviews")
+          .select("*, establishments(name, city)")
+          .eq("client_id", profileRes.data.id)
+          .order("created_at", { ascending: false })
+      ]);
 
-        setFavorites((favoritesData || []) as unknown as Favorite[]);
-        setReviews((reviewsData || []) as unknown as Review[]);
+      if (requestId === lastLoadId.current) {
+        setFavorites(favoritesRes.data || []);
+        setReviews(reviewsRes.data || []);
       }
-    } catch (error) {
-      console.error("Error loading account data:", error);
-    } finally {
+    }
+
+    if (requestId === lastLoadId.current) {
+      setAppointments(appointmentsRes.data || []);
       setLoading(false);
     }
-  }, [router, supabase]);
+  }, [supabase]);
 
   const cancelAppointment = async (appointmentId: string) => {
     setCancelling(appointmentId);
     try {
-      await fetch("/api/booking/cancel", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ appointmentId }),
-      });
+      const { error } = await supabase
+        .from("appointments")
+        .update({ status: "cancelled" })
+        .eq("id", appointmentId);
+
+      if (error) throw error;
       await loadData();
     } catch (error) {
       console.error("Error cancelling appointment:", error);
@@ -130,52 +121,69 @@ export function useAccountData(): UseAccountDataReturn {
 
   const removeFavorite = async (favoriteId: string) => {
     try {
-      await supabase.from("favorites").delete().eq("id", favoriteId);
+      const { error } = await supabase
+        .from("favorites")
+        .delete()
+        .eq("id", favoriteId);
+
+      if (error) throw error;
       setFavorites(prev => prev.filter(f => f.id !== favoriteId));
     } catch (error) {
       console.error("Error removing favorite:", error);
     }
   };
 
+  const deleteReview = async (reviewId: string) => {
+    setDeletingReview(reviewId);
+    try {
+      const { error } = await supabase
+        .from("reviews")
+        .delete()
+        .eq("id", reviewId);
+
+      if (error) throw error;
+      setReviews(prev => prev.filter(r => r.id !== reviewId));
+    } catch (error) {
+      console.error("Error deleting review:", error);
+    } finally {
+      setDeletingReview(null);
+    }
+  };
+
   const addReview = async (data: { appointment_id: string; establishment_id: string; rating: number; comment: string | null }) => {
     if (!profile) return;
+    setSubmittingReview(true);
     try {
-      const { error } = await supabase.from("reviews").insert({
-        ...data,
-        client_profile_id: profile.id,
-        client_name: `${profile.first_name} ${profile.last_name}`,
-        is_verified: true,
-        is_visible: true,
-      });
+      const { error } = await supabase
+        .from("reviews")
+        .insert({
+          client_id: profile.id,
+          establishment_id: data.establishment_id,
+          appointment_id: data.appointment_id,
+          rating: data.rating,
+          comment: data.comment,
+        });
 
       if (error) throw error;
       await loadData();
     } catch (error) {
       console.error("Error adding review:", error);
-    }
-  };
-
-  const deleteReview = async (reviewId: string) => {
-    try {
-      await supabase.from("reviews").delete().eq("id", reviewId);
-      setReviews(prev => prev.filter(r => r.id !== reviewId));
-    } catch (error) {
-      console.error("Error deleting review:", error);
+    } finally {
+      setSubmittingReview(false);
     }
   };
 
   const updateProfile = async (data: Partial<ClientProfile>) => {
-    if (!profile) return;
+    if (!user) return;
     setSaving(true);
     try {
       const { error } = await supabase
         .from("client_profiles")
         .update(data)
-        .eq("id", profile.id);
+        .eq("user_id", user.id);
 
-      if (!error) {
-        setProfile(prev => prev ? { ...prev, ...data } : null);
-      }
+      if (error) throw error;
+      await loadData();
     } catch (error) {
       console.error("Error updating profile:", error);
     } finally {
@@ -210,5 +218,7 @@ export function useAccountData(): UseAccountDataReturn {
     signOut,
     cancelling,
     saving,
+    submittingReview,
+    deletingReview,
   };
 }

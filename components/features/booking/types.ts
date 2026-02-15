@@ -30,4 +30,4 @@ export interface ClientInfo {
     notes: string;
 }
 
-export type BookingStep = "info" | "datetime" | "recap" | "confirmation";
+export type BookingStep = "service" | "info" | "datetime" | "recap" | "confirmation";
