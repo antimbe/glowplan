@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { fetchOccupationData } from "@/lib/utils/booking-fetcher";
 import type { CalendarEvent, AppointmentData, UnavailabilityData, CalendarViewType } from "../types";
 import { AGENDA_CONFIG } from "../constants";
 
@@ -64,54 +65,35 @@ export function useAgenda() {
         endDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0, 23, 59, 59, 999);
       }
 
-      const [appointmentsResponse, unavailabilitiesResponse] = await Promise.all([
-        supabase
-          .from("appointments")
-          .select("*, service:services(name, duration, price)")
-          .eq("establishment_id", establishmentId)
-          .neq("status", "cancelled")
-          .gte("start_time", startDate.toISOString())
-          .lte("start_time", endDate.toISOString())
-          .order("start_time"),
-        supabase
-          .from("unavailabilities")
-          .select("*")
-          .eq("establishment_id", establishmentId)
-          .lte("start_time", endDate.toISOString())
-          .gte("end_time", startDate.toISOString())
-          .order("start_time")
-      ]);
-
-      const { data: appointments } = appointmentsResponse;
-      const { data: unavailabilities } = unavailabilitiesResponse;
+      const { appointments, unavailabilities } = await fetchOccupationData(
+        establishmentId,
+        startDate.toISOString(),
+        endDate.toISOString()
+      );
 
       const calendarEvents: CalendarEvent[] = [];
 
-      if (appointments) {
-        appointments.forEach((apt) => {
-          calendarEvents.push({
-            id: apt.id,
-            title: apt.service?.name || apt.client_name,
-            start: new Date(apt.start_time),
-            end: new Date(apt.end_time),
-            type: "appointment",
-            data: apt,
-          });
+      appointments.forEach((apt) => {
+        calendarEvents.push({
+          id: apt.id,
+          title: (apt as any).service?.name || apt.client_name,
+          start: new Date(apt.start_time),
+          end: new Date(apt.end_time),
+          type: "appointment",
+          data: apt as any,
         });
-      }
+      });
 
-      if (unavailabilities) {
-        unavailabilities.forEach((unav) => {
-          calendarEvents.push({
-            id: unav.id,
-            title: unav.reason || "Indisponible",
-            start: new Date(unav.start_time),
-            end: new Date(unav.end_time),
-            type: "unavailability",
-            data: unav,
-          });
+      unavailabilities.forEach((unav) => {
+        calendarEvents.push({
+          id: unav.id,
+          title: unav.reason || "Indisponible",
+          start: new Date(unav.start_time),
+          end: new Date(unav.end_time),
+          type: "unavailability",
+          data: unav as any,
         });
-      }
+      });
 
       if (requestId !== lastRequestId.current) return;
 
@@ -138,8 +120,37 @@ export function useAgenda() {
   useEffect(() => {
     if (establishmentId) {
       loadEvents();
+
+      // Activation de Supabase Realtime pour l'establishment
+      const channel = supabase
+        .channel(`establishment-${establishmentId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'appointments',
+            filter: `establishment_id=eq.${establishmentId}`
+          },
+          () => loadEvents()
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'unavailabilities',
+            filter: `establishment_id=eq.${establishmentId}`
+          },
+          () => loadEvents()
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
     }
-  }, [establishmentId, loadEvents]);
+  }, [establishmentId, loadEvents, supabase]);
 
   return {
     loading,

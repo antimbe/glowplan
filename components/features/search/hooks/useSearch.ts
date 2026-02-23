@@ -53,7 +53,8 @@ export function useSearch(query: string, location: string) {
           description,
           services(price),
           reviews(rating)
-        `);
+        `)
+                .eq("is_profile_complete", true);
 
             const allConditions: string[] = [];
             if (query) {

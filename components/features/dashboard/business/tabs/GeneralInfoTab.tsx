@@ -10,7 +10,7 @@ import {
   PhotosSection,
 } from "../sections";
 
-export default function GeneralInfoTab({ formData, updateField }: TabProps) {
+export default function GeneralInfoTab({ formData, updateField, establishmentId }: TabProps & { establishmentId: string | null }) {
   return (
     <div className="w-full flex flex-col gap-4">
       <EstablishmentSection formData={formData} updateField={updateField} />
@@ -18,7 +18,7 @@ export default function GeneralInfoTab({ formData, updateField }: TabProps) {
       <LocationSection formData={formData} updateField={updateField} />
       <SettingsSection formData={formData} updateField={updateField} />
       <ActivitySection formData={formData} updateField={updateField} />
-      <PhotosSection formData={formData} updateField={updateField} />
+      <PhotosSection formData={formData} updateField={updateField} establishmentId={establishmentId} />
     </div>
   );
 }

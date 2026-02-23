@@ -1,10 +1,11 @@
-"use client";
-
 import { useState, useEffect, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { jsDayToDbDay } from "@/lib/utils/formatters";
+import { fetchOccupationData } from "@/lib/utils/booking-fetcher";
+import { getAvailableSlots } from "@/lib/utils/booking-utils";
+import { startOfDay, endOfDay, parseISO } from "date-fns";
 
-import { Service, OpeningHour, AvailableSlot } from "../types";
+import { Service, OpeningHour, AvailableSlot, CartItem, ClientInfo } from "../types";
 
 export function useBooking(establishmentId: string, openingHours: OpeningHour[]) {
     const [selectedService, setSelectedService] = useState<Service | null>(null);
@@ -12,6 +13,21 @@ export function useBooking(establishmentId: string, openingHours: OpeningHour[])
     const [selectedSlot, setSelectedSlot] = useState<AvailableSlot | null>(null);
     const [availableSlots, setAvailableSlots] = useState<AvailableSlot[]>([]);
     const [loadingSlots, setLoadingSlots] = useState(false);
+    const [cart, setCart] = useState<CartItem[]>([]);
+    const [isConfirming, setIsConfirming] = useState(false);
+
+    // TTL pour le panier (vage de 20 min d'inactivité)
+    useEffect(() => {
+        if (cart.length === 0) return;
+
+        const timer = setTimeout(() => {
+            setCart([]);
+            alert("Votre panier a expiré après 20 minutes d'inactivité.");
+        }, 20 * 60 * 1000);
+
+        return () => clearTimeout(timer);
+    }, [cart]);
+
     const lastRequestId = useRef(0);
     const supabase = createClient();
 
@@ -28,96 +44,111 @@ export function useBooking(establishmentId: string, openingHours: OpeningHour[])
                 return;
             }
 
-            const startOfDay = new Date(date);
-            startOfDay.setHours(0, 0, 0, 0);
-            const endOfDay = new Date(date);
-            endOfDay.setHours(23, 59, 59, 999);
+            const dayStart = new Date(date);
+            const [openH, openM] = hours.open_time.split(":").map(Number);
+            dayStart.setHours(openH, openM, 0, 0);
 
-            const [appointmentsResponse, unavailabilitiesResponse] = await Promise.all([
-                supabase.from("appointments")
-                    .select("start_time, end_time")
-                    .eq("establishment_id", establishmentId)
-                    .gte("start_time", startOfDay.toISOString())
-                    .lte("start_time", endOfDay.toISOString())
-                    .neq("status", "cancelled"),
-                supabase.from("unavailabilities")
-                    .select("start_time, end_time")
-                    .eq("establishment_id", establishmentId)
-                    .lte("start_time", endOfDay.toISOString())
-                    .gte("end_time", startOfDay.toISOString())
-            ]);
+            const dayEnd = new Date(date);
+            const [closeH, closeM] = hours.close_time.split(":").map(Number);
+            dayEnd.setHours(closeH, closeM, 0, 0);
+
+            const { appointments, unavailabilities } = await fetchOccupationData(
+                establishmentId,
+                startOfDay(date).toISOString(),
+                endOfDay(date).toISOString()
+            );
 
             if (requestId !== lastRequestId.current) return;
 
-            const appointments = appointmentsResponse.data;
-            const unavailabilities = unavailabilitiesResponse.data;
+            // Préparation des occupations pour l'intervalleur
+            const occupied = [
+                ...appointments.map(a => ({ start_time: a.start_time, end_time: a.end_time, type: 'appointment', id: a.id })),
+                ...unavailabilities.map(u => ({ start_time: u.start_time, end_time: u.end_time, type: 'unavailability', id: u.id }))
+            ];
 
-            const slots: AvailableSlot[] = [];
-            const [openHour, openMin] = hours.open_time.split(":").map(Number);
-            const [closeHour, closeMin] = hours.close_time.split(":").map(Number);
+            // Gestion de la pause déjeuner comme une indisponibilité si configurée
+            if (hours.break_start && hours.break_end) {
+                const breakStart = new Date(date);
+                const [bSH, bSM] = hours.break_start.split(":").map(Number);
+                breakStart.setHours(bSH, bSM, 0, 0);
 
-            let currentTime = new Date(date);
-            currentTime.setHours(openHour, openMin, 0, 0);
+                const breakEnd = new Date(date);
+                const [bEH, bEM] = hours.break_end.split(":").map(Number);
+                breakEnd.setHours(bEH, bEM, 0, 0);
 
-            const closeTime = new Date(date);
-            closeTime.setHours(closeHour, closeMin, 0, 0);
-
-            const now = new Date();
-
-            while (currentTime < closeTime) {
-                const slotEnd = new Date(currentTime.getTime() + service.duration * 60000);
-                if (slotEnd > closeTime) break;
-
-                if (currentTime < now) {
-                    currentTime = new Date(currentTime.getTime() + 30 * 60000);
-                    continue;
-                }
-
-                if (hours.break_start && hours.break_end) {
-                    const [breakStartH, breakStartM] = hours.break_start.split(":").map(Number);
-                    const [breakEndH, breakEndM] = hours.break_end.split(":").map(Number);
-                    const breakStart = new Date(date);
-                    breakStart.setHours(breakStartH, breakStartM, 0, 0);
-                    const breakEnd = new Date(date);
-                    breakEnd.setHours(breakEndH, breakEndM, 0, 0);
-
-                    if (currentTime < breakEnd && slotEnd > breakStart) {
-                        currentTime = new Date(breakEnd);
-                        continue;
-                    }
-                }
-
-                const hasConflict = appointments?.some(apt => {
-                    const aptStart = new Date(apt.start_time);
-                    const aptEnd = new Date(apt.end_time);
-                    return currentTime < aptEnd && slotEnd > aptStart;
+                occupied.push({
+                    id: 'break',
+                    start_time: breakStart.toISOString(),
+                    end_time: breakEnd.toISOString(),
+                    type: 'unavailability'
                 });
-
-                const isUnavailable = unavailabilities?.some(u => {
-                    const uStart = new Date(u.start_time);
-                    const uEnd = new Date(u.end_time);
-                    return currentTime < uEnd && slotEnd > uStart;
-                });
-
-                if (!hasConflict && !isUnavailable) {
-                    slots.push({
-                        date: new Date(currentTime),
-                        time: `${currentTime.getHours().toString().padStart(2, "0")}:${currentTime.getMinutes().toString().padStart(2, "0")}`,
-                        endTime: `${slotEnd.getHours().toString().padStart(2, "0")}:${slotEnd.getMinutes().toString().padStart(2, "0")}`,
-                    });
-                }
-
-                currentTime = new Date(currentTime.getTime() + 30 * 60000);
             }
 
-            setAvailableSlots(slots);
+            // Calcul des créneaux via l'intervalleur
+            const calculatedSlots = getAvailableSlots(dayStart, dayEnd, service.duration, occupied as any);
+
+            const formattedSlots: AvailableSlot[] = calculatedSlots.map(s => ({
+                date: s.start,
+                time: `${s.start.getHours().toString().padStart(2, "0")}:${s.start.getMinutes().toString().padStart(2, "0")}`,
+                endTime: `${s.end.getHours().toString().padStart(2, "0")}:${s.end.getMinutes().toString().padStart(2, "0")}`,
+            }));
+
+            setAvailableSlots(formattedSlots);
         } catch (error) {
             console.error("Error loading slots:", error);
             if (requestId === lastRequestId.current) setAvailableSlots([]);
         } finally {
             if (requestId === lastRequestId.current) setLoadingSlots(false);
         }
-    }, [establishmentId, openingHours, supabase]);
+    }, [establishmentId, openingHours]);
+
+    const addToCart = useCallback(() => {
+        if (selectedService && selectedSlot) {
+            setCart(prev => [...prev, { service: selectedService, slot: selectedSlot }]);
+            setSelectedSlot(null);
+            // On pourrait aussi réinitialiser la date si on veut forcer un nouveau choix
+        }
+    }, [selectedService, selectedSlot]);
+
+    const removeFromCart = useCallback((index: number) => {
+        setCart(prev => prev.filter((_, i) => i !== index));
+    }, []);
+
+    const confirmBooking = useCallback(async (clientInfo: ClientInfo) => {
+        setIsConfirming(true);
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+
+            const payload = cart.map(item => ({
+                service_id: item.service.id,
+                start_time: item.slot.date.toISOString(),
+                end_time: new Date(item.slot.date.getTime() + item.service.duration * 60000).toISOString(),
+                client_name: `${clientInfo.firstName} ${clientInfo.lastName}`,
+                client_email: clientInfo.email,
+                client_phone: clientInfo.phone,
+                client_first_name: clientInfo.firstName,
+                client_last_name: clientInfo.lastName,
+                client_profile_id: user?.id, // À ajuster selon si c'est le client_profile.id ou auth.user.id
+            }));
+
+            const { data, error } = await supabase.rpc('process_booking_cart', {
+                p_establishment_id: establishmentId,
+                p_items: payload,
+                p_user_id: user?.id
+            });
+
+            if (error) throw error;
+            if (!data.success) throw new Error(data.error);
+
+            setCart([]);
+            return { success: true, appointmentIds: data.appointment_ids };
+        } catch (error: any) {
+            console.error("Booking confirmation error:", error);
+            return { success: false, error: error.message };
+        } finally {
+            setIsConfirming(false);
+        }
+    }, [cart, establishmentId, supabase]);
 
     useEffect(() => {
         if (selectedDate && selectedService) {
@@ -134,5 +165,10 @@ export function useBooking(establishmentId: string, openingHours: OpeningHour[])
         setSelectedSlot,
         availableSlots,
         loadingSlots,
+        cart,
+        addToCart,
+        removeFromCart,
+        confirmBooking,
+        isConfirming,
     };
 }

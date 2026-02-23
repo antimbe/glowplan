@@ -6,6 +6,38 @@ import { createClient } from "@/lib/supabase/client";
 import { EstablishmentData } from "../types";
 import { useModal } from "@/contexts/ModalContext";
 
+const REQUIRED_FIELDS = [
+    { key: "name", label: "Nom de l'établissement" },
+    { key: "description", label: "Description" },
+    { key: "email", label: "Email de contact" },
+    { key: "address", label: "Adresse" },
+    { key: "city", label: "Ville" },
+    { key: "activity_sectors", label: "Secteurs d'activité" },
+    { key: "main_photo_url", label: "Photo principale" },
+] as const;
+
+const INITIAL_FORM_DATA: EstablishmentData = {
+    name: "",
+    siret: "",
+    description: "",
+    email: "",
+    phone: "",
+    address: "",
+    city: "",
+    postal_code: "",
+    address_complement: "",
+    hide_exact_address: false,
+    auto_confirm_appointments: false,
+    general_conditions: "",
+    show_conditions_online: false,
+    emergency_contact: "",
+    activity_sectors: [],
+    logo_format: "generate",
+    photo_format: "generate",
+    photo_display: "fill",
+    main_photo_url: "",
+};
+
 export function useEstablishment() {
     const router = useRouter();
     const { showSuccess, showError } = useModal();
@@ -15,40 +47,20 @@ export function useEstablishment() {
     const [saving, setSaving] = useState(false);
     const [establishmentId, setEstablishmentId] = useState<string | null>(null);
     const [isProfileComplete, setIsProfileComplete] = useState(false);
+    const [missingFields, setMissingFields] = useState<string[]>([]);
     const [isEditMode, setIsEditMode] = useState<boolean | null>(null);
 
-    const [formData, setFormData] = useState<EstablishmentData>({
-        name: "",
-        siret: "",
-        description: "",
-        email: "",
-        phone: "",
-        address: "",
-        city: "",
-        postal_code: "",
-        address_complement: "",
-        hide_exact_address: false,
-        auto_confirm_appointments: false,
-        general_conditions: "",
-        show_conditions_online: false,
-        emergency_contact: "",
-        activity_sectors: [],
-        logo_format: "generate",
-        photo_format: "generate",
-        photo_display: "fill",
-        main_photo_url: "",
-    });
+    const [formData, setFormData] = useState<EstablishmentData>(INITIAL_FORM_DATA);
 
-    const checkProfileCompletion = useCallback((data: EstablishmentData) => {
-        return !!(
-            data.name &&
-            data.description &&
-            data.email &&
-            data.address &&
-            data.city &&
-            data.activity_sectors.length > 0 &&
-            data.main_photo_url
-        );
+    const getMissingFields = useCallback((data: EstablishmentData) => {
+        const missing: string[] = [];
+        REQUIRED_FIELDS.forEach(field => {
+            const value = data[field.key as keyof EstablishmentData];
+            if (!value || (Array.isArray(value) && value.length === 0)) {
+                missing.push(field.label);
+            }
+        });
+        return missing;
     }, []);
 
     const loadEstablishment = useCallback(async () => {
@@ -62,13 +74,18 @@ export function useEstablishment() {
 
             const userType = user.user_metadata?.user_type;
 
+            // Use .order + .maybeSingle() instead of .single() to avoid errors when
+            // duplicate records exist (e.g. from a previous bug). We always pick the
+            // most recent one.
             const { data, error } = await supabase
                 .from("establishments")
                 .select("*")
                 .eq("user_id", user.id)
-                .single();
+                .order("created_at", { ascending: false })
+                .limit(1)
+                .maybeSingle();
 
-            if (error && error.code !== 'PGRST116') { // PGRST116 is code for 'no rows returned'
+            if (error) {
                 throw error;
             }
 
@@ -79,16 +96,15 @@ export function useEstablishment() {
                     // Just set edit mode to force user to enter info
                     setIsEditMode(true);
                     setIsProfileComplete(false);
+                    // No data in DB, so fields are missing based on initial state
+                    setMissingFields(getMissingFields(INITIAL_FORM_DATA));
                 }
                 return;
             }
 
             setEstablishmentId(data.id);
-            const profileComplete = data.is_profile_complete || false;
-            setIsProfileComplete(profileComplete);
-            setIsEditMode(!profileComplete);
 
-            setFormData({
+            const currentFormData: EstablishmentData = {
                 name: data.name || "",
                 siret: data.siret || "",
                 description: data.description || "",
@@ -108,7 +124,15 @@ export function useEstablishment() {
                 photo_format: data.photo_format || "generate",
                 photo_display: data.photo_display || "fill",
                 main_photo_url: data.main_photo_url || "",
-            });
+            };
+
+            const missing = getMissingFields(currentFormData);
+            const profileComplete = missing.length === 0;
+
+            setIsProfileComplete(profileComplete);
+            setMissingFields(missing);
+            setIsEditMode(!profileComplete);
+            setFormData(currentFormData);
         } catch (error) {
             console.error("Error loading establishment:", error);
             showError("Erreur", "Impossible de charger les informations de votre établissement.");
@@ -116,7 +140,7 @@ export function useEstablishment() {
         } finally {
             setLoading(false);
         }
-    }, [supabase, router, showError]);
+    }, [supabase, router, showError, getMissingFields]);
 
     const saveEstablishment = async () => {
         setSaving(true);
@@ -124,7 +148,8 @@ export function useEstablishment() {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) return;
 
-            const isComplete = checkProfileCompletion(formData);
+            const missing = getMissingFields(formData);
+            const isComplete = missing.length === 0;
 
             const establishmentData = {
                 user_id: user.id,
@@ -139,16 +164,37 @@ export function useEstablishment() {
                     .eq("id", establishmentId);
                 if (error) throw error;
             } else {
-                const { data, error } = await supabase
+                // Safety check: before inserting, make sure no record exists for this user.
+                // This prevents duplication if establishmentId was lost (e.g. due to a bug).
+                const { data: existingData } = await supabase
                     .from("establishments")
-                    .insert(establishmentData)
-                    .select()
-                    .single();
-                if (error) throw error;
-                if (data) setEstablishmentId(data.id);
+                    .select("id")
+                    .eq("user_id", user.id)
+                    .order("created_at", { ascending: false })
+                    .limit(1)
+                    .maybeSingle();
+
+                if (existingData) {
+                    // Record exists but ID wasn't in state — update it instead of inserting
+                    setEstablishmentId(existingData.id);
+                    const { error } = await supabase
+                        .from("establishments")
+                        .update(establishmentData)
+                        .eq("id", existingData.id);
+                    if (error) throw error;
+                } else {
+                    const { data, error } = await supabase
+                        .from("establishments")
+                        .insert(establishmentData)
+                        .select()
+                        .maybeSingle();
+                    if (error) throw error;
+                    if (data) setEstablishmentId(data.id);
+                }
             }
 
             setIsProfileComplete(isComplete);
+            setMissingFields(missing);
             showSuccess("Succès", "Vos informations ont été enregistrées avec succès !");
             setIsEditMode(false);
         } catch (error) {
@@ -175,6 +221,7 @@ export function useEstablishment() {
         saving,
         establishmentId,
         isProfileComplete,
+        missingFields,
         isEditMode,
         updateField,
         saveEstablishment,

@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils/cn";
 import { DAYS_DB } from "@/lib/utils/formatters";
 import { OpeningHour, Service, ClientInfo, BookingStep, AvailableSlot } from "../booking/types";
 import { BookingTunnel } from "../booking/BookingTunnel";
+import { useBooking } from "../booking/hooks/useBooking";
 import { Establishment } from "./types";
 
 interface EstablishmentSidebarProps {
@@ -24,11 +25,22 @@ export function EstablishmentSidebar({
     blockedError
 }: EstablishmentSidebarProps) {
     const [step, setStep] = useState<BookingStep>("service");
-    const [selectedService, setSelectedService] = useState<Service | null>(null);
-    const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-    const [selectedSlot, setSelectedSlot] = useState<AvailableSlot | null>(null);
-    const [availableSlots, setAvailableSlots] = useState<AvailableSlot[]>([]);
-    const [loadingSlots, setLoadingSlots] = useState(false);
+
+    const {
+        selectedService,
+        setSelectedService,
+        selectedDate,
+        setSelectedDate,
+        selectedSlot,
+        setSelectedSlot,
+        availableSlots,
+        loadingSlots,
+        cart,
+        addToCart,
+        removeFromCart,
+        confirmBooking,
+        isConfirming,
+    } = useBooking(establishment.id, openingHours);
 
     const [clientInfo, setClientInfo] = useState<ClientInfo>({
         firstName: "",
@@ -57,9 +69,12 @@ export function EstablishmentSidebar({
     };
 
     const handleSubmitBooking = async () => {
-        // Logique de soumission simplifiée pour le walkthrough
-        // En réalité, on appellerait une API ou une fonction passée en prop
-        onBookingComplete();
+        const result = await confirmBooking(clientInfo);
+        if (result.success) {
+            onBookingComplete();
+        } else {
+            alert(`Erreur lors de la réservation : ${result.error}`);
+        }
     };
 
     return (
@@ -83,12 +98,15 @@ export function EstablishmentSidebar({
                     loadingSlots={loadingSlots}
                     clientInfo={clientInfo}
                     setClientInfo={setClientInfo}
-                    clientProfileId={null} // À passer via props si besoin
-                    submitting={false}
+                    clientProfileId={null}
+                    submitting={isConfirming}
                     handleSubmitBooking={handleSubmitBooking}
                     blockedError={blockedError}
                     establishment={establishment}
                     openingHours={openingHours}
+                    cart={cart}
+                    addToCart={addToCart}
+                    removeFromCart={removeFromCart}
                 />
             </div>
 

@@ -31,3 +31,8 @@ export interface ClientInfo {
 }
 
 export type BookingStep = "service" | "info" | "datetime" | "recap" | "confirmation";
+
+export interface CartItem {
+    service: Service;
+    slot: AvailableSlot;
+}

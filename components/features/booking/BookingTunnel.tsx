@@ -1,11 +1,14 @@
 "use client";
 
-import { Check, Clock, Calendar, ArrowRight, ChevronLeft, User, Mail, Phone, Instagram, FileText, LogIn, UserPlus } from "lucide-react";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
+
+import { Check, Clock, Calendar, ArrowRight, ChevronLeft, User, Mail, Phone, Instagram, FileText, LogIn, UserPlus, Trash2, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui";
 import { cn } from "@/lib/utils/cn";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Service, AvailableSlot, ClientInfo, BookingStep, OpeningHour } from "./types";
+import { Service, AvailableSlot, ClientInfo, BookingStep, OpeningHour, CartItem } from "./types";
 
 interface BookingTunnelProps {
     step: BookingStep;
@@ -27,6 +30,9 @@ interface BookingTunnelProps {
     blockedError: boolean;
     establishment: any;
     openingHours: OpeningHour[];
+    cart: CartItem[];
+    addToCart: () => void;
+    removeFromCart: (index: number) => void;
 }
 
 export function BookingTunnel({
@@ -48,7 +54,10 @@ export function BookingTunnel({
     handleSubmitBooking,
     blockedError,
     establishment,
-    openingHours
+    openingHours,
+    cart,
+    addToCart,
+    removeFromCart
 }: BookingTunnelProps) {
     const router = useRouter();
 
@@ -65,7 +74,6 @@ export function BookingTunnel({
 
     const isDateAvailable = (date: Date) => {
         const dayOfWeek = date.getDay();
-        // Convert JS day (0-6, Sun-Sat) to DB day (0-6, Mon-Sun)
         const dbDay = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
         const hours = openingHours.find(h => h.day_of_week === dbDay);
         return hours?.is_open ?? false;
@@ -177,166 +185,228 @@ export function BookingTunnel({
                             </div>
                         ) : availableSlots.length > 0 ? (
                             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                                {availableSlots.map((slot) => (
-                                    <button
-                                        key={slot.time}
-                                        onClick={() => {
-                                            setSelectedSlot(slot);
-                                            setStep("recap");
-                                        }}
-                                        className="py-3 px-2 border border-gray-200 rounded-xl text-center hover:border-primary hover:text-primary hover:bg-primary/5 transition-all text-sm font-semibold cursor-pointer"
-                                    >
-                                        {slot.time}
-                                    </button>
-                                ))}
+                                {availableSlots.map((slot) => {
+                                    const isSelected = selectedSlot?.time === slot.time;
+                                    return (
+                                        <button
+                                            key={slot.time}
+                                            onClick={() => setSelectedSlot(slot)}
+                                            className={cn(
+                                                "py-3 px-2 border rounded-xl text-center transition-all text-sm font-semibold cursor-pointer",
+                                                isSelected ? "border-primary bg-primary text-white" : "border-gray-200 hover:border-primary/30"
+                                            )}
+                                        >
+                                            {slot.time}
+                                        </button>
+                                    );
+                                })}
                             </div>
                         ) : (
                             <div className="text-center py-8 bg-gray-50 rounded-2xl">
                                 <p className="text-gray-500">Aucun créneau disponible pour cette date.</p>
                             </div>
                         )}
+
+                        {selectedSlot && (
+                            <div className="mt-8 flex flex-col gap-3">
+                                <Button
+                                    variant="primary"
+                                    onClick={() => {
+                                        addToCart();
+                                        setStep("info");
+                                    }}
+                                    className="w-full flex items-center justify-center gap-2"
+                                >
+                                    <ShoppingCart size={18} />
+                                    <span>Ajouter une autre prestation</span>
+                                </Button>
+                                <Button
+                                    variant="secondary"
+                                    onClick={() => {
+                                        addToCart();
+                                        setStep("recap");
+                                    }}
+                                    className="w-full"
+                                >
+                                    Passer au récapitulatif
+                                </Button>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Sticky Footer for Mobile */}
+                {selectedSlot && (
+                    <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 lg:hidden z-50 animate-in slide-in-from-bottom duration-300">
+                        <div className="max-w-md mx-auto flex items-center justify-between gap-4">
+                            <div>
+                                <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">Total</p>
+                                <p className="text-xl font-black text-primary">{selectedService.price}€</p>
+                            </div>
+                            <Button
+                                variant="primary"
+                                onClick={() => {
+                                    addToCart();
+                                    setStep("recap");
+                                }}
+                                className="flex-1 py-4 font-bold"
+                            >
+                                Continuer
+                            </Button>
+                        </div>
                     </div>
                 )}
             </div>
         );
     }
 
-    if (step === "recap" && selectedService && selectedSlot) {
+    if (step === "recap" && cart.length > 0) {
+        const totalPrice = cart.reduce((sum, item) => sum + item.service.price, 0);
+
         return (
-            <div className="bg-white rounded-2xl p-6 border border-gray-100">
+            <div className="bg-white rounded-2xl p-6 border border-gray-100 flex flex-col h-full">
                 <Button
                     variant="ghost"
                     onClick={() => setStep("datetime")}
-                    className="flex items-center gap-2 text-gray-500 hover:text-primary mb-6"
+                    className="flex items-center gap-2 text-gray-500 hover:text-primary mb-6 w-fit"
                 >
                     <ChevronLeft size={18} />
-                    <span>Modifier l'horaire</span>
+                    <span>Ajouter des services</span>
                 </Button>
 
-                {/* Recap Card */}
-                <div className="bg-gray-50 rounded-2xl p-6 mb-8">
-                    <div className="flex items-center gap-4 mb-4">
-                        <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
-                            <Calendar size={24} />
-                        </div>
-                        <div>
-                            <p className="text-sm text-gray-500 uppercase font-bold tracking-wider">Date & Heure</p>
-                            <p className="font-bold text-gray-900">
-                                {selectedDate?.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })}
-                            </p>
-                            <p className="text-primary font-bold">{selectedSlot.time} ({selectedService.duration} min)</p>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-4 pt-4 border-t border-gray-200">
-                        <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
-                            <ArrowRight size={24} />
-                        </div>
-                        <div>
-                            <p className="text-sm text-gray-500 uppercase font-bold tracking-wider">Prestation</p>
-                            <p className="font-bold text-gray-900">{selectedService.name}</p>
-                            <p className="text-primary font-bold">{selectedService.price}€</p>
-                        </div>
-                    </div>
-                </div>
+                <h2 className="text-lg font-bold text-gray-900 mb-4">Récapitulatif de votre panier</h2>
 
-                {/* Login Prompt if guest */}
-                {!clientProfileId && (
-                    <div className="mb-6 p-4 border border-primary/20 bg-primary/5 rounded-xl">
-                        <div className="flex gap-3">
-                            <div className="p-2 bg-primary/10 rounded-full h-fit">
-                                <UserPlus size={18} className="text-primary" />
-                            </div>
-                            <div>
-                                <p className="text-sm font-bold text-gray-900">Connectez-vous pour gagner du temps</p>
-                                <p className="text-xs text-gray-600 mb-3">Retrouvez votre historique et vos favoris.</p>
-                                <div className="flex gap-2">
-                                    <Link href={`/auth/client/login?redirect=${encodeURIComponent(window.location.pathname)}`}>
-                                        <Button variant="outline" size="sm" className="cursor-pointer">
-                                            <LogIn size={16} className="mr-1" />
-                                            Connexion
-                                        </Button>
-                                    </Link>
+                <div className="space-y-4 flex-1 overflow-y-auto mb-8 pr-2">
+                    {cart.map((item, index) => (
+                        <div key={`${item.service.id}-${index}`} className="bg-gray-50 rounded-2xl p-4 relative group">
+                            <button
+                                onClick={() => removeFromCart(index)}
+                                className="absolute top-2 right-2 p-2 text-gray-400 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                            >
+                                <Trash2 size={16} />
+                            </button>
+                            <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary shrink-0">
+                                    <Clock size={20} />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <h4 className="font-bold text-gray-900 truncate">{item.service.name}</h4>
+                                    <p className="text-xs text-gray-500">
+                                        {format(item.slot.date, "EEEE d MMMM", { locale: fr })} à {item.slot.time}
+                                    </p>
+                                </div>
+                                <div className="text-right">
+                                    <p className="font-bold text-primary">{item.service.price}€</p>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                )}
-
-                <h2 className="text-lg font-bold text-gray-900 mb-4">Vos informations</h2>
-                <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Prénom <span className="text-red-500">*</span></label>
-                            <div className="relative">
-                                <User size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                                <input
-                                    type="text"
-                                    value={clientInfo.firstName}
-                                    onChange={(e) => setClientInfo({ ...clientInfo, firstName: e.target.value })}
-                                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:border-primary outline-none transition-all"
-                                    placeholder="Jean"
-                                />
-                            </div>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Nom <span className="text-red-500">*</span></label>
-                            <div className="relative">
-                                <User size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                                <input
-                                    type="text"
-                                    value={clientInfo.lastName}
-                                    onChange={(e) => setClientInfo({ ...clientInfo, lastName: e.target.value })}
-                                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:border-primary outline-none transition-all"
-                                    placeholder="Dupont"
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Email <span className="text-red-500">*</span></label>
-                        <div className="relative">
-                            <Mail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                            <input
-                                type="email"
-                                value={clientInfo.email}
-                                onChange={(e) => setClientInfo({ ...clientInfo, email: e.target.value })}
-                                className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:border-primary outline-none transition-all"
-                                placeholder="jean.dupont@email.com"
-                            />
-                        </div>
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Téléphone <span className="text-red-500">*</span></label>
-                        <div className="relative">
-                            <Phone size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                            <input
-                                type="tel"
-                                value={clientInfo.phone}
-                                onChange={(e) => setClientInfo({ ...clientInfo, phone: e.target.value })}
-                                className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:border-primary outline-none transition-all"
-                                placeholder="06 12 34 56 78"
-                            />
-                        </div>
-                    </div>
+                    ))}
                 </div>
 
-                <Button
-                    variant="primary"
-                    onClick={handleSubmitBooking}
-                    disabled={!clientInfo.firstName || !clientInfo.lastName || !clientInfo.email || !clientInfo.phone || submitting || blockedError}
-                    className="w-full mt-8 py-4 text-base cursor-pointer"
-                >
-                    {submitting ? (
-                        <div className="flex items-center gap-2 justify-center">
-                            <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full" />
-                            <span>Confirmation en cours...</span>
+                <div className="pt-6 border-t border-gray-100 mt-auto">
+                    <div className="flex justify-between items-center mb-6">
+                        <span className="text-gray-500 font-medium">Total</span>
+                        <span className="text-2xl font-black text-primary">{totalPrice}€</span>
+                    </div>
+
+                    {!clientProfileId && (
+                        <div className="mb-6 p-4 border border-primary/20 bg-primary/5 rounded-xl">
+                            <div className="flex gap-3">
+                                <div className="p-2 bg-primary/10 rounded-full h-fit">
+                                    <UserPlus size={18} className="text-primary" />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-bold text-gray-900">Connectez-vous pour gagner du temps</p>
+                                    <p className="text-xs text-gray-600 mb-3">Retrouvez votre historique et vos favoris.</p>
+                                    <div className="flex gap-2">
+                                        <Link href={`/auth/client/login?redirect=${encodeURIComponent(window.location.pathname)}`}>
+                                            <Button variant="outline" size="sm" className="cursor-pointer">
+                                                <LogIn size={16} className="mr-1" />
+                                                Connexion
+                                            </Button>
+                                        </Link>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                    ) : (
-                        <span>Confirmer la réservation</span>
                     )}
-                </Button>
+
+                    <h2 className="text-lg font-bold text-gray-900 mb-4">Vos informations</h2>
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Prénom <span className="text-red-500">*</span></label>
+                                <div className="relative">
+                                    <User size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                    <input
+                                        type="text"
+                                        value={clientInfo.firstName}
+                                        onChange={(e) => setClientInfo({ ...clientInfo, firstName: e.target.value })}
+                                        className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:border-primary outline-none transition-all"
+                                        placeholder="Jean"
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Nom <span className="text-red-500">*</span></label>
+                                <div className="relative">
+                                    <User size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                    <input
+                                        type="text"
+                                        value={clientInfo.lastName}
+                                        onChange={(e) => setClientInfo({ ...clientInfo, lastName: e.target.value })}
+                                        className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:border-primary outline-none transition-all"
+                                        placeholder="Dupont"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Email <span className="text-red-500">*</span></label>
+                            <div className="relative">
+                                <Mail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                <input
+                                    type="email"
+                                    value={clientInfo.email}
+                                    onChange={(e) => setClientInfo({ ...clientInfo, email: e.target.value })}
+                                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:border-primary outline-none transition-all"
+                                    placeholder="jean.dupont@email.com"
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Téléphone <span className="text-red-500">*</span></label>
+                            <div className="relative">
+                                <Phone size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                <input
+                                    type="tel"
+                                    value={clientInfo.phone}
+                                    onChange={(e) => setClientInfo({ ...clientInfo, phone: e.target.value })}
+                                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:border-primary outline-none transition-all"
+                                    placeholder="06 12 34 56 78"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <Button
+                        variant="primary"
+                        onClick={handleSubmitBooking}
+                        disabled={!clientInfo.firstName || !clientInfo.lastName || !clientInfo.email || !clientInfo.phone || submitting || blockedError}
+                        className="w-full mt-8 py-4 text-base cursor-pointer"
+                    >
+                        {submitting ? (
+                            <div className="flex items-center gap-2 justify-center">
+                                <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full" />
+                                <span>Confirmation en cours...</span>
+                            </div>
+                        ) : (
+                            <span>Confirmer la réservation</span>
+                        )}
+                    </Button>
+                </div>
             </div>
         );
     }
