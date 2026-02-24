@@ -78,10 +78,9 @@ function EstablishmentCard({ establishment, isFavorite, onToggleFavorite }: {
             <Card
                 variant="default"
                 padding="none"
-                hoverable
-                className="group overflow-hidden bg-white border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_10px_30px_rgba(50,66,44,0.1)] transition-all duration-500 cursor-pointer h-full border-b-4 border-b-transparent hover:border-b-primary/50"
+                className="group rounded-2xl bg-white border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_10px_30px_rgba(50,66,44,0.1)] transition-[box-shadow,border-color] duration-500 cursor-pointer h-full flex flex-col border-b-4 border-b-transparent hover:border-b-primary/50"
             >
-                <Box className="relative h-56 overflow-hidden">
+                <Box className="relative h-56 overflow-hidden rounded-t-2xl flex-shrink-0">
                     <MotionBox
                         className="absolute inset-0 bg-gray-200 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
                         style={{
@@ -99,8 +98,8 @@ function EstablishmentCard({ establishment, isFavorite, onToggleFavorite }: {
                         variant="ghost"
                         size="sm"
                         className={`absolute top-4 right-4 p-2 rounded-full backdrop-blur-md transition-all shadow-sm h-10 w-10 min-w-0 z-10 cursor-pointer ${isFavorite
-                                ? "bg-red-50 text-red-500 hover:bg-red-100"
-                                : "bg-white/90 text-gray-900 hover:text-red-500 hover:bg-white"
+                            ? "bg-red-50 text-red-500 hover:bg-red-100"
+                            : "bg-white/90 text-gray-900 hover:text-red-500 hover:bg-white"
                             }`}
                         onClick={(e) => {
                             e.preventDefault();

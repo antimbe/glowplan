@@ -102,13 +102,30 @@ export function useBooking(establishmentId: string, openingHours: OpeningHour[])
         }
     }, [establishmentId, openingHours]);
 
-    const addToCart = useCallback(() => {
-        if (selectedService && selectedSlot) {
-            setCart(prev => [...prev, { service: selectedService, slot: selectedSlot }]);
-            setSelectedSlot(null);
-            // On pourrait aussi réinitialiser la date si on veut forcer un nouveau choix
+    const addToCart = useCallback((): { success: boolean; error?: string } => {
+        if (!selectedService || !selectedSlot) return { success: false, error: "Aucune prestation ou créneau sélectionné." };
+
+        const newStart = selectedSlot.date.getTime();
+        const newEnd = newStart + selectedService.duration * 60000;
+
+        // Vérifier les chevauchements avec les articles déjà dans le panier
+        const overlap = cart.find(item => {
+            const itemStart = item.slot.date.getTime();
+            const itemEnd = itemStart + item.service.duration * 60000;
+            return newStart < itemEnd && newEnd > itemStart;
+        });
+
+        if (overlap) {
+            return {
+                success: false,
+                error: `Ce créneau (${selectedSlot.time}) chevauche déjà "${overlap.service.name}" à ${overlap.slot.time}. Veuillez choisir un autre créneau.`,
+            };
         }
-    }, [selectedService, selectedSlot]);
+
+        setCart(prev => [...prev, { service: selectedService, slot: selectedSlot }]);
+        setSelectedSlot(null);
+        return { success: true };
+    }, [selectedService, selectedSlot, cart]);
 
     const removeFromCart = useCallback((index: number) => {
         setCart(prev => prev.filter((_, i) => i !== index));

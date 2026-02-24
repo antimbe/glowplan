@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -31,7 +33,7 @@ interface BookingTunnelProps {
     establishment: any;
     openingHours: OpeningHour[];
     cart: CartItem[];
-    addToCart: () => void;
+    addToCart: () => { success: boolean; error?: string };
     removeFromCart: (index: number) => void;
 }
 
@@ -60,6 +62,17 @@ export function BookingTunnel({
     removeFromCart
 }: BookingTunnelProps) {
     const router = useRouter();
+    const [cartError, setCartError] = useState<string | null>(null);
+
+    const handleAddToCart = (nextStep: BookingStep) => {
+        const result = addToCart();
+        if (!result.success) {
+            setCartError(result.error || "Erreur lors de l'ajout au panier.");
+            return;
+        }
+        setCartError(null);
+        setStep(nextStep);
+    };
 
     const getNext14Days = () => {
         const days: Date[] = [];
@@ -209,23 +222,14 @@ export function BookingTunnel({
 
                         {selectedSlot && (
                             <div className="mt-8 flex flex-col gap-3">
+                                {cartError && (
+                                    <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3 font-medium">
+                                        ⚠️ {cartError}
+                                    </div>
+                                )}
                                 <Button
                                     variant="primary"
-                                    onClick={() => {
-                                        addToCart();
-                                        setStep("info");
-                                    }}
-                                    className="w-full flex items-center justify-center gap-2"
-                                >
-                                    <ShoppingCart size={18} />
-                                    <span>Ajouter une autre prestation</span>
-                                </Button>
-                                <Button
-                                    variant="secondary"
-                                    onClick={() => {
-                                        addToCart();
-                                        setStep("recap");
-                                    }}
+                                    onClick={() => handleAddToCart("recap")}
                                     className="w-full"
                                 >
                                     Passer au récapitulatif
@@ -245,10 +249,7 @@ export function BookingTunnel({
                             </div>
                             <Button
                                 variant="primary"
-                                onClick={() => {
-                                    addToCart();
-                                    setStep("recap");
-                                }}
+                                onClick={() => handleAddToCart("recap")}
                                 className="flex-1 py-4 font-bold"
                             >
                                 Continuer
@@ -271,20 +272,14 @@ export function BookingTunnel({
                     className="flex items-center gap-2 text-gray-500 hover:text-primary mb-6 w-fit"
                 >
                     <ChevronLeft size={18} />
-                    <span>Ajouter des services</span>
+                    <span>Modifier le créneau</span>
                 </Button>
 
                 <h2 className="text-lg font-bold text-gray-900 mb-4">Récapitulatif de votre panier</h2>
 
                 <div className="space-y-4 flex-1 overflow-y-auto mb-8 pr-2">
                     {cart.map((item, index) => (
-                        <div key={`${item.service.id}-${index}`} className="bg-gray-50 rounded-2xl p-4 relative group">
-                            <button
-                                onClick={() => removeFromCart(index)}
-                                className="absolute top-2 right-2 p-2 text-gray-400 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
-                            >
-                                <Trash2 size={16} />
-                            </button>
+                        <div key={`${item.service.id}-${index}`} className="bg-gray-50 rounded-2xl p-4">
                             <div className="flex items-center gap-4">
                                 <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary shrink-0">
                                     <Clock size={20} />

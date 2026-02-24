@@ -235,6 +235,7 @@ export default function EstablishmentPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-8">
+              {/* Photo hero */}
               <div className="relative group rounded-3xl overflow-hidden bg-white border border-gray-100 shadow-xl shadow-gray-200/50">
                 <div className="h-64 sm:h-96 w-full relative">
                   {establishment.main_photo_url ? (
@@ -290,6 +291,19 @@ export default function EstablishmentPage() {
                 </div>
               </div>
 
+              {/* Booking section — moved to main column */}
+              <EstablishmentSidebar
+                establishment={establishment}
+                services={services}
+                openingHours={openingHours}
+                onBookingComplete={() => {
+                  loadEstablishment();
+                  router.push("/account?tab=reservations");
+                }}
+                blockedError={blockedError}
+                mode="booking"
+              />
+
               <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm">
                 <h2 className="text-2xl font-black text-gray-900 mb-4">À propos de l'établissement</h2>
                 <div className="text-gray-600 font-medium leading-relaxed">
@@ -304,16 +318,15 @@ export default function EstablishmentPage() {
               />
             </div>
 
+            {/* Sidebar — info only */}
             <div className="lg:col-span-1">
               <EstablishmentSidebar
                 establishment={establishment}
                 services={services}
                 openingHours={openingHours}
-                onBookingComplete={() => {
-                  loadEstablishment();
-                  router.push("/account?tab=reservations");
-                }}
-                blockedError={blockedError}
+                onBookingComplete={() => { }}
+                blockedError={false}
+                mode="info"
               />
             </div>
           </div>
