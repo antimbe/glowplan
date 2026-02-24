@@ -277,11 +277,11 @@ export default function ShareAvailabilityModal({ isOpen, onClose, establishmentI
   const getStoriesData = () => {
     const itemsPerStory = 12; // 12 jours par Story
     const stories: AvailabilitySlot[][] = [];
-    
+
     for (let i = 0; i < availabilities.length; i += itemsPerStory) {
       stories.push(availabilities.slice(i, i + itemsPerStory));
     }
-    
+
     return stories.length > 0 ? stories : [[]];
   };
 
@@ -289,20 +289,20 @@ export default function ShareAvailabilityModal({ isOpen, onClose, establishmentI
   const totalStories = stories.length;
 
   const handleCopyLink = () => {
-    const link = `${window.location.origin}/book/${establishmentId}`;
+    const link = `${window.location.origin}/establishment/${establishmentId}`;
     navigator.clipboard.writeText(link);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   const handleOpenLink = () => {
-    const link = `${window.location.origin}/book/${establishmentId}`;
+    const link = `${window.location.origin}/establishment/${establishmentId}`;
     window.open(link, "_blank");
   };
 
   const downloadStory = useCallback(async (storyIndex: number) => {
     if (!storyRef.current) return;
-    
+
     try {
       // Créer un iframe isolé sans les styles globaux Tailwind
       const iframe = document.createElement("iframe");
@@ -384,7 +384,7 @@ export default function ShareAvailabilityModal({ isOpen, onClose, establishmentI
     }
   }, [totalStories, downloadStory]);
 
-  const currentMonth = availabilities.length > 0 
+  const currentMonth = availabilities.length > 0
     ? MONTHS[availabilities[0].date.getMonth()]
     : MONTHS[new Date().getMonth()];
 
@@ -393,7 +393,7 @@ export default function ShareAvailabilityModal({ isOpen, onClose, establishmentI
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      
+
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden mx-4">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-100">
@@ -454,7 +454,7 @@ export default function ShareAvailabilityModal({ isOpen, onClose, establishmentI
               </div>
 
               {/* Story Preview - Using inline styles for html2canvas compatibility */}
-              <div 
+              <div
                 ref={storyRef}
                 style={{
                   background: "linear-gradient(to bottom, #f5f5f0, #eae8e0)",
@@ -476,13 +476,13 @@ export default function ShareAvailabilityModal({ isOpen, onClose, establishmentI
                 ) : (
                   <>
                     {/* Logo */}
-                    <div style={{ 
-                      backgroundColor: "#4a5d4a", 
-                      color: "white", 
-                      fontSize: "10px", 
-                      fontWeight: "700", 
-                      padding: "5px 14px", 
-                      borderRadius: "9999px", 
+                    <div style={{
+                      backgroundColor: "#4a5d4a",
+                      color: "white",
+                      fontSize: "10px",
+                      fontWeight: "700",
+                      padding: "5px 14px",
+                      borderRadius: "9999px",
                       marginBottom: "12px",
                       letterSpacing: "1px"
                     }}>
@@ -490,82 +490,82 @@ export default function ShareAvailabilityModal({ isOpen, onClose, establishmentI
                     </div>
 
                     {/* Establishment Name */}
-                    <h3 style={{ 
-                      fontSize: "18px", 
-                      fontWeight: "700", 
-                      color: "#1f2937", 
+                    <h3 style={{
+                      fontSize: "18px",
+                      fontWeight: "700",
+                      color: "#1f2937",
                       marginBottom: "4px",
                       textAlign: "center"
                     }}>
                       {establishment?.name || "Mon établissement"}
                     </h3>
-                    <div style={{ 
-                      display: "flex", 
-                      alignItems: "center", 
-                      gap: "3px", 
-                      color: "#6b7280", 
-                      fontSize: "11px", 
-                      marginBottom: "10px" 
+                    <div style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "3px",
+                      color: "#6b7280",
+                      fontSize: "11px",
+                      marginBottom: "10px"
                     }}>
                       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
-                        <circle cx="12" cy="10" r="3"/>
+                        <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+                        <circle cx="12" cy="10" r="3" />
                       </svg>
                       {establishment?.city || "Ma ville"}
                     </div>
 
                     {/* Month Badge */}
-                    <div style={{ 
-                      backgroundColor: "#4a5d4a", 
-                      color: "white", 
-                      fontSize: "11px", 
-                      fontWeight: "600", 
-                      padding: "6px 14px", 
-                      borderRadius: "9999px", 
-                      display: "flex", 
-                      alignItems: "center", 
-                      gap: "6px", 
-                      marginBottom: "10px" 
+                    <div style={{
+                      backgroundColor: "#4a5d4a",
+                      color: "white",
+                      fontSize: "11px",
+                      fontWeight: "600",
+                      padding: "6px 14px",
+                      borderRadius: "9999px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      marginBottom: "10px"
                     }}>
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
-                        <line x1="16" x2="16" y1="2" y2="6"/>
-                        <line x1="8" x2="8" y1="2" y2="6"/>
-                        <line x1="3" x2="21" y1="10" y2="10"/>
+                        <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
+                        <line x1="16" x2="16" y1="2" y2="6" />
+                        <line x1="8" x2="8" y1="2" y2="6" />
+                        <line x1="3" x2="21" y1="10" y2="10" />
                       </svg>
                       {currentMonth}
                     </div>
 
                     {/* Availability List */}
-                    <div style={{ 
-                      backgroundColor: "rgba(255,255,255,0.9)", 
-                      borderRadius: "12px", 
-                      padding: "10px", 
-                      width: "100%", 
+                    <div style={{
+                      backgroundColor: "rgba(255,255,255,0.9)",
+                      borderRadius: "12px",
+                      padding: "10px",
+                      width: "100%",
                       flex: 1,
                       border: "1px solid rgba(74, 93, 74, 0.15)"
                     }}>
                       {stories[currentStoryIndex]?.length > 0 ? (
                         <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                           {stories[currentStoryIndex].map((slot, idx) => (
-                            <div key={idx} style={{ 
-                              display: "flex", 
-                              alignItems: "flex-start", 
+                            <div key={idx} style={{
+                              display: "flex",
+                              alignItems: "flex-start",
                               gap: "10px",
                               padding: "4px 6px",
                               borderRadius: "6px",
                               backgroundColor: idx % 2 === 0 ? "rgba(74, 93, 74, 0.06)" : "transparent"
                             }}>
-                              <div style={{ 
-                                width: "24px", 
-                                height: "24px", 
-                                borderRadius: "6px", 
-                                backgroundColor: "#4a5d4a", 
-                                color: "white", 
-                                display: "flex", 
-                                alignItems: "center", 
-                                justifyContent: "center", 
-                                fontSize: "11px", 
+                              <div style={{
+                                width: "24px",
+                                height: "24px",
+                                borderRadius: "6px",
+                                backgroundColor: "#4a5d4a",
+                                color: "white",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: "11px",
                                 fontWeight: "700",
                                 flexShrink: 0
                               }}>
@@ -615,7 +615,7 @@ export default function ShareAvailabilityModal({ isOpen, onClose, establishmentI
                   Page web avec la liste de vos créneaux disponibles et bouton de réservation direct.
                 </p>
                 <div className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 truncate mb-3">
-                  {window.location.origin}/book/{establishmentId}
+                  {window.location.origin}/establishment/{establishmentId}
                 </div>
                 <div className="flex gap-2">
                   <Button

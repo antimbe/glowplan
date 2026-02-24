@@ -29,12 +29,17 @@ export default function AgendaEvent({
         const eventStartDay = new Date(event.start).setHours(0, 0, 0, 0);
         const eventEndDay = new Date(event.end).setHours(0, 0, 0, 0);
 
-        if (dayStart === eventStartDay) {
-            // Starts today, ends later or at end of current limit
-            endMinutes = Math.min(endMinutes, AGENDA_CONFIG.END_HOUR * 60 + 60); // Include full last hour
-        } else if (dayStart === eventEndDay) {
-            // Ends today, started earlier
+        if (dayStart === eventStartDay && dayStart === eventEndDay) {
+            // Starts and ends today (single-day) – clamp both ends to display
             startMinutes = Math.max(startMinutes, AGENDA_CONFIG.START_HOUR * 60);
+            endMinutes = Math.min(endMinutes, (AGENDA_CONFIG.END_HOUR + 1) * 60);
+        } else if (dayStart === eventStartDay) {
+            // Starts today but continues into following days – extend to end of display
+            endMinutes = (AGENDA_CONFIG.END_HOUR + 1) * 60;
+        } else if (dayStart === eventEndDay) {
+            // Ends today – block starts at beginning of day display
+            startMinutes = AGENDA_CONFIG.START_HOUR * 60;
+            // endMinutes stays as the actual end time of the event
         } else {
             // Spans entire day
             startMinutes = AGENDA_CONFIG.START_HOUR * 60;

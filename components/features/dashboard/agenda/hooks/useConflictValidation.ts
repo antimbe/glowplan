@@ -12,7 +12,7 @@ export interface ConflictingAppointment {
 
 export interface ConflictResult {
   hasConflict: boolean;
-  type: "unavailability" | "appointment" | "overlap" | null;
+  type: "unavailability" | "appointment" | "overlap" | "past" | null;
   message: string | null;
   conflictingAppointments?: ConflictingAppointment[];
 }
@@ -52,7 +52,7 @@ export async function checkAppointmentConflicts(
       other: "Indisponibilité",
     };
     const typeLabel = typeLabels[unavailability.unavailability_type] || "Indisponibilité";
-    
+
     return {
       hasConflict: true,
       type: "unavailability",
@@ -79,7 +79,7 @@ export async function checkAppointmentConflicts(
     const apt = appointments[0];
     const aptStart = new Date(apt.start_time);
     const aptEnd = new Date(apt.end_time);
-    
+
     return {
       hasConflict: true,
       type: "appointment",
@@ -131,7 +131,7 @@ export async function checkUnavailabilityConflicts(
     };
     const unavailability = unavailabilities[0];
     const typeLabel = typeLabels[unavailability.unavailability_type] || "Indisponibilité";
-    
+
     return {
       hasConflict: true,
       type: "unavailability",

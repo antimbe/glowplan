@@ -100,7 +100,7 @@ export default function CalendarView({
       const eventStartDate = new Date(event.start).setHours(0, 0, 0, 0);
       const eventEndDate = new Date(event.end).setHours(0, 0, 0, 0);
       if (dateStart < eventStartDate || dateStart > eventEndDate) return false;
-      return dateStart === eventStartDate ? eventStart.getHours() === hour : hour === 7;
+      return dateStart === eventStartDate ? eventStart.getHours() === hour : hour === AGENDA_CONFIG.START_HOUR;
     });
   };
 
@@ -169,6 +169,16 @@ export default function CalendarView({
     );
   };
 
+  const getEventsForDay = (day: Date) => {
+    const dayStart = new Date(day).setHours(0, 0, 0, 0);
+    const dayEnd = new Date(day).setHours(23, 59, 59, 999);
+    return events.filter(event => {
+      const eventStart = new Date(event.start).getTime();
+      const eventEnd = new Date(event.end).getTime();
+      return eventStart <= dayEnd && eventEnd >= dayStart;
+    });
+  };
+
   const renderMonthView = () => {
     const monthDays = getMonthDays();
     return (
@@ -181,12 +191,52 @@ export default function CalendarView({
           ))}
         </div>
         <div className="grid grid-cols-7 flex-1 overflow-y-auto">
-          {monthDays.map((day, i) => (
-            <div key={i} className={`border-b border-l border-gray-50 p-1 min-h-[100px] ${!day ? "bg-gray-50/50" : "hover:bg-primary/5 cursor-pointer"}`}
-              onClick={() => day && (onDateChange(day), onViewChange("day"))}>
-              {day && <span className={`text-xs font-bold ${isToday(day) ? "bg-primary text-white w-6 h-6 rounded-full flex items-center justify-center" : ""}`}>{day.getDate()}</span>}
-            </div>
-          ))}
+          {monthDays.map((day, i) => {
+            const dayEvents = day ? getEventsForDay(day) : [];
+            const appointments = dayEvents.filter(e => e.type === "appointment");
+            const unavailabilities = dayEvents.filter(e => e.type === "unavailability");
+            const isUnavailable = unavailabilities.length > 0;
+
+            return (
+              <div
+                key={i}
+                className={`border-b border-l border-gray-50 p-1 min-h-[100px] flex flex-col gap-0.5 ${!day ? "bg-gray-50/50" : isUnavailable ? "bg-red-50/60 hover:bg-red-50 cursor-pointer" : "hover:bg-primary/5 cursor-pointer"
+                  }`}
+                onClick={() => day && (onDateChange(day), onViewChange("day"))}
+              >
+                {day && (
+                  <>
+                    <span className={`text-xs font-bold self-start ${isToday(day) ? "bg-primary text-white w-6 h-6 rounded-full flex items-center justify-center" : ""}`}>
+                      {day.getDate()}
+                    </span>
+
+                    {/* Unavailability indicator */}
+                    {isUnavailable && (
+                      <div className="text-[9px] lg:text-[10px] bg-red-100 text-red-700 rounded px-1 py-0.5 font-semibold truncate flex items-center gap-0.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0" />
+                        Indisponible
+                      </div>
+                    )}
+
+                    {/* Appointment dots/labels */}
+                    {appointments.slice(0, 3).map((apt, idx) => (
+                      <div
+                        key={idx}
+                        onClick={(e) => { e.stopPropagation(); onEventClick(apt); }}
+                        className="text-[9px] lg:text-[10px] bg-primary/10 text-primary rounded px-1 py-0.5 font-medium truncate cursor-pointer hover:bg-primary/20 transition-colors flex items-center gap-0.5"
+                      >
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
+                        {apt.title}
+                      </div>
+                    ))}
+                    {appointments.length > 3 && (
+                      <div className="text-[9px] text-gray-400 px-1">+{appointments.length - 3} autre{appointments.length - 3 > 1 ? "s" : ""}</div>
+                    )}
+                  </>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     );

@@ -17,9 +17,10 @@ interface UnavailabilityFormProps {
   onDelete?: () => void;
 }
 
-const TIME_OPTIONS = Array.from({ length: 27 }, (_, i) => {
-  const hours = Math.floor(i / 2) + 7;
-  const minutes = (i % 2) * 30;
+const TIME_OPTIONS = Array.from({ length: 57 }, (_, i) => {
+  const totalMinutes = 7 * 60 + i * 15;
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
   return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
 });
 
@@ -31,23 +32,23 @@ const UNAVAILABILITY_TYPES = [
   { value: "other", label: "Autre" },
 ];
 
-export default function UnavailabilityForm({ 
-  unavailability, 
-  establishmentId, 
+export default function UnavailabilityForm({
+  unavailability,
+  establishmentId,
   selectedDate,
-  onSave, 
+  onSave,
   onCancel,
   onDelete
 }: UnavailabilityFormProps) {
   const [startDate, setStartDate] = useState(
-    selectedDate ? selectedDate.toISOString().split("T")[0] : 
-    unavailability?.start_time ? new Date(unavailability.start_time).toISOString().split("T")[0] :
-    new Date().toISOString().split("T")[0]
+    selectedDate ? selectedDate.toISOString().split("T")[0] :
+      unavailability?.start_time ? new Date(unavailability.start_time).toISOString().split("T")[0] :
+        new Date().toISOString().split("T")[0]
   );
   const [endDate, setEndDate] = useState(
     unavailability?.end_time ? new Date(unavailability.end_time).toISOString().split("T")[0] :
-    selectedDate ? selectedDate.toISOString().split("T")[0] :
-    new Date().toISOString().split("T")[0]
+      selectedDate ? selectedDate.toISOString().split("T")[0] :
+        new Date().toISOString().split("T")[0]
   );
   const [startTime, setStartTime] = useState(() => {
     if (unavailability?.start_time) {
@@ -68,9 +69,9 @@ export default function UnavailabilityForm({
   );
   const [reason, setReason] = useState(unavailability?.reason || "");
   const [saving, setSaving] = useState(false);
-  const [conflictModal, setConflictModal] = useState<{ 
-    open: boolean; 
-    conflict: ConflictResult | null; 
+  const [conflictModal, setConflictModal] = useState<{
+    open: boolean;
+    conflict: ConflictResult | null;
     selectedAppointments: string[];
     customCancelReason: string;
   }>({
@@ -97,13 +98,13 @@ export default function UnavailabilityForm({
         endDateTime,
         unavailability?.id
       );
-      
+
       if (conflict.hasConflict) {
         setSaving(false);
         if (conflict.type === "appointment" && conflict.conflictingAppointments) {
-          setConflictModal({ 
-            open: true, 
-            conflict, 
+          setConflictModal({
+            open: true,
+            conflict,
             selectedAppointments: [],
             customCancelReason: "",
           });
@@ -125,7 +126,7 @@ export default function UnavailabilityForm({
         for (const aptId of appointmentsToCancel) {
           await supabase
             .from("appointments")
-            .update({ 
+            .update({
               status: "cancelled",
               cancelled_by_client: false,
               cancelled_at: new Date().toISOString(),
@@ -137,7 +138,7 @@ export default function UnavailabilityForm({
           await fetch("/api/booking/cancel-by-pro", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ 
+            body: JSON.stringify({
               appointmentId: aptId,
               reason: cancelReason,
             }),
@@ -240,97 +241,97 @@ export default function UnavailabilityForm({
 
   return (
     <>
-    <FormModal
-      isOpen={true}
-      onClose={onCancel}
-      title={unavailability ? "Modifier l'indisponibilité" : "Nouvelle indisponibilité"}
-      subtitle="Bloquez un créneau dans votre agenda"
-      icon={<Ban className="w-5 h-5 text-white" />}
-      variant="danger"
-      footer={footer}
-    >
-      <div className="flex flex-col gap-4 lg:gap-5">
-        <FormField
-          label="Type d'indisponibilité"
-          required
-          leftIcon={<Tag size={14} className="text-red-500" />}
-        >
-          <Select
-            value={unavailabilityType}
-            onChange={(e) => setUnavailabilityType(e.target.value as UnavailabilityType)}
-            options={UNAVAILABILITY_TYPES}
-            fullWidth
-            size="md"
-          />
-        </FormField>
-
-        <div className="bg-red-50/50 rounded-xl p-4">
+      <FormModal
+        isOpen={true}
+        onClose={onCancel}
+        title={unavailability ? "Modifier l'indisponibilité" : "Nouvelle indisponibilité"}
+        subtitle="Bloquez un créneau dans votre agenda"
+        icon={<Ban className="w-5 h-5 text-white" />}
+        variant="danger"
+        footer={footer}
+      >
+        <div className="flex flex-col gap-4 lg:gap-5">
           <FormField
-            label="Période"
+            label="Type d'indisponibilité"
             required
-            leftIcon={<Clock size={14} className="text-red-500" />}
+            leftIcon={<Tag size={14} className="text-red-500" />}
           >
-            <div className="grid grid-cols-2 gap-3 mb-3">
-              <div className="flex flex-col">
-                <span className="text-[10px] text-gray-400 mb-1">Date de début</span>
-                <Input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  fullWidth
-                  className="h-11 !p-3"
-                />
+            <Select
+              value={unavailabilityType}
+              onChange={(e) => setUnavailabilityType(e.target.value as UnavailabilityType)}
+              options={UNAVAILABILITY_TYPES}
+              fullWidth
+              size="md"
+            />
+          </FormField>
+
+          <div className="bg-red-50/50 rounded-xl p-4">
+            <FormField
+              label="Période"
+              required
+              leftIcon={<Clock size={14} className="text-red-500" />}
+            >
+              <div className="grid grid-cols-2 gap-3 mb-3">
+                <div className="flex flex-col">
+                  <span className="text-[10px] text-gray-400 mb-1">Date de début</span>
+                  <Input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    fullWidth
+                    className="h-11 !p-3"
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[10px] text-gray-400 mb-1">Heure de début</span>
+                  <Select
+                    value={startTime}
+                    onChange={(e) => setStartTime(e.target.value)}
+                    options={timeOptions}
+                    fullWidth
+                    size="md"
+                  />
+                </div>
               </div>
-              <div className="flex flex-col">
-                <span className="text-[10px] text-gray-400 mb-1">Heure de début</span>
-                <Select
-                  value={startTime}
-                  onChange={(e) => setStartTime(e.target.value)}
-                  options={timeOptions}
-                  fullWidth
-                  size="md"
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col">
+                  <span className="text-[10px] text-gray-400 mb-1">Date de fin</span>
+                  <Input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    fullWidth
+                    className="h-11 !p-3"
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[10px] text-gray-400 mb-1">Heure de fin</span>
+                  <Select
+                    value={endTime}
+                    onChange={(e) => setEndTime(e.target.value)}
+                    options={timeOptions}
+                    fullWidth
+                    size="md"
+                  />
+                </div>
               </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="flex flex-col">
-                <span className="text-[10px] text-gray-400 mb-1">Date de fin</span>
-                <Input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  fullWidth
-                  className="h-11 !p-3"
-                />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-[10px] text-gray-400 mb-1">Heure de fin</span>
-                <Select
-                  value={endTime}
-                  onChange={(e) => setEndTime(e.target.value)}
-                  options={timeOptions}
-                  fullWidth
-                  size="md"
-                />
-              </div>
-            </div>
+            </FormField>
+          </div>
+
+          <FormField
+            label="Motif (optionnel)"
+            leftIcon={<FileText size={14} className="text-red-500" />}
+          >
+            <Input
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="Précisez le motif de l'indisponibilité..."
+              fullWidth
+              className="h-11"
+            />
           </FormField>
         </div>
-
-        <FormField
-          label="Motif (optionnel)"
-          leftIcon={<FileText size={14} className="text-red-500" />}
-        >
-          <Input
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            placeholder="Précisez le motif de l'indisponibilité..."
-            fullWidth
-            className="h-11"
-          />
-        </FormField>
-      </div>
-    </FormModal>
+      </FormModal>
 
       {/* Modal de conflit avec indisponibilité existante */}
       {conflictModal.open && conflictModal.conflict?.type !== "appointment" && (
@@ -370,14 +371,14 @@ export default function UnavailabilityForm({
               <div className="flex justify-between items-center mb-2">
                 <span className="text-xs text-gray-500">Sélectionnez les rendez-vous à annuler</span>
                 <div className="flex gap-2">
-                  <button 
+                  <button
                     onClick={selectAllAppointments}
                     className="text-xs text-primary hover:underline cursor-pointer"
                   >
                     Tout sélectionner
                   </button>
                   <span className="text-gray-300">|</span>
-                  <button 
+                  <button
                     onClick={deselectAllAppointments}
                     className="text-xs text-gray-500 hover:underline cursor-pointer"
                   >
@@ -387,22 +388,20 @@ export default function UnavailabilityForm({
               </div>
               <div className="space-y-2">
                 {conflictModal.conflict.conflictingAppointments.map((apt) => (
-                  <div 
+                  <div
                     key={apt.id}
                     onClick={() => toggleAppointmentSelection(apt.id)}
-                    className={`p-3 rounded-xl border cursor-pointer transition-all ${
-                      conflictModal.selectedAppointments.includes(apt.id)
+                    className={`p-3 rounded-xl border cursor-pointer transition-all ${conflictModal.selectedAppointments.includes(apt.id)
                         ? "border-red-300 bg-red-50"
                         : "border-gray-200 hover:border-gray-300"
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
-                          conflictModal.selectedAppointments.includes(apt.id)
+                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${conflictModal.selectedAppointments.includes(apt.id)
                             ? "border-red-500 bg-red-500"
                             : "border-gray-300"
-                        }`}>
+                          }`}>
                           {conflictModal.selectedAppointments.includes(apt.id) && (
                             <Check size={12} className="text-white" />
                           )}
@@ -460,7 +459,7 @@ export default function UnavailabilityForm({
                 }}
                 className="w-full"
               >
-                {conflictModal.selectedAppointments.length > 0 
+                {conflictModal.selectedAppointments.length > 0
                   ? `Créer et annuler ${conflictModal.selectedAppointments.length} rendez-vous`
                   : "Créer sans annuler de rendez-vous"
                 }
