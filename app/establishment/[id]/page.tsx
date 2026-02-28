@@ -55,18 +55,20 @@ export default function EstablishmentPage() {
 
   const [blockedError, setBlockedError] = useState(false);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  const [loginPromptContext, setLoginPromptContext] = useState<"favorite" | "review" | null>(null);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [reviewRating, setReviewRating] = useState(0);
   const [reviewComment, setReviewComment] = useState("");
   const [submittingReview, setSubmittingReview] = useState(false);
   const [hasAlreadyReviewed, setHasAlreadyReviewed] = useState(false);
+  const [clientProfileId, setClientProfileId] = useState<string | null>(null);
 
   // Actions hook (favorites)
   const { isFavorite, toggleFavorite, hasProfile } = useEstablishmentActions(establishmentId);
 
   const loadEstablishment = useCallback(async () => {
     try {
-      setLoading(true);
+      if (!establishment) setLoading(true);
       const { data: est, error: estError } = await supabase
         .from("establishments")
         .select("*")
@@ -95,21 +97,25 @@ export default function EstablishmentPage() {
       const { data: revs } = await supabase
         .from("reviews")
         .select(`
-          id, rating, comment, created_at,
+          id, rating, comment, created_at, client_name,
           client_profiles(first_name, last_name)
         `)
         .eq("establishment_id", establishmentId)
         .order("created_at", { ascending: false });
 
-      const formattedReviews: Review[] = (revs || []).map((r: any) => ({
-        id: r.id,
-        rating: r.rating,
-        comment: r.comment,
-        created_at: r.created_at,
-        client_name: r.client_profiles
-          ? `${r.client_profiles.first_name} ${r.client_profiles.last_name?.charAt(0)}.`
-          : "Utilisateur"
-      }));
+      const formattedReviews: Review[] = (revs || []).map((r: any) => {
+        const profile = Array.isArray(r.client_profiles) ? r.client_profiles[0] : r.client_profiles;
+        return {
+          id: r.id,
+          rating: r.rating,
+          comment: r.comment,
+          created_at: r.created_at,
+          client_name: profile
+            ? `${profile.first_name} ${profile.last_name?.charAt(0) || ""}.`
+            : (r.client_name || "Utilisateur"),
+          client_profiles: profile
+        };
+      });
 
       setReviews(formattedReviews);
 
@@ -128,10 +134,11 @@ export default function EstablishmentPage() {
           .single();
 
         if (profile) {
+          setClientProfileId(profile.id);
           const { data: existingReview } = await supabase
             .from("reviews")
             .select("id")
-            .eq("client_id", profile.id)
+            .eq("client_profile_id", profile.id)
             .eq("establishment_id", establishmentId)
             .limit(1);
           setHasAlreadyReviewed((existingReview?.length || 0) > 0);
@@ -140,7 +147,7 @@ export default function EstablishmentPage() {
             .from("blocked_clients")
             .select("id")
             .eq("establishment_id", establishmentId)
-            .eq("client_id", profile.id)
+            .eq("client_profile_id", profile.id)
             .single();
           if (block) setBlockedError(true);
         }
@@ -160,8 +167,18 @@ export default function EstablishmentPage() {
   const handleToggleFavorite = async () => {
     const res = await toggleFavorite();
     if (res.error === "authentication_required") {
+      setLoginPromptContext("favorite");
       setShowLoginPrompt(true);
     }
+  };
+
+  const handleOpenReviewModal = () => {
+    if (!clientProfileId) {
+      setLoginPromptContext("review");
+      setShowLoginPrompt(true);
+      return;
+    }
+    setShowReviewModal(true);
   };
 
   const handleSubmitReview = async () => {
@@ -181,7 +198,7 @@ export default function EstablishmentPage() {
       if (!profile) return;
 
       const { error } = await supabase.from("reviews").insert({
-        client_id: profile.id,
+        client_profile_id: profile.id,
         establishment_id: establishmentId,
         rating: reviewRating,
         comment: reviewComment || null,
@@ -249,7 +266,7 @@ export default function EstablishmentPage() {
                       <Star size={64} className="text-primary/20" />
                     </div>
                   )}
-                  <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/80 to-transparent" />
+                  <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
                 </div>
 
                 <div className="absolute top-4 right-4 flex items-center gap-2">
@@ -267,7 +284,7 @@ export default function EstablishmentPage() {
                   </Button>
                 </div>
 
-                <div className="absolute bottom-6 left-6 right-6 text-white text-shadow-sm">
+                <div className="absolute bottom-6 left-6 right-6 text-white">
                   <div className="flex flex-wrap items-center gap-3 mb-2">
                     {establishment.activity_sectors?.map((sector) => (
                       <Badge key={sector} variant="secondary" className="bg-white/20 backdrop-blur-md text-white border-none py-1 px-3 font-bold text-[10px] uppercase">
@@ -275,16 +292,16 @@ export default function EstablishmentPage() {
                       </Badge>
                     ))}
                   </div>
-                  <h1 className="text-3xl sm:text-4xl font-black">{establishment.name}</h1>
-                  <div className="flex flex-wrap items-center gap-4 mt-3 font-bold text-white/90">
-                    <div className="flex items-center gap-1.5 bg-black/20 backdrop-blur-md px-3 py-1 rounded-xl">
-                      <MapPin size={16} className="text-primary" />
-                      <span>{establishment.city}</span>
+                  <h1 className="text-3xl sm:text-4xl font-black text-white drop-shadow-md">{establishment.name}</h1>
+                  <div className="flex flex-wrap items-center gap-4 mt-3 font-bold">
+                    <div className="flex items-center gap-1.5 bg-black/30 backdrop-blur-md px-3 py-1 rounded-xl border border-white/10">
+                      <MapPin size={16} className="text-white" />
+                      <span className="text-white">{establishment.city}</span>
                     </div>
                     {averageRating && (
-                      <div className="flex items-center gap-1.5 bg-black/20 backdrop-blur-md px-3 py-1 rounded-xl">
+                      <div className="flex items-center gap-1.5 bg-black/30 backdrop-blur-md px-3 py-1 rounded-xl border border-white/10">
                         <Star size={16} className="text-accent fill-accent" />
-                        <span>{averageRating} ({reviews.length} avis)</span>
+                        <span className="text-white">{averageRating} ({reviews.length} avis)</span>
                       </div>
                     )}
                   </div>
@@ -298,13 +315,13 @@ export default function EstablishmentPage() {
                 openingHours={openingHours}
                 onBookingComplete={() => {
                   loadEstablishment();
-                  router.push("/account?tab=reservations");
                 }}
                 blockedError={blockedError}
                 mode="booking"
+                clientProfileId={clientProfileId}
               />
 
-              <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm">
+              <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-xl shadow-gray-200/50">
                 <h2 className="text-2xl font-black text-gray-900 mb-4">À propos de l'établissement</h2>
                 <div className="text-gray-600 font-medium leading-relaxed">
                   {establishment.description || "Aucune description disponible."}
@@ -314,7 +331,7 @@ export default function EstablishmentPage() {
               <EstablishmentReviews
                 reviews={reviews}
                 averageRating={averageRating}
-                onAddReview={hasAlreadyReviewed ? undefined : () => setShowReviewModal(true)}
+                onAddReview={hasAlreadyReviewed ? undefined : handleOpenReviewModal}
               />
             </div>
 
@@ -327,6 +344,7 @@ export default function EstablishmentPage() {
                 onBookingComplete={() => { }}
                 blockedError={false}
                 mode="info"
+                clientProfileId={clientProfileId}
               />
             </div>
           </div>
@@ -336,13 +354,19 @@ export default function EstablishmentPage() {
       {showLoginPrompt && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl">
-            <h2 className="text-2xl font-black text-gray-900 mb-2">Ajouter aux favoris</h2>
-            <p className="text-gray-600 mb-8 font-medium">Connectez-vous pour sauvegarder cet établissement.</p>
+            <h2 className="text-2xl font-black text-gray-900 mb-2">
+              {loginPromptContext === "favorite" ? "Ajouter aux favoris" : "Laisser un avis"}
+            </h2>
+            <p className="text-gray-600 mb-8 font-medium">
+              {loginPromptContext === "favorite"
+                ? "Connectez-vous pour sauvegarder cet établissement."
+                : "Connectez-vous pour partager votre expérience."}
+            </p>
             <div className="flex flex-col gap-3">
-              <Link href={`/auth/client/login?redirect=${encodeURIComponent(window.location.pathname)}`}>
+              <Link href={`/auth/client/login?redirect=${encodeURIComponent(typeof window !== 'undefined' ? window.location.pathname : '')}`}>
                 <Button variant="primary" className="w-full h-12 font-bold rounded-xl"><LogIn size={20} className="mr-2" /> Se connecter</Button>
               </Link>
-              <Button variant="ghost" onClick={() => setShowLoginPrompt(false)} className="font-bold">Plus tard</Button>
+              <Button variant="ghost" onClick={() => { setShowLoginPrompt(false); setLoginPromptContext(null); }} className="font-bold">Plus tard</Button>
             </div>
           </div>
         </div>

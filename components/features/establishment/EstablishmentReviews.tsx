@@ -28,7 +28,7 @@ export function EstablishmentReviews({
     onAddReview
 }: EstablishmentReviewsProps) {
     return (
-        <div className="bg-white rounded-2xl p-4 sm:p-6 border border-gray-100 mb-6">
+        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-xl shadow-gray-200/50 mb-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
                 <h2 className="text-lg font-bold text-gray-900">Avis clients</h2>
                 <div className="flex flex-wrap items-center gap-2 sm:gap-3">

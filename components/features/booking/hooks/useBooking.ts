@@ -14,6 +14,7 @@ export function useBooking(establishmentId: string, openingHours: OpeningHour[])
     const [availableSlots, setAvailableSlots] = useState<AvailableSlot[]>([]);
     const [loadingSlots, setLoadingSlots] = useState(false);
     const [cart, setCart] = useState<CartItem[]>([]);
+    const [editingIndex, setEditingIndex] = useState<number | null>(null);
     const [isConfirming, setIsConfirming] = useState(false);
 
     // TTL pour le panier (vage de 20 min d'inactivité)
@@ -109,7 +110,10 @@ export function useBooking(establishmentId: string, openingHours: OpeningHour[])
         const newEnd = newStart + selectedService.duration * 60000;
 
         // Vérifier les chevauchements avec les articles déjà dans le panier
-        const overlap = cart.find(item => {
+        const overlap = cart.find((item, index) => {
+            // Si on est en train d'éditer cet item précisément, on ne le compte pas comme un chevauchement
+            if (editingIndex === index) return false;
+
             const itemStart = item.slot.date.getTime();
             const itemEnd = itemStart + item.service.duration * 60000;
             return newStart < itemEnd && newEnd > itemStart;
@@ -122,19 +126,54 @@ export function useBooking(establishmentId: string, openingHours: OpeningHour[])
             };
         }
 
-        setCart(prev => [...prev, { service: selectedService, slot: selectedSlot }]);
+        if (editingIndex !== null) {
+            // Remplacer l'item existant si on est en mode édition
+            setCart(prev => {
+                const newCart = [...prev];
+                newCart[editingIndex] = { service: selectedService, slot: selectedSlot };
+                return newCart;
+            });
+            setEditingIndex(null);
+        } else {
+            // Ajouter un nouvel item
+            setCart(prev => [...prev, { service: selectedService, slot: selectedSlot }]);
+        }
+
         setSelectedSlot(null);
         return { success: true };
-    }, [selectedService, selectedSlot, cart]);
+    }, [selectedService, selectedSlot, cart, editingIndex]);
+
+    const prepareEdit = useCallback((index: number) => {
+        const item = cart[index];
+        if (!item) return;
+
+        setSelectedService(item.service);
+        setSelectedDate(item.slot.date);
+        setSelectedSlot(item.slot);
+        setEditingIndex(index);
+    }, [cart]);
 
     const removeFromCart = useCallback((index: number) => {
         setCart(prev => prev.filter((_, i) => i !== index));
-    }, []);
+        if (editingIndex === index) {
+            setEditingIndex(null);
+        }
+    }, [editingIndex]);
 
     const confirmBooking = useCallback(async (clientInfo: ClientInfo) => {
         setIsConfirming(true);
         try {
             const { data: { user } } = await supabase.auth.getUser();
+            let profileId = null;
+
+            if (user) {
+                const { data: profile } = await supabase
+                    .from("client_profiles")
+                    .select("id")
+                    .eq("user_id", user.id)
+                    .single();
+                if (profile) profileId = profile.id;
+            }
 
             const payload = cart.map(item => ({
                 service_id: item.service.id,
@@ -145,7 +184,7 @@ export function useBooking(establishmentId: string, openingHours: OpeningHour[])
                 client_phone: clientInfo.phone,
                 client_first_name: clientInfo.firstName,
                 client_last_name: clientInfo.lastName,
-                client_profile_id: user?.id, // À ajuster selon si c'est le client_profile.id ou auth.user.id
+                client_profile_id: profileId,
             }));
 
             const { data, error } = await supabase.rpc('process_booking_cart', {
@@ -185,6 +224,9 @@ export function useBooking(establishmentId: string, openingHours: OpeningHour[])
         cart,
         addToCart,
         removeFromCart,
+        prepareEdit,
+        editingIndex,
+        setEditingIndex,
         confirmBooking,
         isConfirming,
     };

@@ -35,6 +35,9 @@ interface BookingTunnelProps {
     cart: CartItem[];
     addToCart: () => { success: boolean; error?: string };
     removeFromCart: (index: number) => void;
+    prepareEdit: (index: number) => void;
+    editingIndex: number | null;
+    setEditingIndex: (index: number | null) => void;
 }
 
 export function BookingTunnel({
@@ -59,7 +62,10 @@ export function BookingTunnel({
     openingHours,
     cart,
     addToCart,
-    removeFromCart
+    removeFromCart,
+    prepareEdit,
+    editingIndex,
+    setEditingIndex
 }: BookingTunnelProps) {
     const router = useRouter();
     const [cartError, setCartError] = useState<string | null>(null);
@@ -144,18 +150,31 @@ export function BookingTunnel({
                     variant="ghost"
                     onClick={() => {
                         setStep("info");
-                        setSelectedDate(null);
-                        setSelectedSlot(null);
+                        // Ne pas reset si on est en train d'éditer, car on veut garder le service sélectionné
+                        if (editingIndex === null) {
+                            setSelectedDate(null);
+                            setSelectedSlot(null);
+                        } else {
+                            // Si on annule l'édition en revenant tout au début
+                            setEditingIndex(null);
+                            setSelectedDate(null);
+                            setSelectedSlot(null);
+                        }
                     }}
                     className="flex items-center gap-2 text-gray-500 hover:text-primary mb-4"
                 >
                     <ChevronLeft size={18} />
-                    <span>Modifier la prestation</span>
+                    <span>{editingIndex !== null ? "Annuler la modification" : "Modifier la prestation"}</span>
                 </Button>
 
-                <div className="bg-gray-50 rounded-xl p-4 mb-6">
+                <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 mb-6">
                     <div className="flex justify-between items-center">
                         <div>
+                            <div className="flex items-center gap-2 mb-1">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-primary bg-primary/10 px-2 py-0.5 rounded">
+                                    {editingIndex !== null ? "Modification en cours" : "Prestation sélectionnée"}
+                                </span>
+                            </div>
                             <h3 className="font-semibold text-gray-900">{selectedService.name}</h3>
                             <span className="text-sm text-gray-500">{selectedService.duration} min</span>
                         </div>
@@ -238,25 +257,6 @@ export function BookingTunnel({
                         )}
                     </div>
                 )}
-
-                {/* Sticky Footer for Mobile */}
-                {selectedSlot && (
-                    <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 lg:hidden z-50 animate-in slide-in-from-bottom duration-300">
-                        <div className="max-w-md mx-auto flex items-center justify-between gap-4">
-                            <div>
-                                <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">Total</p>
-                                <p className="text-xl font-black text-primary">{selectedService.price}€</p>
-                            </div>
-                            <Button
-                                variant="primary"
-                                onClick={() => handleAddToCart("recap")}
-                                className="flex-1 py-4 font-bold"
-                            >
-                                Continuer
-                            </Button>
-                        </div>
-                    </div>
-                )}
             </div>
         );
     }
@@ -268,7 +268,10 @@ export function BookingTunnel({
             <div className="bg-white rounded-2xl p-6 border border-gray-100 flex flex-col h-full">
                 <Button
                     variant="ghost"
-                    onClick={() => setStep("datetime")}
+                    onClick={() => {
+                        prepareEdit(0); // On édite le premier item (cas simple)
+                        setStep("datetime");
+                    }}
                     className="flex items-center gap-2 text-gray-500 hover:text-primary mb-6 w-fit"
                 >
                     <ChevronLeft size={18} />

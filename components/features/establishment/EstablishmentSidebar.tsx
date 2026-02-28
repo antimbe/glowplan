@@ -16,6 +16,7 @@ interface EstablishmentSidebarProps {
     onBookingComplete: () => void;
     blockedError: boolean;
     mode?: "booking" | "info";
+    clientProfileId?: string | null;
 }
 
 export function EstablishmentSidebar({
@@ -25,8 +26,9 @@ export function EstablishmentSidebar({
     onBookingComplete,
     blockedError,
     mode = "booking",
+    clientProfileId = null
 }: EstablishmentSidebarProps) {
-    const [step, setStep] = useState<BookingStep>("service");
+    const [step, setStep] = useState<BookingStep>("info");
 
     const {
         selectedService,
@@ -40,6 +42,9 @@ export function EstablishmentSidebar({
         cart,
         addToCart,
         removeFromCart,
+        prepareEdit,
+        editingIndex,
+        setEditingIndex,
         confirmBooking,
         isConfirming,
     } = useBooking(establishment.id, openingHours);
@@ -71,9 +76,14 @@ export function EstablishmentSidebar({
         return [`${fmt(hour.open_time)} – ${fmt(hour.close_time)}`];
     };
 
+    const formatDay = (dayIndex: number): string => {
+        return DAYS_DB[dayIndex];
+    };
+
     const handleSubmitBooking = async () => {
         const result = await confirmBooking(clientInfo);
         if (result.success) {
+            setStep("confirmation");
             onBookingComplete();
         } else {
             alert(`Erreur lors de la réservation : ${result.error}`);
@@ -82,42 +92,41 @@ export function EstablishmentSidebar({
 
     if (mode === "info") {
         return (
-            <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm sticky top-24">
+            <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-xl shadow-gray-200/50 sticky top-24">
                 <div className="space-y-6">
-                    <div className="flex items-start gap-4">
-                        <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 shrink-0">
-                            <MapPin size={20} />
+                    <div>
+                        <div className="flex items-center gap-2 mb-4">
+                            <div className="p-2 bg-primary/10 rounded-xl">
+                                <MapPin size={20} className="text-primary" />
+                            </div>
+                            <h3 className="font-black text-gray-900 uppercase tracking-widest text-[10px]">Localisation</h3>
                         </div>
-                        <div>
-                            <p className="text-xs font-black uppercase tracking-widest text-gray-400 mb-1">Localisation</p>
-                            <p className="text-sm font-bold text-gray-900 leading-relaxed">
-                                {establishment.address}<br />
-                                {establishment.postal_code} {establishment.city}
-                            </p>
+                        <div className="bg-gray-50 rounded-2xl p-4">
+                            <p className="font-bold text-gray-900">{establishment.address}</p>
+                            <p className="text-gray-500 font-medium">{establishment.postal_code} {establishment.city}</p>
                         </div>
                     </div>
-                    <div className="pt-6 border-t border-gray-50">
-                        <div className="flex items-center gap-4 mb-4">
-                            <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 shrink-0">
-                                <Clock size={20} />
+
+                    <div>
+                        <div className="flex items-center gap-2 mb-4">
+                            <div className="p-2 bg-primary/10 rounded-xl">
+                                <Clock size={20} className="text-primary" />
                             </div>
-                            <p className="text-xs font-black uppercase tracking-widest text-gray-400">Horaires</p>
+                            <h3 className="font-black text-gray-900 uppercase tracking-widest text-[10px]">Horaires</h3>
                         </div>
-                        <div className="space-y-1">
-                            {getSortedHours().map((hour) => {
-                                const slots = formatHours(hour);
-                                const isClosed = !hour.is_open;
-                                return (
-                                    <div key={hour.day_of_week} className="grid grid-cols-[100px_1fr] items-start gap-2 py-1.5 border-b border-gray-50 last:border-0">
-                                        <span className="text-sm font-semibold text-gray-600">{DAYS_DB[hour.day_of_week]}</span>
-                                        <div className="flex flex-col gap-0.5">
-                                            {slots.map((slot, i) => (
-                                                <span key={i} className={cn("text-sm font-bold", isClosed ? "text-red-500" : "text-gray-900")}>{slot}</span>
-                                            ))}
-                                        </div>
+                        <div className="space-y-2">
+                            {getSortedHours().map((hours) => (
+                                <div key={hours.day_of_week} className="flex justify-between items-start text-sm py-1 border-b border-gray-50 last:border-0">
+                                    <span className="text-gray-500 font-medium">{formatDay(hours.day_of_week)}</span>
+                                    <div className="text-right">
+                                        {formatHours(hours).map((slot, i) => (
+                                            <span key={i} className={cn("font-bold block", hours.is_open ? "text-gray-900" : "text-red-500")}>
+                                                {slot}
+                                            </span>
+                                        ))}
                                     </div>
-                                );
-                            })}
+                                </div>
+                            ))}
                         </div>
                     </div>
                 </div>
@@ -126,13 +135,13 @@ export function EstablishmentSidebar({
     }
 
     return (
-        <div className="bg-white rounded-3xl border border-gray-100 shadow-xl overflow-hidden">
+        <div className="bg-white rounded-3xl border border-gray-100 shadow-xl shadow-gray-200/50 overflow-hidden">
             <div className="bg-primary p-4 text-white text-center">
                 <p className="text-xs font-black uppercase tracking-widest opacity-80">Réservation en direct</p>
             </div>
             <BookingTunnel
-                step={step === "service" ? "info" : step}
-                setStep={(s) => setStep(s === "info" ? "service" : s)}
+                step={step}
+                setStep={setStep}
                 services={services}
                 selectedService={selectedService}
                 setSelectedService={setSelectedService}
@@ -144,7 +153,7 @@ export function EstablishmentSidebar({
                 loadingSlots={loadingSlots}
                 clientInfo={clientInfo}
                 setClientInfo={setClientInfo}
-                clientProfileId={null}
+                clientProfileId={clientProfileId}
                 submitting={isConfirming}
                 handleSubmitBooking={handleSubmitBooking}
                 blockedError={blockedError}
@@ -153,6 +162,9 @@ export function EstablishmentSidebar({
                 cart={cart}
                 addToCart={addToCart}
                 removeFromCart={removeFromCart}
+                prepareEdit={prepareEdit}
+                editingIndex={editingIndex}
+                setEditingIndex={setEditingIndex}
             />
         </div>
     );
