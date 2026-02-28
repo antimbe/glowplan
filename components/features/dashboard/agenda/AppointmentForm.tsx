@@ -56,6 +56,7 @@ export default function AppointmentForm({
   const [cancelModal, setCancelModal] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
   const [cancelling, setCancelling] = useState(false);
+  const [globalError, setGlobalError] = useState<string | null>(null);
   const [date, setDate] = useState(
     selectedDate ? selectedDate.toISOString().split("T")[0] : new Date().toISOString().split("T")[0]
   );
@@ -129,19 +130,20 @@ export default function AppointmentForm({
 
     const startDateTime = new Date(`${date}T${startTime}:00`);
     const endDateTime = new Date(`${date}T${endTime}:00`);
+    const now = new Date();
 
     // Refuser les RDV dans le passé (sauf lors d'une modification d'un RDV existant)
-    if (!appointment?.id && startDateTime < new Date()) {
-      setConflictModal({
-        open: true,
-        conflict: {
-          hasConflict: true,
-          type: "past",
-          message: "Impossible de créer un rendez-vous à une date ou heure déjà passée.",
-        },
-      });
+    if (startDateTime < now && !appointment?.id) {
+      setGlobalError("Impossible de créer un rendez-vous à une date ou heure déjà passée.");
       return;
     }
+
+    if (endDateTime <= startDateTime) {
+      setGlobalError("L'heure de fin doit être après l'heure de début.");
+      return;
+    }
+
+    setGlobalError(null);
 
     // Vérifier les conflits avant de sauvegarder
     if (!skipConflictCheck) {
@@ -366,6 +368,12 @@ export default function AppointmentForm({
         footer={footer}
       >
         <div className="flex flex-col gap-4 lg:gap-5">
+          {globalError && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
+              <AlertTriangle size={16} className="text-red-600" />
+              <span className="text-sm font-medium">{globalError}</span>
+            </div>
+          )}
           <FormField
             label="Nom du client"
             required
@@ -444,6 +452,7 @@ export default function AppointmentForm({
                     type="date"
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
+                    min={new Date().toISOString().split("T")[0]}
                     fullWidth
                     className="h-11 !p-3"
                   />

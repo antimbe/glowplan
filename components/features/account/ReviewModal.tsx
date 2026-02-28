@@ -47,7 +47,7 @@ export function ReviewModal({
                                     size={32}
                                     className={cn(
                                         star <= rating
-                                            ? "text-yellow-500 fill-yellow-500"
+                                            ? "text-accent fill-accent"
                                             : "text-gray-300"
                                     )}
                                 />

@@ -35,8 +35,8 @@ export default function TimeSlot({
             )}
             <div
                 className={`border-l border-gray-100 relative group ${unavailableSlot
-                        ? "bg-red-50 cursor-not-allowed"
-                        : "cursor-pointer"
+                    ? "cursor-not-allowed"
+                    : "cursor-pointer"
                     }`}
                 onClick={() => {
                     if (unavailableSlot) {

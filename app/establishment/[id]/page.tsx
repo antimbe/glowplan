@@ -270,7 +270,6 @@ export default function EstablishmentPage() {
                 </div>
 
                 <div className="absolute top-4 right-4 flex items-center gap-2">
-                  <Button variant="ghost" size="sm" className="p-2 rounded-full backdrop-blur-md bg-white/90 text-gray-900 shadow-sm h-10 w-10 min-w-0"><Share2 size={18} /></Button>
                   <Button
                     variant="ghost"
                     size="sm"

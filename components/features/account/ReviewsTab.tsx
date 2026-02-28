@@ -37,7 +37,7 @@ export function ReviewsTab({ reviews, onDelete, deletingId, formatDate }: Review
                                             size={16}
                                             className={cn(
                                                 star <= review.rating
-                                                    ? "text-yellow-500 fill-yellow-500"
+                                                    ? "text-accent fill-accent"
                                                     : "text-gray-300"
                                             )}
                                         />

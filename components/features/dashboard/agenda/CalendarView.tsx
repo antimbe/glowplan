@@ -200,7 +200,7 @@ export default function CalendarView({
             return (
               <div
                 key={i}
-                className={`border-b border-l border-gray-50 p-1 min-h-[100px] flex flex-col gap-0.5 ${!day ? "bg-gray-50/50" : isUnavailable ? "bg-red-50/60 hover:bg-red-50 cursor-pointer" : "hover:bg-primary/5 cursor-pointer"
+                className={`border-b border-l border-gray-50 p-1 min-h-[100px] flex flex-col gap-0.5 ${!day ? "bg-gray-50/50" : "hover:bg-primary/5 cursor-pointer"
                   }`}
                 onClick={() => day && (onDateChange(day), onViewChange("day"))}
               >

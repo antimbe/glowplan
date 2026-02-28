@@ -69,6 +69,7 @@ export default function UnavailabilityForm({
   );
   const [reason, setReason] = useState(unavailability?.reason || "");
   const [saving, setSaving] = useState(false);
+  const [globalError, setGlobalError] = useState<string | null>(null);
   const [conflictModal, setConflictModal] = useState<{
     open: boolean;
     conflict: ConflictResult | null;
@@ -88,6 +89,19 @@ export default function UnavailabilityForm({
 
     const startDateTime = new Date(`${startDate}T${startTime}:00`);
     const endDateTime = new Date(`${endDate}T${endTime}:00`);
+    const now = new Date();
+
+    if (startDateTime < now && !unavailability) {
+      setGlobalError("Vous ne pouvez pas créer une indisponibilité dans le passé");
+      return;
+    }
+
+    if (endDateTime <= startDateTime) {
+      setGlobalError("La date de fin doit être après la date de début");
+      return;
+    }
+
+    setGlobalError(null);
 
     // Vérifier les conflits avant de sauvegarder
     if (!skipConflictCheck) {
@@ -251,6 +265,12 @@ export default function UnavailabilityForm({
         footer={footer}
       >
         <div className="flex flex-col gap-4 lg:gap-5">
+          {globalError && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
+              <AlertTriangle size={16} className="text-red-600" />
+              <span className="text-sm font-medium">{globalError}</span>
+            </div>
+          )}
           <FormField
             label="Type d'indisponibilité"
             required
@@ -278,6 +298,7 @@ export default function UnavailabilityForm({
                     type="date"
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
+                    min={new Date().toISOString().split("T")[0]}
                     fullWidth
                     className="h-11 !p-3"
                   />
@@ -300,6 +321,7 @@ export default function UnavailabilityForm({
                     type="date"
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
+                    min={startDate || new Date().toISOString().split("T")[0]}
                     fullWidth
                     className="h-11 !p-3"
                   />
@@ -392,15 +414,15 @@ export default function UnavailabilityForm({
                     key={apt.id}
                     onClick={() => toggleAppointmentSelection(apt.id)}
                     className={`p-3 rounded-xl border cursor-pointer transition-all ${conflictModal.selectedAppointments.includes(apt.id)
-                        ? "border-red-300 bg-red-50"
-                        : "border-gray-200 hover:border-gray-300"
+                      ? "border-red-300 bg-red-50"
+                      : "border-gray-200 hover:border-gray-300"
                       }`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${conflictModal.selectedAppointments.includes(apt.id)
-                            ? "border-red-500 bg-red-500"
-                            : "border-gray-300"
+                          ? "border-red-500 bg-red-500"
+                          : "border-gray-300"
                           }`}>
                           {conflictModal.selectedAppointments.includes(apt.id) && (
                             <Check size={12} className="text-white" />

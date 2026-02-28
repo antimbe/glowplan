@@ -46,7 +46,7 @@ export default function ReviewsTab({ establishmentId }: ReviewsTabProps) {
       setLoading(false);
       return;
     }
-    
+
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -79,7 +79,7 @@ export default function ReviewsTab({ establishmentId }: ReviewsTabProps) {
 
   const loadFavoritesCount = async () => {
     if (!establishmentId) return;
-    
+
     try {
       console.log("Loading favorites for establishment:", establishmentId);
       const { count, error, data } = await supabase
@@ -172,16 +172,16 @@ export default function ReviewsTab({ establishmentId }: ReviewsTabProps) {
                   const avg = Number(averageRating) || 0;
                   const isFullStar = star <= Math.floor(avg);
                   const isHalfStar = !isFullStar && star === Math.ceil(avg) && avg % 1 !== 0;
-                  
+
                   return (
                     <div key={star} className="relative w-5 h-5">
                       <Star size={20} className="absolute text-gray-300" />
                       {isFullStar && (
-                        <Star size={20} className="absolute text-yellow-500 fill-yellow-500" />
+                        <Star size={20} className="absolute text-accent fill-accent" />
                       )}
                       {isHalfStar && (
                         <div className="absolute overflow-hidden w-2.5">
-                          <Star size={20} className="text-yellow-500 fill-yellow-500" />
+                          <Star size={20} className="text-accent fill-accent" />
                         </div>
                       )}
                     </div>
@@ -198,7 +198,7 @@ export default function ReviewsTab({ establishmentId }: ReviewsTabProps) {
                   <span className="text-sm text-gray-600 w-12">{rating} étoile{rating > 1 ? "s" : ""}</span>
                   <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-yellow-500 rounded-full transition-all"
+                      className="h-full bg-accent rounded-full transition-all"
                       style={{ width: `${percentage}%` }}
                     />
                   </div>
@@ -254,16 +254,16 @@ export default function ReviewsTab({ establishmentId }: ReviewsTabProps) {
                       const rating = Number(review.rating);
                       const isFullStar = star <= Math.floor(rating);
                       const isHalfStar = !isFullStar && star === Math.ceil(rating) && rating % 1 !== 0;
-                      
+
                       return (
                         <div key={star} className="relative">
                           <Star size={16} className="text-gray-300" />
                           {isFullStar && (
-                            <Star size={16} className="absolute inset-0 text-yellow-500 fill-yellow-500" />
+                            <Star size={16} className="absolute inset-0 text-accent fill-accent" />
                           )}
                           {isHalfStar && (
                             <div className="absolute inset-0 overflow-hidden w-[50%]">
-                              <Star size={16} className="text-yellow-500 fill-yellow-500" />
+                              <Star size={16} className="text-accent fill-accent" />
                             </div>
                           )}
                         </div>

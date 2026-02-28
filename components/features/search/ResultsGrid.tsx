@@ -144,7 +144,9 @@ function EstablishmentCard({ establishment, isFavorite, onToggleFavorite }: {
 
                         <Flex align="center" gap={1.5}>
                             <MapPin size={16} className="text-primary/40" />
-                            <Text variant="small" as="span" className="text-gray-500 font-medium">{establishment.city}</Text>
+                            <Text variant="small" as="span" className="text-gray-500 font-medium">
+                                {establishment.city} {establishment.review_count > 0 && <span className="text-gray-400 font-normal ml-1">• {establishment.review_count} avis</span>}
+                            </Text>
                         </Flex>
                     </Stack>
 

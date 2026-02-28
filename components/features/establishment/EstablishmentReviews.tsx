@@ -41,7 +41,7 @@ export function EstablishmentReviews({
                                         size={16}
                                         className={cn(
                                             star <= Math.round(averageRating)
-                                                ? "text-yellow-500 fill-yellow-500"
+                                                ? "text-accent fill-accent"
                                                 : "text-gray-300"
                                         )}
                                     />
@@ -78,7 +78,7 @@ export function EstablishmentReviews({
                                                 size={12}
                                                 className={cn(
                                                     star <= review.rating
-                                                        ? "text-yellow-500 fill-yellow-500"
+                                                        ? "text-accent fill-accent"
                                                         : "text-gray-300"
                                                 )}
                                             />

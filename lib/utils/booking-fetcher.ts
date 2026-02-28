@@ -23,14 +23,14 @@ export async function fetchOccupationData(
             .select('*, service:services(name, duration, price)')
             .eq('establishment_id', establishmentId)
             .neq('status', 'cancelled')
-            .gte('start_time', startDate)
-            .lte('start_time', endDate),
+            .lte('start_time', endDate)
+            .gte('end_time', startDate),
         supabase
             .from('unavailabilities')
             .select('*')
             .eq('establishment_id', establishmentId)
-            .gte('start_time', startDate)
             .lte('start_time', endDate)
+            .gte('end_time', startDate)
     ]);
 
     if (appointmentsResult.error) throw appointmentsResult.error;
