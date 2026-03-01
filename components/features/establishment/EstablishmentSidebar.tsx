@@ -102,7 +102,9 @@ export function EstablishmentSidebar({
                             <h3 className="font-black text-gray-900 uppercase tracking-widest text-[10px]">Localisation</h3>
                         </div>
                         <div className="bg-gray-50 rounded-2xl p-4">
-                            <p className="font-bold text-gray-900">{establishment.address}</p>
+                            {!establishment.hide_exact_address && (
+                                <p className="font-bold text-gray-900">{establishment.address}</p>
+                            )}
                             <p className="text-gray-500 font-medium">{establishment.postal_code} {establishment.city}</p>
                         </div>
                     </div>

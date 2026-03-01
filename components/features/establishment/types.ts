@@ -1,3 +1,10 @@
+export interface Photo {
+    id: string;
+    url: string;
+    position: number;
+    is_main: boolean;
+}
+
 export interface Establishment {
     id: string;
     name: string;
@@ -13,6 +20,7 @@ export interface Establishment {
     show_conditions_online: boolean;
     auto_confirm_appointments: boolean;
     hide_exact_address: boolean;
+    photos?: Photo[];
 }
 
 export interface Review {

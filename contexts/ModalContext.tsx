@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback, ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useMemo, ReactNode } from "react";
 import Modal, { ModalVariant } from "@/components/ui/Modal";
 
 interface ModalOptions {
@@ -68,18 +68,18 @@ export function ModalProvider({ children }: { children: ReactNode }) {
     setIsOpen(false);
   }, []);
 
+  const contextValue = useMemo(() => ({
+    showModal,
+    showSuccess,
+    showError,
+    showInfo,
+    showWarning,
+    showConfirm,
+    closeModal,
+  }), [showModal, showSuccess, showError, showInfo, showWarning, showConfirm, closeModal]);
+
   return (
-    <ModalContext.Provider
-      value={{
-        showModal,
-        showSuccess,
-        showError,
-        showInfo,
-        showWarning,
-        showConfirm,
-        closeModal,
-      }}
-    >
+    <ModalContext.Provider value={contextValue}>
       {children}
       <Modal
         isOpen={isOpen}

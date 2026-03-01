@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { EstablishmentData } from "../types";
@@ -41,7 +41,7 @@ const INITIAL_FORM_DATA: EstablishmentData = {
 export function useEstablishment() {
     const router = useRouter();
     const { showSuccess, showError } = useModal();
-    const supabase = createClient();
+    const supabase = useMemo(() => createClient(), []);
 
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);

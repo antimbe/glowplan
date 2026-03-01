@@ -71,3 +71,13 @@ Ce document récapitule l'ensemble des points à tester pour garantir la robuste
 - [ ] Tenter de créer un RDV avec une heure de fin AVANT l'heure de début.
 - [ ] Saisir des emojis ou du texte très long dans les notes.
 - [ ] Tenter d'annuler un RDV déjà annulé (si possible via double clic).
+
+## 8. 👤 Gestion des Clients (Agenda)
+- [ ] **Lien avec le profil existant** : Sélectionner un client déjà enregistré. Vérifier que ses coordonnées s'affichent instantanément.
+- [ ] **Création au vol** : Saisir un nouveau nom/tél dans le formulaire de RDV. Vérifier après enregistrement s'il apparaît dans l'onglet "Clients".
+- [ ] **Historique** : Un RDV créé dans l'agenda doit apparaître dans la fiche client correspondante.
+
+## 9. 🛡️ Intégrité et Sécurité
+- [ ] **Accès Interdit** : Tenter d'accéder à l'ID d'agenda d'un autre établissement via l'URL (Doit renvoyer une 404 ou erreur).
+- [ ] **Dépassement d'horaires** : Tenter de prendre un RDV qui finit après l'heure de fermeture (Vérifier le comportement attendu).
+- [ ] **Performance** : Vérifier que l'agenda reste fluide avec + de 50 événements sur une même semaine.

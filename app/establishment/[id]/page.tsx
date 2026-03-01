@@ -36,7 +36,7 @@ import { cn } from "@/lib/utils/cn";
 import { Service, OpeningHour, ClientInfo, BookingStep, AvailableSlot } from "@/components/features/booking/types";
 import { EstablishmentReviews } from "@/components/features/establishment/EstablishmentReviews";
 import { EstablishmentSidebar } from "@/components/features/establishment/EstablishmentSidebar";
-import { Establishment, Review } from "@/components/features/establishment/types";
+import { Establishment, Review, Photo } from "@/components/features/establishment/types";
 import { useEstablishmentActions } from "@/components/features/establishment/hooks/useEstablishmentActions";
 
 export default function EstablishmentPage() {
@@ -62,6 +62,7 @@ export default function EstablishmentPage() {
   const [submittingReview, setSubmittingReview] = useState(false);
   const [hasAlreadyReviewed, setHasAlreadyReviewed] = useState(false);
   const [clientProfileId, setClientProfileId] = useState<string | null>(null);
+  const [activePhotoUrl, setActivePhotoUrl] = useState<string | null>(null);
 
   // Actions hook (favorites)
   const { isFavorite, toggleFavorite, hasProfile } = useEstablishmentActions(establishmentId);
@@ -119,10 +120,19 @@ export default function EstablishmentPage() {
 
       setReviews(formattedReviews);
 
+      // Fetch gallery photos
+      const { data: gallery } = await supabase
+        .from("establishment_photos")
+        .select("*")
+        .eq("establishment_id", establishmentId)
+        .order("position", { ascending: true });
+
       if (formattedReviews.length > 0) {
         const avg = formattedReviews.reduce((sum, r) => sum + r.rating, 0) / formattedReviews.length;
         setAverageRating(Math.round(avg * 10) / 10);
       }
+
+      setEstablishment(prev => prev ? { ...prev, photos: (gallery as Photo[]) || [] } : null);
 
       // Check for user-specific data (blocks, already reviewed)
       const { data: { user } } = await supabase.auth.getUser();
@@ -163,6 +173,12 @@ export default function EstablishmentPage() {
   useEffect(() => {
     loadEstablishment();
   }, [loadEstablishment]);
+
+  useEffect(() => {
+    if (establishment?.main_photo_url && !activePhotoUrl) {
+      setActivePhotoUrl(establishment.main_photo_url);
+    }
+  }, [establishment, activePhotoUrl]);
 
   const handleToggleFavorite = async () => {
     const res = await toggleFavorite();
@@ -255,9 +271,9 @@ export default function EstablishmentPage() {
               {/* Photo hero */}
               <div className="relative group rounded-3xl overflow-hidden bg-white border border-gray-100 shadow-xl shadow-gray-200/50">
                 <div className="h-64 sm:h-96 w-full relative">
-                  {establishment.main_photo_url ? (
+                  {(activePhotoUrl || establishment.main_photo_url) ? (
                     <img
-                      src={establishment.main_photo_url}
+                      src={activePhotoUrl || establishment.main_photo_url || ""}
                       alt={establishment.name}
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                     />
@@ -306,6 +322,33 @@ export default function EstablishmentPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Gallery Thumbnails */}
+              {establishment.photos && establishment.photos.length > 0 && (
+                <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-hide">
+                  <button
+                    onClick={() => setActivePhotoUrl(establishment.main_photo_url)}
+                    className={cn(
+                      "relative w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0 rounded-2xl overflow-hidden border-2 transition-all shadow-md",
+                      activePhotoUrl === establishment.main_photo_url ? "border-primary scale-105" : "border-transparent hover:border-gray-300"
+                    )}
+                  >
+                    <img src={establishment.main_photo_url!} className="w-full h-full object-cover" alt="Main" />
+                  </button>
+                  {establishment.photos.map((photo) => (
+                    <button
+                      key={photo.id}
+                      onClick={() => setActivePhotoUrl(photo.url)}
+                      className={cn(
+                        "relative w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0 rounded-2xl overflow-hidden border-2 transition-all shadow-md",
+                        activePhotoUrl === photo.url ? "border-primary scale-105" : "border-transparent hover:border-gray-300"
+                      )}
+                    >
+                      <img src={photo.url} className="w-full h-full object-cover" alt="Gallery" />
+                    </button>
+                  ))}
+                </div>
+              )}
 
               {/* Booking section — moved to main column */}
               <EstablishmentSidebar
