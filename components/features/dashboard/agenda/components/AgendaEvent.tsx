@@ -55,8 +55,10 @@ export default function AgendaEvent({
     let label = title;
 
     if (event.type === "unavailability") {
-        const unavData = event.data as { unavailability_type: UnavailabilityType };
-        label = title || UNAVAILABILITY_TYPE_LABELS[unavData.unavailability_type] || "Indisponible";
+        const unavData = event.data as any; // Using any to avoid complex cast since we check type
+        const typeLabel = UNAVAILABILITY_TYPE_LABELS[unavData.unavailability_type as keyof typeof UNAVAILABILITY_TYPE_LABELS] || "Indisponible";
+        const reason = unavData.reason;
+        label = reason && reason !== "Indisponible" ? `${typeLabel} : ${reason}` : typeLabel;
     }
 
     return (
