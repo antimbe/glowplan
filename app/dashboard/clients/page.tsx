@@ -5,12 +5,15 @@ import { Users, Loader2 } from "lucide-react";
 import { useClientsData } from "@/components/features/dashboard/clients/hooks/useClientsData";
 import { ClientsFilters } from "@/components/features/dashboard/clients/ClientsFilters";
 import { ClientsTable } from "@/components/features/dashboard/clients/ClientsTable";
-import { SortField } from "@/components/features/dashboard/clients/types";
+import { SortField, ClientStats } from "@/components/features/dashboard/clients/types";
+import { ClientHistoryModal } from "@/components/features/dashboard/clients/ClientHistoryModal";
 
 export default function ClientsPage() {
-  const { clients, loading, blockClient, blockingClient } = useClientsData();
+  const { clients, loading, establishmentId, blockClient, blockingClient } = useClientsData();
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortField>("last_visit");
+  const [selectedClient, setSelectedClient] = useState<ClientStats | null>(null);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
 
   const filteredClients = clients
     .filter(c => {
@@ -63,6 +66,10 @@ export default function ClientsPage() {
           clients={filteredClients}
           onBlock={blockClient}
           blockingClient={blockingClient}
+          onClientClick={(client) => {
+            setSelectedClient(client);
+            setIsHistoryModalOpen(true);
+          }}
         />
       ) : (
         <div className="bg-white rounded-2xl p-12 border border-gray-100 text-center">
@@ -77,6 +84,16 @@ export default function ClientsPage() {
             }
           </p>
         </div>
+      )}
+
+      {selectedClient && establishmentId && (
+        <ClientHistoryModal
+          isOpen={isHistoryModalOpen}
+          onClose={() => setIsHistoryModalOpen(false)}
+          clientName={`${selectedClient.first_name} ${selectedClient.last_name}`}
+          clientProfileId={selectedClient.client_profile_id}
+          establishmentId={establishmentId}
+        />
       )}
     </div>
   );

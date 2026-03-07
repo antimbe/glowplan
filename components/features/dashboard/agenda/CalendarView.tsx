@@ -7,6 +7,7 @@ import { AGENDA_CONFIG } from "./constants";
 import AgendaHeader from "./components/AgendaHeader";
 import AgendaGrid from "./components/AgendaGrid";
 import TimeSlot from "./components/TimeSlot";
+import TimeIndicator from "./components/TimeIndicator";
 
 interface CalendarViewProps {
   events: CalendarEvent[];
@@ -124,46 +125,67 @@ export default function CalendarView({
     const weekDays = getWeekDays();
     return (
       <div className="flex flex-col h-full">
-        <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-gray-100 bg-gray-50/50">
-          <div className="h-14" />
-          {weekDays.map((day, i) => (
-            <div key={i} className="h-14 flex flex-col items-center justify-center font-semibold text-gray-700 border-l border-gray-100">
-              <span className="text-[10px] uppercase text-gray-400">{DAYS[day.getDay() === 0 ? 6 : day.getDay() - 1]}</span>
-              <div className="flex items-center gap-1">
-                <span className={`text-lg ${isToday(day) ? "bg-primary text-white w-7 h-7 rounded-full flex items-center justify-center -mb-1" : ""}`}>{day.getDate()}</span>
+        <div className="flex-1 overflow-y-auto relative">
+          {/* Header sticky inside scrollable container to align with content scrollbar */}
+          <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-gray-100 bg-gray-50/50 sticky top-0 z-30">
+            <div className="h-14 bg-gray-50/50" />
+            {weekDays.map((day, i) => (
+              <div key={i} className="h-14 flex flex-col items-center justify-center font-semibold text-gray-700 border-l border-gray-100 bg-gray-50/50">
+                <span className="text-[10px] uppercase text-gray-400">{DAYS[day.getDay() === 0 ? 6 : day.getDay() - 1]}</span>
+                <div className="flex items-center gap-1">
+                  <span className={`text-lg ${isToday(day) ? "bg-primary text-white w-7 h-7 rounded-full flex items-center justify-center -mb-1" : ""}`}>{day.getDate()}</span>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-        <div className="flex-1 overflow-y-auto">
-          {HOURS.map((hour) => (
-            <div key={hour} className="grid grid-cols-[60px_repeat(7,1fr)] group">
-              <div className="text-[10px] text-gray-400 text-right pr-3 pt-2 font-medium border-b border-gray-50 h-[70px]">
-                {hour.toString().padStart(2, "0")}:00
-              </div>
-              {weekDays.map((day, i) => {
-                const unavailableSlot = isSlotUnavailable(day, hour);
-                const slotEvents = getEventsStartingAtHour(day, hour);
+            ))}
+          </div>
+
+          <div className="relative">
+            {(() => {
+              const todayIndex = weekDays.findIndex(d => isToday(d));
+              if (todayIndex !== -1) {
                 return (
-                  <div key={i} className="border-l border-b border-gray-50 relative h-[70px]">
-                    <TimeSlot
-                      hour={hour}
-                      currentDay={day}
-                      unavailableSlot={unavailableSlot}
-                      slotEvents={slotEvents}
-                      showTimeColumn={false}
-                      onSlotClick={(h) => {
-                        const slotDate = new Date(day);
-                        slotDate.setHours(h, 0, 0, 0);
-                        onSlotClick(slotDate);
-                      }}
-                      onEventClick={onEventClick}
-                    />
+                  <div
+                    className="absolute pointer-events-none z-20 h-full"
+                    style={{
+                      left: `calc(60px + ${todayIndex} * (100% - 60px) / 7)`,
+                      width: `calc((100% - 60px) / 7)`
+                    }}
+                  >
+                    <TimeIndicator showLabel={false} />
                   </div>
                 );
-              })}
-            </div>
-          ))}
+              }
+              return null;
+            })()}
+            {HOURS.map((hour) => (
+              <div key={hour} className="grid grid-cols-[60px_repeat(7,1fr)] group">
+                <div className="text-[10px] text-gray-400 text-right pr-3 pt-2 font-medium border-b border-gray-50 h-[70px]">
+                  {hour.toString().padStart(2, "0")}:00
+                </div>
+                {weekDays.map((day, i) => {
+                  const unavailableSlot = isSlotUnavailable(day, hour);
+                  const slotEvents = getEventsStartingAtHour(day, hour);
+                  return (
+                    <div key={i} className="border-l border-b border-gray-50 relative h-[70px]">
+                      <TimeSlot
+                        hour={hour}
+                        currentDay={day}
+                        unavailableSlot={unavailableSlot}
+                        slotEvents={slotEvents}
+                        showTimeColumn={false}
+                        onSlotClick={(h) => {
+                          const slotDate = new Date(day);
+                          slotDate.setHours(h, 0, 0, 0);
+                          onSlotClick(slotDate);
+                        }}
+                        onEventClick={onEventClick}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );

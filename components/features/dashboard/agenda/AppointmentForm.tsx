@@ -17,7 +17,7 @@ interface AppointmentFormProps {
   onDelete?: () => void;
 }
 
-const TIME_OPTIONS = Array.from({ length: 57 }, (_, i) => {
+const TIME_OPTIONS = Array.from({ length: 53 }, (_, i) => {
   const totalMinutes = 7 * 60 + i * 15;
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;

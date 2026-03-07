@@ -147,6 +147,7 @@ export function useClientsData() {
     return {
         clients,
         loading,
+        establishmentId,
         blockClient,
         blockingClient,
         refresh: () => establishmentId && loadClients(establishmentId),

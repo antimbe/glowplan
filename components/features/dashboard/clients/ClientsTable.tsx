@@ -15,9 +15,10 @@ interface ClientsTableProps {
     clients: ClientStats[];
     onBlock: (clientProfileId: string, block: boolean) => Promise<void>;
     blockingClient: string | null;
+    onClientClick: (client: ClientStats) => void;
 }
 
-export function ClientsTable({ clients, onBlock, blockingClient }: ClientsTableProps) {
+export function ClientsTable({ clients, onBlock, blockingClient, onClientClick }: ClientsTableProps) {
     const [actionMenuOpen, setActionMenuOpen] = useState<string | null>(null);
 
     const formatDate = (dateStr: string | null) => {
@@ -45,8 +46,9 @@ export function ClientsTable({ clients, onBlock, blockingClient }: ClientsTableP
                         {clients.map((client) => (
                             <tr
                                 key={client.id}
+                                onClick={() => onClientClick(client)}
                                 className={cn(
-                                    "hover:bg-gray-50/50 transition-colors",
+                                    "hover:bg-gray-50/50 transition-colors cursor-pointer group",
                                     client.is_blocked && "bg-red-50/30"
                                 )}
                             >
@@ -125,6 +127,7 @@ export function ClientsTable({ clients, onBlock, blockingClient }: ClientsTableP
                                         {client.phone && (
                                             <a
                                                 href={`tel:${client.phone}`}
+                                                onClick={(e) => e.stopPropagation()}
                                                 className="w-8 h-8 rounded-lg bg-green-100 text-green-600 flex items-center justify-center hover:bg-green-200 transition-colors"
                                                 title="Appeler"
                                             >
@@ -133,6 +136,7 @@ export function ClientsTable({ clients, onBlock, blockingClient }: ClientsTableP
                                         )}
                                         <a
                                             href={`mailto:${client.email}`}
+                                            onClick={(e) => e.stopPropagation()}
                                             className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center hover:bg-blue-200 transition-colors"
                                             title="Envoyer un email"
                                         >
@@ -142,7 +146,10 @@ export function ClientsTable({ clients, onBlock, blockingClient }: ClientsTableP
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
-                                                onClick={() => setActionMenuOpen(actionMenuOpen === client.id ? null : client.id)}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setActionMenuOpen(actionMenuOpen === client.id ? null : client.id);
+                                                }}
                                                 className="w-8 h-8 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 p-0 min-w-0"
                                             >
                                                 <MoreVertical size={16} />
@@ -151,7 +158,8 @@ export function ClientsTable({ clients, onBlock, blockingClient }: ClientsTableP
                                                 <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-10">
                                                     <Button
                                                         variant="ghost"
-                                                        onClick={() => {
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
                                                             onBlock(client.client_profile_id, !client.is_blocked);
                                                             setActionMenuOpen(null);
                                                         }}
