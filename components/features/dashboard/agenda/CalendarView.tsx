@@ -3,7 +3,8 @@
 import { useMemo } from "react";
 import { CalendarViewType, CalendarEvent } from "./types";
 import { DAYS_DB, MONTHS } from "@/lib/utils/formatters";
-import { AGENDA_CONFIG } from "./constants";
+import { AGENDA_CONFIG, UNAVAILABILITY_TYPE_LABELS } from "./constants";
+import { UnavailabilityData } from "./types";
 import AgendaHeader from "./components/AgendaHeader";
 import AgendaGrid from "./components/AgendaGrid";
 import TimeSlot from "./components/TimeSlot";
@@ -233,12 +234,16 @@ export default function CalendarView({
                     </span>
 
                     {/* Unavailability indicator */}
-                    {isUnavailable && (
-                      <div className="text-[9px] lg:text-[10px] bg-red-100 text-red-700 rounded px-1 py-0.5 font-semibold truncate flex items-center gap-0.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0" />
-                        Indisponible
-                      </div>
-                    )}
+                    {unavailabilities.map((unav, idx) => {
+                      const unavData = unav.data as UnavailabilityData;
+                      const label = UNAVAILABILITY_TYPE_LABELS[unavData.unavailability_type] || "Indisponible";
+                      return (
+                        <div key={`unav-${idx}`} className="text-[9px] lg:text-[10px] bg-red-100 text-red-700 rounded px-1 py-0.5 font-semibold truncate flex items-center gap-0.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0" />
+                          {label}
+                        </div>
+                      );
+                    })}
 
                     {/* Appointment dots/labels */}
                     {appointments.slice(0, 3).map((apt, idx) => (
