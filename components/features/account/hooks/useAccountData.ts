@@ -67,6 +67,11 @@ export function useAccountData(): UseAccountDataReturn {
     if (requestId !== lastLoadId.current) return;
 
     if (profileRes.data) {
+      if (profileRes.data.user_type === "professional") {
+        router.push("/dashboard");
+        return;
+      }
+
       setProfile(profileRes.data);
 
       const [appointmentsRes, favoritesRes, reviewsRes] = await Promise.all([

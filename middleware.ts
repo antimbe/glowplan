@@ -35,21 +35,65 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // Protected routes - redirect to login if not authenticated
-  if (
-    !user &&
-    request.nextUrl.pathname.startsWith('/dashboard')
-  ) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/auth/pro/login'
-    return NextResponse.redirect(url)
+  let userType = user?.user_metadata?.user_type
+
+  // Fallback for older accounts that might not have user_type in their metadata
+  if (user && !userType) {
+    const { data: establishment } = await supabase
+      .from('establishments')
+      .select('id')
+      .eq('user_id', user.id)
+      .maybeSingle()
+    
+    if (establishment) {
+      userType = 'pro'
+      
+      // Update their metadata for future so we don't have to query the db every time
+      await supabase.auth.updateUser({
+        data: { user_type: 'pro' }
+      })
+    } else {
+      userType = 'client'
+    }
   }
 
-  // Optimize dashboard entry - redirect /dashboard to /dashboard/business for speed
-  if (user && request.nextUrl.pathname === '/dashboard') {
-    const url = request.nextUrl.clone()
-    url.pathname = '/dashboard/business'
-    return NextResponse.redirect(url)
+  // Restrict /dashboard access strictly to 'pro' users
+  if (request.nextUrl.pathname.startsWith('/dashboard')) {
+    if (!user) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/auth/pro/login'
+      return NextResponse.redirect(url)
+    }
+    
+    // Redirect logged-in clients trying to access dashboard
+    if (userType !== 'pro') {
+      const url = request.nextUrl.clone()
+      url.pathname = '/account'
+      return NextResponse.redirect(url)
+    }
+
+    // Optimize dashboard entry - redirect /dashboard to /dashboard/business for speed
+    if (request.nextUrl.pathname === '/dashboard') {
+      const url = request.nextUrl.clone()
+      url.pathname = '/dashboard/business'
+      return NextResponse.redirect(url)
+    }
+  }
+
+  // Restrict /account access strictly to 'client' users
+  if (request.nextUrl.pathname.startsWith('/account')) {
+    if (!user) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/auth/client/login'
+      return NextResponse.redirect(url)
+    }
+
+    // Redirect logged-in professionals trying to access account
+    if (userType === 'pro') {
+      const url = request.nextUrl.clone()
+      url.pathname = '/dashboard'
+      return NextResponse.redirect(url)
+    }
   }
 
   // IMPORTANT: You *must* return the supabaseResponse object as it is. If you're
