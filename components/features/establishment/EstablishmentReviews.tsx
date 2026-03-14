@@ -22,6 +22,28 @@ interface EstablishmentReviewsProps {
     onAddReview?: () => void;
 }
 
+const renderStars = (rating: number, size = 16) => {
+    return [1, 2, 3, 4, 5].map((position) => {
+        const isFull = position <= rating;
+        const isHalf = !isFull && position - 0.5 <= rating;
+
+        if (isFull) {
+            return <Star key={position} size={size} className="text-accent fill-accent" />;
+        } else if (isHalf) {
+            return (
+                <div key={position} className="relative inline-block" style={{ width: size, height: size }}>
+                    <Star size={size} className="text-gray-300 absolute top-0 left-0" />
+                    <div className="absolute top-0 left-0 overflow-hidden text-accent fill-accent" style={{ width: '50%', height: '100%' }}>
+                        <Star size={size} />
+                    </div>
+                </div>
+            );
+        } else {
+            return <Star key={position} size={size} className="text-gray-300" />;
+        }
+    });
+};
+
 export function EstablishmentReviews({
     reviews,
     averageRating,
@@ -35,17 +57,7 @@ export function EstablishmentReviews({
                     {averageRating !== null && (
                         <div className="flex items-center gap-2">
                             <div className="flex items-center gap-1">
-                                {[1, 2, 3, 4, 5].map((star) => (
-                                    <Star
-                                        key={star}
-                                        size={16}
-                                        className={cn(
-                                            star <= Math.round(averageRating)
-                                                ? "text-accent fill-accent"
-                                                : "text-gray-300"
-                                        )}
-                                    />
-                                ))}
+                                {renderStars(averageRating, 16)}
                             </div>
                             <span className="font-bold text-gray-900">{averageRating}</span>
                             <span className="text-gray-500 text-sm">({reviews.length} avis)</span>
@@ -72,17 +84,7 @@ export function EstablishmentReviews({
                             <div className="flex justify-between items-start mb-2">
                                 <div>
                                     <div className="flex items-center gap-1 mb-1">
-                                        {[1, 2, 3, 4, 5].map((star) => (
-                                            <Star
-                                                key={star}
-                                                size={12}
-                                                className={cn(
-                                                    star <= review.rating
-                                                        ? "text-accent fill-accent"
-                                                        : "text-gray-300"
-                                                )}
-                                            />
-                                        ))}
+                                        {renderStars(review.rating, 12)}
                                     </div>
                                     <p className="font-semibold text-gray-900 text-sm">
                                         {review.client_profiles

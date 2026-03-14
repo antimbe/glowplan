@@ -62,14 +62,15 @@ export default function EstablishmentPage() {
   const [submittingReview, setSubmittingReview] = useState(false);
   const [hasAlreadyReviewed, setHasAlreadyReviewed] = useState(false);
   const [clientProfileId, setClientProfileId] = useState<string | null>(null);
+  const [initialClientInfo, setInitialClientInfo] = useState<Partial<ClientInfo>>({});
   const [activePhotoUrl, setActivePhotoUrl] = useState<string | null>(null);
 
   // Actions hook (favorites)
   const { isFavorite, toggleFavorite, hasProfile } = useEstablishmentActions(establishmentId);
 
-  const loadEstablishment = useCallback(async () => {
+  const loadEstablishment = useCallback(async (isBackgroundRefresh = false) => {
     try {
-      if (!establishment) setLoading(true);
+      if (!isBackgroundRefresh) setLoading(true);
       const { data: est, error: estError } = await supabase
         .from("establishments")
         .select("*")
@@ -139,12 +140,20 @@ export default function EstablishmentPage() {
       if (user) {
         const { data: profile } = await supabase
           .from("client_profiles")
-          .select("id")
+          .select("id, first_name, last_name, phone, instagram")
           .eq("user_id", user.id)
           .single();
 
         if (profile) {
           setClientProfileId(profile.id);
+          setInitialClientInfo({
+            firstName: profile.first_name || "",
+            lastName: profile.last_name || "",
+            email: user.email || "",
+            phone: profile.phone || "",
+            instagram: profile.instagram || ""
+          });
+
           const { data: existingReview } = await supabase
             .from("reviews")
             .select("id")
@@ -171,7 +180,7 @@ export default function EstablishmentPage() {
   }, [establishmentId, supabase]);
 
   useEffect(() => {
-    loadEstablishment();
+    loadEstablishment(false);
   }, [loadEstablishment]);
 
   useEffect(() => {
@@ -356,11 +365,12 @@ export default function EstablishmentPage() {
                 services={services}
                 openingHours={openingHours}
                 onBookingComplete={() => {
-                  loadEstablishment();
+                  loadEstablishment(true);
                 }}
                 blockedError={blockedError}
                 mode="booking"
                 clientProfileId={clientProfileId}
+                initialClientInfo={initialClientInfo}
               />
 
               <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-xl shadow-gray-200/50">
@@ -387,6 +397,7 @@ export default function EstablishmentPage() {
                 blockedError={false}
                 mode="info"
                 clientProfileId={clientProfileId}
+                initialClientInfo={initialClientInfo}
               />
             </div>
           </div>

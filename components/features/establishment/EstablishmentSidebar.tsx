@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MapPin, Clock } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { DAYS_DB } from "@/lib/utils/formatters";
@@ -14,9 +14,10 @@ interface EstablishmentSidebarProps {
     services: Service[];
     openingHours: OpeningHour[];
     onBookingComplete: () => void;
-    blockedError: boolean;
+    blockedError?: boolean;
     mode?: "booking" | "info";
     clientProfileId?: string | null;
+    initialClientInfo?: Partial<ClientInfo>;
 }
 
 export function EstablishmentSidebar({
@@ -26,7 +27,8 @@ export function EstablishmentSidebar({
     onBookingComplete,
     blockedError,
     mode = "booking",
-    clientProfileId = null
+    clientProfileId = null,
+    initialClientInfo = {}
 }: EstablishmentSidebarProps) {
     const [step, setStep] = useState<BookingStep>("info");
 
@@ -50,13 +52,31 @@ export function EstablishmentSidebar({
     } = useBooking(establishment.id, openingHours);
 
     const [clientInfo, setClientInfo] = useState<ClientInfo>({
-        firstName: "",
-        lastName: "",
-        email: "",
-        phone: "",
-        instagram: "",
+        firstName: initialClientInfo?.firstName || "",
+        lastName: initialClientInfo?.lastName || "",
+        email: initialClientInfo?.email || "",
+        phone: initialClientInfo?.phone || "",
+        instagram: initialClientInfo?.instagram || "",
         notes: "",
     });
+
+    // Force update whenever initialClientInfo receives valid data
+    useEffect(() => {
+        if (initialClientInfo && Object.keys(initialClientInfo).length > 0) {
+            setClientInfo(prev => {
+                // Seulement remplacer si la valeur est arrivée (non-vide)
+                return {
+                    ...prev,
+                    firstName: initialClientInfo.firstName || prev.firstName,
+                    lastName: initialClientInfo.lastName || prev.lastName,
+                    email: initialClientInfo.email || prev.email,
+                    phone: initialClientInfo.phone || prev.phone,
+                    instagram: initialClientInfo.instagram || prev.instagram,
+                };
+            });
+        }
+    }, [initialClientInfo?.firstName, initialClientInfo?.lastName, initialClientInfo?.email, initialClientInfo?.phone, initialClientInfo?.instagram]);
+
 
     const getSortedHours = () => {
         // DB convention: 0=Lundi, 1=Mardi, ..., 6=Dimanche — tri direct
@@ -158,7 +178,7 @@ export function EstablishmentSidebar({
                 clientProfileId={clientProfileId}
                 submitting={isConfirming}
                 handleSubmitBooking={handleSubmitBooking}
-                blockedError={blockedError}
+                blockedError={blockedError || false}
                 establishment={establishment}
                 openingHours={openingHours}
                 cart={cart}

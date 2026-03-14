@@ -62,25 +62,22 @@ export function useAccountData(): UseAccountDataReturn {
       setUser(authUser);
     }
 
-    // Parallel fetching
-    const [profileRes, appointmentsRes] = await Promise.all([
-      supabase.from("client_profiles").select("*").eq("user_id", authUser.id).single(),
-      supabase.from("appointments")
-        .select(`
-          *,
-          establishments(name, city),
-          services(name, price, duration)
-        `)
-        .eq("user_id", authUser.id)
-        .order("start_time", { ascending: false })
-    ]);
+    const profileRes = await supabase.from("client_profiles").select("*").eq("user_id", authUser.id).single();
 
     if (requestId !== lastLoadId.current) return;
 
     if (profileRes.data) {
       setProfile(profileRes.data);
 
-      const [favoritesRes, reviewsRes] = await Promise.all([
+      const [appointmentsRes, favoritesRes, reviewsRes] = await Promise.all([
+        supabase.from("appointments")
+          .select(`
+            *,
+            establishments(name, city),
+            services(name, price, duration)
+          `)
+          .eq("client_profile_id", profileRes.data.id)
+          .order("start_time", { ascending: false }),
         supabase.from("favorites")
           .select("*, establishments(name, city, main_photo_url)")
           .eq("client_id", profileRes.data.id),
@@ -91,14 +88,15 @@ export function useAccountData(): UseAccountDataReturn {
       ]);
 
       if (requestId === lastLoadId.current) {
+        setAppointments(appointmentsRes.data || []);
         setFavorites(favoritesRes.data || []);
         setReviews(reviewsRes.data || []);
+        setLoading(false);
       }
-    }
-
-    if (requestId === lastLoadId.current) {
-      setAppointments(appointmentsRes.data || []);
-      setLoading(false);
+    } else {
+      if (requestId === lastLoadId.current) {
+        setLoading(false);
+      }
     }
   }, [supabase]);
 

@@ -74,7 +74,7 @@ Ce document récapitule l'ensemble des points à tester pour garantir la robuste
 
 ## 8. 👤 Gestion des Clients (Agenda)
 - [ ] **Lien avec le profil existant** : Sélectionner un client déjà enregistré. Vérifier que ses coordonnées s'affichent instantanément.
-- [ ] **Création au vol** : Saisir un nouveau nom/tél dans le formulaire de RDV. Vérifier après enregistrement s'il apparaît dans l'onglet "Clients".
+
 - [ ] **Historique** : Un RDV créé dans l'agenda doit apparaître dans la fiche client correspondante.
 
 ## 9. 🛡️ Intégrité et Sécurité

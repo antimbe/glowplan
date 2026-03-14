@@ -390,8 +390,12 @@ export function BookingTunnel({
                     </div>
 
                     <Button
+                        type="button"
                         variant="primary"
-                        onClick={handleSubmitBooking}
+                        onClick={(e) => {
+                            e.preventDefault();
+                            handleSubmitBooking();
+                        }}
                         disabled={!clientInfo.firstName || !clientInfo.lastName || !clientInfo.email || !clientInfo.phone || submitting || blockedError}
                         className="w-full mt-8 py-4 text-base cursor-pointer"
                     >
