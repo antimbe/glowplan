@@ -83,7 +83,7 @@ export function useAccountData(): UseAccountDataReturn {
           .eq("client_id", profileRes.data.id),
         supabase.from("reviews")
           .select("*, establishments(name, city)")
-          .eq("client_id", profileRes.data.id)
+          .eq("client_profile_id", profileRes.data.id)
           .order("created_at", { ascending: false })
       ]);
 
@@ -155,7 +155,7 @@ export function useAccountData(): UseAccountDataReturn {
       const { error } = await supabase
         .from("reviews")
         .insert({
-          client_id: profile.id,
+          client_profile_id: profile.id,
           establishment_id: data.establishment_id,
           appointment_id: data.appointment_id,
           rating: data.rating,
