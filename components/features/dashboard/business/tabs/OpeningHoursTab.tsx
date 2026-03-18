@@ -145,7 +145,7 @@ export default function OpeningHoursTab({ establishmentId }: OpeningHoursTabProp
             >
               <div className="flex flex-col lg:flex-row lg:items-center gap-4">
                 {/* Jour et toggle */}
-                <div className="flex items-center justify-between lg:w-40">
+                <div className="flex items-center justify-between w-full lg:w-40">
                   <span className={`font-semibold ${day.is_open ? "text-primary" : "text-gray-400"}`}>
                     {DAYS_OF_WEEK[day.day_of_week].label}
                   </span>
@@ -159,30 +159,32 @@ export default function OpeningHoursTab({ establishmentId }: OpeningHoursTabProp
                 {day.is_open && (
                   <>
                     {/* Horaires principaux */}
-                    <div className="flex items-center gap-2 flex-1">
-                      <select
-                        value={day.open_time || "09:00"}
-                        onChange={(e) => updateDay(index, "open_time", e.target.value)}
-                        className="h-10 px-3 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/10 text-sm font-medium bg-white cursor-pointer"
-                      >
-                        {TIME_OPTIONS.map((time) => (
-                          <option key={time} value={time}>{time}</option>
-                        ))}
-                      </select>
-                      <span className="text-gray-400">à</span>
-                      <select
-                        value={day.close_time || "18:00"}
-                        onChange={(e) => updateDay(index, "close_time", e.target.value)}
-                        className="h-10 px-3 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/10 text-sm font-medium bg-white cursor-pointer"
-                      >
-                        {TIME_OPTIONS.map((time) => (
-                          <option key={time} value={time}>{time}</option>
-                        ))}
-                      </select>
+                    <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={day.open_time || "09:00"}
+                          onChange={(e) => updateDay(index, "open_time", e.target.value)}
+                          className="h-10 px-2 sm:px-3 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/10 text-xs sm:text-sm font-medium bg-white cursor-pointer"
+                        >
+                          {TIME_OPTIONS.map((time) => (
+                            <option key={time} value={time}>{time}</option>
+                          ))}
+                        </select>
+                        <span className="text-gray-400 text-xs">à</span>
+                        <select
+                          value={day.close_time || "18:00"}
+                          onChange={(e) => updateDay(index, "close_time", e.target.value)}
+                          className="h-10 px-2 sm:px-3 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/10 text-xs sm:text-sm font-medium bg-white cursor-pointer"
+                        >
+                          {TIME_OPTIONS.map((time) => (
+                            <option key={time} value={time}>{time}</option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
 
                     {/* Pause */}
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
                       <button
                         onClick={() => toggleBreak(index)}
                         className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer ${
@@ -192,7 +194,7 @@ export default function OpeningHoursTab({ establishmentId }: OpeningHoursTabProp
                         }`}
                       >
                         <Coffee size={16} />
-                        <span className="hidden lg:inline">Pause</span>
+                        <span>Pause</span>
                       </button>
 
                       {day.break_start && (
@@ -200,7 +202,7 @@ export default function OpeningHoursTab({ establishmentId }: OpeningHoursTabProp
                           <select
                             value={day.break_start}
                             onChange={(e) => updateDay(index, "break_start", e.target.value)}
-                            className="h-10 px-3 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/10 text-sm font-medium bg-white cursor-pointer"
+                            className="h-10 px-2 sm:px-3 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/10 text-xs sm:text-sm font-medium bg-white cursor-pointer"
                           >
                             {TIME_OPTIONS.map((time) => (
                               <option key={time} value={time}>{time}</option>
@@ -210,7 +212,7 @@ export default function OpeningHoursTab({ establishmentId }: OpeningHoursTabProp
                           <select
                             value={day.break_end || "14:00"}
                             onChange={(e) => updateDay(index, "break_end", e.target.value)}
-                            className="h-10 px-3 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/10 text-sm font-medium bg-white cursor-pointer"
+                            className="h-10 px-2 sm:px-3 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/10 text-xs sm:text-sm font-medium bg-white cursor-pointer"
                           >
                             {TIME_OPTIONS.map((time) => (
                               <option key={time} value={time}>{time}</option>

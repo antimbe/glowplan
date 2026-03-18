@@ -166,8 +166,8 @@ export default function ReviewsTab({ establishmentId }: ReviewsTabProps) {
           <div className="flex flex-col lg:flex-row gap-8">
             {/* Average Rating */}
             <div className="text-center lg:text-left">
-              <div className="text-5xl font-bold text-primary mb-2">{averageRating}</div>
-              <div className="flex items-center justify-center lg:justify-start gap-0.5 mb-2">
+              <div className="text-4xl sm:text-5xl font-bold text-primary mb-2">{averageRating}</div>
+              <div className="flex items-center justify-center lg:justify-start gap-1 mb-2">
                 {[1, 2, 3, 4, 5].map((star) => {
                   const avg = Number(averageRating) || 0;
                   const isFullStar = star <= Math.floor(avg);
@@ -235,13 +235,13 @@ export default function ReviewsTab({ establishmentId }: ReviewsTabProps) {
                       {getReviewerName(review).charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-gray-900">{getReviewerName(review)}</h3>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="font-semibold text-gray-900 truncate max-w-[120px] sm:max-w-none">{getReviewerName(review)}</h3>
                         {review.is_verified && (
-                          <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Vérifié</span>
+                          <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full whitespace-nowrap">Vérifié</span>
                         )}
                         {!review.is_visible && (
-                          <span className="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">Masqué</span>
+                          <span className="text-[10px] bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full whitespace-nowrap">Masqué</span>
                         )}
                       </div>
                       <p className="text-sm text-gray-500">{formatDate(review.created_at)}</p>

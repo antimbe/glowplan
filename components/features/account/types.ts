@@ -8,6 +8,8 @@ export interface Appointment {
   establishment_id: string;
   service_id: string;
   has_review?: boolean;
+  cancelled_by_client?: boolean;
+  cancellation_reason?: string | null;
   establishments?: {
     name: string;
     city: string;

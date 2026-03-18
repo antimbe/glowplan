@@ -103,9 +103,12 @@ export function AppointmentsTab({
                                             </div>
                                             <div className="flex flex-wrap gap-2 mt-2">
                                                 {apt.status === "cancelled" && (
-                                                    <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-red-100 text-red-700">
+                                                    <span className={cn(
+                                                        "inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full",
+                                                        apt.cancelled_by_client ? "bg-red-100 text-red-700" : "bg-orange-100 text-orange-700"
+                                                    )}>
                                                         <X size={12} />
-                                                        Annulé
+                                                        {apt.cancelled_by_client ? "Annulé" : "Annulé par l'établissement"}
                                                     </span>
                                                 )}
                                                 {apt.has_review && (

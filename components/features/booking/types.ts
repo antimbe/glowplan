@@ -4,6 +4,7 @@ export interface Service {
     description: string | null;
     price: number;
     duration: number;
+    image_url?: string | null;
 }
 
 export interface OpeningHour {

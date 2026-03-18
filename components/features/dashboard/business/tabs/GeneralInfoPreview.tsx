@@ -101,33 +101,35 @@ export default function GeneralInfoPreview({ formData, establishmentId, onEdit }
     <div className="space-y-6">
       {/* Header avec photo et infos principales */}
       <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-        <div className="flex items-start gap-4 p-4">
-          {formData.main_photo_url ? (
-            <img 
-              src={formData.main_photo_url} 
-              alt={formData.name}
-              className="w-20 h-20 rounded-xl object-cover flex-shrink-0"
-            />
-          ) : (
-            <div className="w-20 h-20 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
-              <FileText size={24} className="text-gray-400" />
-            </div>
-          )}
-          <div className="flex-1 min-w-0">
-            <h2 className="text-xl font-bold text-gray-900">{formData.name || "Mon établissement"}</h2>
-            <div className="flex flex-wrap gap-2 mt-2">
-              {formData.activity_sectors.map((sector, idx) => (
-                <span key={idx} className="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-full">
-                  {sector}
-                </span>
-              ))}
+        <div className="flex flex-col sm:flex-row sm:items-start gap-4 p-4 lg:p-6">
+          <div className="flex items-start gap-4 flex-1">
+            {formData.main_photo_url ? (
+              <img 
+                src={formData.main_photo_url} 
+                alt={formData.name}
+                className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-cover flex-shrink-0"
+              />
+            ) : (
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
+                <FileText size={24} className="text-gray-400" />
+              </div>
+            )}
+            <div className="min-w-0">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900 break-words">{formData.name || "Mon établissement"}</h2>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {formData.activity_sectors.map((sector, idx) => (
+                  <span key={idx} className="bg-gray-100 text-gray-600 text-[10px] sm:text-xs px-2 py-1 rounded-full whitespace-nowrap">
+                    {sector}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
           <Button
             variant="primary"
             size="sm"
             onClick={onEdit}
-            className="flex-shrink-0"
+            className="w-full sm:w-auto flex-shrink-0 h-10"
           >
             <Edit size={16} className="mr-2" />
             Modifier mes informations

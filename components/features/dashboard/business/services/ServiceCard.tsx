@@ -28,11 +28,11 @@ export default function ServiceCard({ service, onEdit, onDelete }: ServiceCardPr
   };
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md transition-all group relative">
-      <div className="flex gap-4">
+    <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 hover:shadow-md transition-all group relative">
+      <div className="flex gap-3 sm:gap-4">
         {/* Image */}
         {service.image_url ? (
-          <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden flex-shrink-0">
             <img
               src={service.image_url}
               alt={service.name}
@@ -40,8 +40,8 @@ export default function ServiceCard({ service, onEdit, onDelete }: ServiceCardPr
             />
           </div>
         ) : (
-          <div className="w-20 h-20 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-            <span className="text-primary text-2xl font-bold">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+            <span className="text-primary text-xl sm:text-2xl font-bold">
               {service.name.charAt(0).toUpperCase()}
             </span>
           </div>
@@ -49,9 +49,9 @@ export default function ServiceCard({ service, onEdit, onDelete }: ServiceCardPr
 
         {/* Content */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between">
-            <div>
-              <h4 className="text-primary font-bold text-base truncate">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0 flex-1">
+              <h4 className="text-primary font-bold text-sm sm:text-base break-words">
                 {service.name}
               </h4>
               {service.description && (
@@ -62,10 +62,10 @@ export default function ServiceCard({ service, onEdit, onDelete }: ServiceCardPr
             </div>
 
             {/* Menu */}
-            <div className="relative">
+            <div className="relative flex-shrink-0">
               <button
                 onClick={() => setShowMenu(!showMenu)}
-                className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors cursor-pointer lg:opacity-0 lg:group-hover:opacity-100"
+                className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors cursor-pointer lg:opacity-0 lg:group-hover:opacity-100 lg:focus-within:opacity-100"
               >
                 <MoreVertical size={18} />
               </button>
@@ -104,21 +104,21 @@ export default function ServiceCard({ service, onEdit, onDelete }: ServiceCardPr
           </div>
 
           {/* Meta */}
-          <div className="flex items-center gap-4 mt-3">
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4 mt-3">
             <div className="flex items-center gap-1.5 text-gray-500">
-              <Euro size={14} />
-              <span className="text-sm font-semibold text-primary">
+              <Euro size={14} className="flex-shrink-0" />
+              <span className="text-xs sm:text-sm font-semibold text-primary">
                 {formatPrice(service.price)}
               </span>
             </div>
             <div className="flex items-center gap-1.5 text-gray-500">
-              <Clock size={14} />
-              <span className="text-sm">{formatDuration(service.duration)}</span>
+              <Clock size={14} className="flex-shrink-0" />
+              <span className="text-xs sm:text-sm">{formatDuration(service.duration)}</span>
             </div>
             {service.min_age && (
               <div className="flex items-center gap-1.5 text-gray-500">
-                <User size={14} />
-                <span className="text-sm">{service.min_age}+ ans</span>
+                <User size={14} className="flex-shrink-0" />
+                <span className="text-xs sm:text-sm">{service.min_age}+ ans</span>
               </div>
             )}
           </div>

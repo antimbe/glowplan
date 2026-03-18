@@ -111,26 +111,41 @@ export function BookingTunnel({
                                     setSelectedService(service);
                                     setStep("datetime");
                                 }}
-                                className="w-full p-4 border border-gray-200 rounded-xl hover:border-primary/30 hover:shadow-md transition-all text-left group cursor-pointer"
+                                className="w-full flex flex-col sm:flex-row overflow-hidden border border-gray-200 rounded-2xl hover:border-primary/40 hover:shadow-lg transition-all text-left bg-white group cursor-pointer"
                             >
-                                <div className="flex justify-between items-start">
-                                    <div className="flex-1">
-                                        <h3 className="font-semibold text-gray-900 group-hover:text-primary transition-colors">
-                                            {service.name}
-                                        </h3>
-                                        {service.description && (
-                                            <p className="text-sm text-gray-500 mt-1">{service.description}</p>
-                                        )}
-                                        <div className="flex items-center gap-3 mt-2 text-sm text-gray-400">
-                                            <span className="flex items-center gap-1">
-                                                <Clock size={14} />
-                                                {service.duration} min
-                                            </span>
-                                        </div>
+                                {service.image_url && (
+                                    <div className="w-full aspect-video sm:aspect-auto sm:w-48 sm:h-32 flex-shrink-0 bg-gray-50 border-b sm:border-b-0 sm:border-r border-gray-100 relative overflow-hidden">
+                                        <img
+                                            src={service.image_url}
+                                            alt={service.name}
+                                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                        />
                                     </div>
-                                    <div className="text-right">
-                                        <span className="text-lg font-bold text-primary">{service.price}€</span>
-                                        <ArrowRight size={20} className="text-gray-300 group-hover:text-primary transition-colors ml-auto mt-2" />
+                                )}
+                                <div className="p-4 sm:p-5 flex-1 flex flex-col justify-center min-w-0">
+                                    <div className="flex justify-between items-start gap-4">
+                                        <div className="flex-1 min-w-0">
+                                            <h3 className="text-base font-bold text-gray-900 group-hover:text-primary transition-colors truncate">
+                                                {service.name}
+                                            </h3>
+                                            {service.description && (
+                                                <p className="text-sm text-gray-500 mt-1.5 line-clamp-2 leading-relaxed">
+                                                    {service.description}
+                                                </p>
+                                            )}
+                                            <div className="flex items-center gap-3 mt-3 text-sm text-gray-400 font-medium">
+                                                <span className="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded-md">
+                                                    <Clock size={14} />
+                                                    {service.duration} min
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className="text-right flex-shrink-0 flex flex-col items-end justify-between h-full">
+                                            <span className="text-lg font-black text-primary">{service.price}€</span>
+                                            <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center mt-auto group-hover:bg-primary/10 transition-colors">
+                                                <ArrowRight size={16} className="text-gray-400 group-hover:text-primary transition-colors" />
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </button>
@@ -167,18 +182,33 @@ export function BookingTunnel({
                     <span>{editingIndex !== null ? "Annuler la modification" : "Modifier la prestation"}</span>
                 </Button>
 
-                <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 mb-6">
-                    <div className="flex justify-between items-center">
-                        <div>
-                            <div className="flex items-center gap-2 mb-1">
-                                <span className="text-[10px] font-black uppercase tracking-widest text-primary bg-primary/10 px-2 py-0.5 rounded">
-                                    {editingIndex !== null ? "Modification en cours" : "Prestation sélectionnée"}
+                <div className="bg-primary/5 border border-primary/20 rounded-xl overflow-hidden mb-6 flex flex-col sm:flex-row items-stretch">
+                    {selectedService.image_url && (
+                        <div className="w-full aspect-video sm:aspect-auto sm:w-40 sm:h-32 flex-shrink-0 relative border-b sm:border-b-0 sm:border-r border-primary/10">
+                            <img
+                                src={selectedService.image_url}
+                                alt={selectedService.name}
+                                className="w-full h-full object-cover"
+                            />
+                        </div>
+                    )}
+                    <div className="p-4 sm:p-5 flex-1 flex flex-col justify-center">
+                        <div className="flex justify-between items-start gap-4">
+                            <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1.5">
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-primary bg-white/60 px-2 py-0.5 rounded shadow-sm">
+                                        {editingIndex !== null ? "Modification en cours" : "Prestation sélectionnée"}
+                                    </span>
+                                </div>
+                                <h3 className="font-bold text-gray-900 leading-tight mb-1">{selectedService.name}</h3>
+                                <span className="text-sm text-gray-500 font-medium flex items-center gap-1.5">
+                                    <Clock size={14} /> {selectedService.duration} min
                                 </span>
                             </div>
-                            <h3 className="font-semibold text-gray-900">{selectedService.name}</h3>
-                            <span className="text-sm text-gray-500">{selectedService.duration} min</span>
+                            <span className="font-black text-lg text-primary bg-white/60 px-3 py-1 rounded-lg shadow-sm">
+                                {selectedService.price}€
+                            </span>
                         </div>
-                        <span className="font-bold text-primary">{selectedService.price}€</span>
                     </div>
                 </div>
 
@@ -282,19 +312,25 @@ export function BookingTunnel({
 
                 <div className="space-y-4 flex-1 overflow-y-auto mb-8 pr-2">
                     {cart.map((item, index) => (
-                        <div key={`${item.service.id}-${index}`} className="bg-gray-50 rounded-2xl p-4">
+                        <div key={`${item.service.id}-${index}`} className="bg-white rounded-2xl p-3 sm:p-4 border border-gray-100 shadow-sm">
                             <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary shrink-0">
-                                    <Clock size={20} />
-                                </div>
+                                {item.service.image_url ? (
+                                    <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden shrink-0 shadow-sm relative border border-gray-100">
+                                        <img src={item.service.image_url} alt={item.service.name} className="w-full h-full object-cover" />
+                                    </div>
+                                ) : (
+                                    <div className="w-12 h-12 sm:w-14 sm:h-14 bg-primary/10 rounded-xl flex items-center justify-center text-primary shrink-0">
+                                        <Clock size={24} />
+                                    </div>
+                                )}
                                 <div className="flex-1 min-w-0">
-                                    <h4 className="font-bold text-gray-900 truncate">{item.service.name}</h4>
-                                    <p className="text-xs text-gray-500">
+                                    <h4 className="font-bold text-gray-900 truncate leading-tight">{item.service.name}</h4>
+                                    <p className="text-xs sm:text-sm text-gray-500 font-medium mt-1">
                                         {format(item.slot.date, "EEEE d MMMM", { locale: fr })} à {item.slot.time}
                                     </p>
                                 </div>
-                                <div className="text-right">
-                                    <p className="font-bold text-primary">{item.service.price}€</p>
+                                <div className="text-right shrink-0">
+                                    <p className="font-black text-primary text-lg">{item.service.price}€</p>
                                 </div>
                             </div>
                         </div>

@@ -93,9 +93,15 @@ export function useAccountData(): UseAccountDataReturn {
       ]);
 
       if (requestId === lastLoadId.current) {
-        setAppointments(appointmentsRes.data || []);
+        const reviewsData = reviewsRes.data || [];
+        const appointmentsData = (appointmentsRes.data || []).map(apt => ({
+          ...apt,
+          has_review: reviewsData.some(r => r.appointment_id === apt.id)
+        }));
+
+        setAppointments(appointmentsData);
         setFavorites(favoritesRes.data || []);
-        setReviews(reviewsRes.data || []);
+        setReviews(reviewsData);
         setLoading(false);
       }
     } else {
@@ -110,7 +116,11 @@ export function useAccountData(): UseAccountDataReturn {
     try {
       const { error } = await supabase
         .from("appointments")
-        .update({ status: "cancelled" })
+        .update({ 
+          status: "cancelled",
+          cancelled_by_client: true,
+          cancelled_at: new Date().toISOString()
+        })
         .eq("id", appointmentId);
 
       if (error) throw error;
