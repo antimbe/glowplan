@@ -52,11 +52,11 @@ export default function BookPage() {
       // Charger les infos de l'établissement
       const { data: estab, error } = await supabase
         .from("establishments")
-        .select("name, city, description, main_photo_url")
+        .select("name, city, description, main_photo_url, is_profile_complete")
         .eq("id", establishmentId)
         .single();
 
-      if (error || !estab) {
+      if (error || !estab || !estab.is_profile_complete) {
         setNotFound(true);
         setLoading(false);
         return;

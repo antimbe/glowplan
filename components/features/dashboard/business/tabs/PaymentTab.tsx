@@ -29,6 +29,23 @@ export default function PaymentTab({ formData, updateField, saveEstablishment, s
     updateField("payment_links", currentLinks);
   };
 
+  const isFormValid = () => {
+    if (!formData.require_deposit) return true;
+    
+    if (!formData.deposit_amount || formData.deposit_amount.trim() === "") return false;
+    if (!formData.payment_instructions || formData.payment_instructions.trim() === "") return false;
+    if (!formData.payment_links || formData.payment_links.length === 0) return false;
+    
+    for (const link of formData.payment_links) {
+      if (!link.provider || link.provider.trim() === "") return false;
+      if (!link.url || link.url.trim() === "") return false;
+    }
+    
+    return true;
+  };
+
+  const isValid = isFormValid();
+
   return (
     <div className="space-y-6 max-w-4xl mx-auto pb-20">
       <div className="bg-white rounded-2xl p-6 sm:p-8 border border-gray-100 shadow-sm">
@@ -155,13 +172,19 @@ export default function PaymentTab({ formData, updateField, saveEstablishment, s
       </div>
 
       <div className="flex flex-col sm:flex-row justify-end items-center gap-4 fixed bottom-0 left-0 right-0 p-4 bg-white/80 backdrop-blur-md border-t border-gray-200 z-10 sm:static sm:bg-transparent sm:border-none sm:p-0">
-        <p className="text-xs text-gray-500 hidden sm:block mr-auto">
-          N'oubliez pas d'enregistrer vos modifications.
-        </p>
+        {!isValid ? (
+          <p className="text-xs text-red-500 font-semibold text-center sm:text-left sm:mr-auto">
+            Remplissez tous les champs (montant, instructions, lien valide) pour enregistrer.
+          </p>
+        ) : (
+          <p className="text-xs text-gray-500 hidden sm:block mr-auto">
+            N'oubliez pas d'enregistrer vos modifications.
+          </p>
+        )}
         <Button
           variant="primary"
           onClick={saveEstablishment}
-          disabled={saving}
+          disabled={saving || !isValid}
           className="w-full sm:w-auto px-8"
         >
           {saving ? (

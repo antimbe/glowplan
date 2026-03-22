@@ -14,6 +14,7 @@ export default function DashboardLayout({
 }) {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
+  const [establishmentId, setEstablishmentId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const supabase = createClient();
@@ -32,6 +33,16 @@ export default function DashboardLayout({
       // Si c'est explicitement un pro, autoriser l'accès
       if (userType === "pro") {
         setUser(user);
+        
+        // Fetch establishment ID for notifications
+        const { data: est } = await supabase
+          .from("establishments")
+          .select("id")
+          .eq("user_id", user.id)
+          .single();
+        
+        if (est) setEstablishmentId(est.id);
+        
         setLoading(false);
         return;
       }
@@ -53,6 +64,7 @@ export default function DashboardLayout({
       if (establishment && establishment.length > 0) {
         // A un établissement = pro
         setUser(user);
+        setEstablishmentId(establishment[0].id);
         setLoading(false);
         return;
       }
@@ -103,6 +115,7 @@ export default function DashboardLayout({
         <DashboardHeader 
           userEmail={user?.email} 
           onMenuClick={() => setSidebarOpen(true)}
+          establishmentId={establishmentId}
         />
         <div className="flex-1 p-4 lg:p-6 w-full">
           {children}

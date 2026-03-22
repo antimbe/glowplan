@@ -1,17 +1,49 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { fetchOccupationData } from "@/lib/utils/booking-fetcher";
 import type { CalendarEvent, AppointmentData, UnavailabilityData, CalendarViewType } from "../types";
 import { AGENDA_CONFIG } from "../constants";
 
 export function useAgenda() {
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [establishmentId, setEstablishmentId] = useState<string | null>(null);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [view, setView] = useState<CalendarViewType>("week");
+  
+  // Initialisation à partir des paramètres d'URL (ex: notifications)
+  const initialDate = useMemo(() => {
+    const dateParam = searchParams.get('date');
+    if (dateParam) {
+      const d = new Date(dateParam);
+      if (!isNaN(d.getTime())) return d;
+    }
+    return new Date();
+  }, [searchParams]);
+
+  const initialView = useMemo(() => {
+    const viewParam = searchParams.get('view') as CalendarViewType;
+    if (viewParam && ["day", "week", "month"].includes(viewParam)) return viewParam;
+    return "week";
+  }, [searchParams]);
+
+  const [currentDate, setCurrentDate] = useState(initialDate);
+  const [view, setView] = useState<CalendarViewType>(initialView);
+  
+  // Mettre à jour si les paramètres d'URL changent (clic sur une nouvelle notif)
+  useEffect(() => {
+    const dateParam = searchParams.get('date');
+    if (dateParam) {
+      const d = new Date(dateParam);
+      if (!isNaN(d.getTime())) setCurrentDate(d);
+    }
+    
+    const viewParam = searchParams.get('view') as CalendarViewType;
+    if (viewParam && ["day", "week", "month"].includes(viewParam)) setView(viewParam);
+  }, [searchParams]);
+
   const lastRequestId = useRef(0);
 
   const supabase = createClient();

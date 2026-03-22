@@ -111,9 +111,9 @@ export function ProfileTab({
 
                 <div className="pt-6 border-t border-gray-200">
                     <Button
-                        variant="outline"
+                        variant="white"
                         onClick={onSignOut}
-                        className="w-full text-red-500 border-red-200 hover:bg-red-50 cursor-pointer"
+                        className="w-full text-red-600 border border-red-100 hover:bg-red-600 hover:text-white hover:border-red-600 transition-all shadow-sm active:scale-95 cursor-pointer flex items-center justify-center gap-2"
                     >
                         <LogOut size={18} />
                         Se déconnecter

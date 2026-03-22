@@ -1,13 +1,21 @@
 "use client";
 
 import { Menu, Search, Bell, Settings } from "lucide-react";
+import { useState } from "react";
+import { cn } from "@/lib/utils/cn";
+import Link from "next/link";
+import NotificationDropdown from "./NotificationDropdown";
+import { useNotifications } from "./hooks/useNotifications";
 
 interface DashboardHeaderProps {
   userEmail?: string;
   onMenuClick?: () => void;
+  establishmentId?: string | null;
 }
 
-export default function DashboardHeader({ userEmail, onMenuClick }: DashboardHeaderProps) {
+export default function DashboardHeader({ userEmail, onMenuClick, establishmentId }: DashboardHeaderProps) {
+  const [showNotifications, setShowNotifications] = useState(false);
+  const { unreadCount } = useNotifications(establishmentId || null);
   return (
     <div className="h-14 lg:h-16 bg-primary sticky top-0 z-30">
       <div className="flex items-center justify-between h-full px-4 lg:px-8">
@@ -40,15 +48,37 @@ export default function DashboardHeader({ userEmail, onMenuClick }: DashboardHea
           </button>
 
           {/* Notifications */}
-          <button className="relative w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors">
-            <Bell size={20} className="text-white/70" />
-            <div className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full" />
-          </button>
+          <div className="relative">
+            <button 
+              onClick={() => setShowNotifications(!showNotifications)}
+              className={cn(
+                "relative w-10 h-10 rounded-xl flex items-center justify-center transition-colors cursor-pointer",
+                showNotifications ? "bg-white/20" : "bg-white/10 hover:bg-white/20"
+              )}
+            >
+              <Bell size={20} className={showNotifications ? "text-white" : "text-white/70"} />
+              {unreadCount > 0 && (
+                <div className="absolute top-2 right-2 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center border-2 border-primary">
+                   <span className="text-[10px] text-white font-bold leading-none">{unreadCount > 9 ? '9+' : unreadCount}</span>
+                </div>
+              )}
+            </button>
+
+            {showNotifications && (
+              <NotificationDropdown 
+                establishmentId={establishmentId || null} 
+                onClose={() => setShowNotifications(false)} 
+              />
+            )}
+          </div>
 
           {/* Settings - hidden on mobile */}
-          <button className="hidden sm:flex w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 items-center justify-center transition-colors">
+          <Link 
+            href="/dashboard/settings"
+            className="hidden sm:flex w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 items-center justify-center transition-colors cursor-pointer"
+          >
             <Settings size={20} className="text-white/70" />
-          </button>
+          </Link>
 
           {/* User Profile */}
           <div className="flex items-center gap-3 pl-3 lg:pl-4 border-l border-white/10">

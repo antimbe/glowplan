@@ -52,6 +52,7 @@ export function useEstablishment() {
     const [establishmentId, setEstablishmentId] = useState<string | null>(null);
     const [isProfileComplete, setIsProfileComplete] = useState(false);
     const [missingFields, setMissingFields] = useState<string[]>([]);
+    const [hasServices, setHasServices] = useState<boolean>(false);
     const [isEditMode, setIsEditMode] = useState<boolean | null>(null);
 
     const [formData, setFormData] = useState<EstablishmentData>(INITIAL_FORM_DATA);
@@ -83,7 +84,7 @@ export function useEstablishment() {
             // most recent one.
             const { data, error } = await supabase
                 .from("establishments")
-                .select("*")
+                .select("*, services(id)")
                 .eq("user_id", user.id)
                 .order("created_at", { ascending: false })
                 .limit(1)
@@ -135,6 +136,13 @@ export function useEstablishment() {
             };
 
             const missing = getMissingFields(currentFormData);
+            const serviceExists = data.services && data.services.length > 0;
+            setHasServices(serviceExists);
+            
+            if (!serviceExists) {
+                missing.push("Au moins une prestation (onglet Offres)");
+            }
+
             const profileComplete = missing.length === 0;
 
             setIsProfileComplete(profileComplete);
@@ -157,6 +165,22 @@ export function useEstablishment() {
             if (!user) return;
 
             const missing = getMissingFields(formData);
+            
+            // Check for services during save if we don't have a reliable state
+            // or just use the current hasServices state if we trust it's updated
+            // Re-checking is safer.
+            const { count } = await supabase
+                .from("services")
+                .select("*", { count: 'exact', head: true })
+                .eq("establishment_id", establishmentId);
+            
+            const serviceExists = (count || 0) > 0;
+            setHasServices(serviceExists);
+
+            if (!serviceExists) {
+                missing.push("Au moins une prestation (onglet Offres)");
+            }
+
             const isComplete = missing.length === 0;
 
             const establishmentData = {
@@ -230,6 +254,7 @@ export function useEstablishment() {
         establishmentId,
         isProfileComplete,
         missingFields,
+        hasServices,
         isEditMode,
         updateField,
         saveEstablishment,

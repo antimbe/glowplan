@@ -5,14 +5,14 @@ import Link from "next/link";
 import { Logo } from "@/components/ui";
 import { 
   Building2, 
-  Wallet, 
   Calendar, 
   Users, 
   Briefcase, 
   CreditCard, 
   LogOut,
   X,
-  TrendingUp
+  TrendingUp,
+  Settings
 } from "lucide-react";
 
 const navigationItems = [
@@ -20,11 +20,6 @@ const navigationItems = [
     label: "Mes statistiques", 
     href: "/dashboard/statistics", 
     icon: TrendingUp 
-  },
-  { 
-    label: "Portefeuille", 
-    href: "/dashboard/construction?page=portefeuille", 
-    icon: Wallet 
   },
   { 
     label: "Mon agenda", 
@@ -46,6 +41,11 @@ const navigationItems = [
     label: "Mes abonnements", 
     href: "/dashboard/construction?page=abonnements", 
     icon: CreditCard 
+  },
+  { 
+    label: "Paramètres", 
+    href: "/dashboard/settings", 
+    icon: Settings 
   },
 ];
 

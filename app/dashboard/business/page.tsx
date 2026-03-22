@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button, Tabs } from "@/components/ui";
-import { Loader2, Info, ChevronRight } from "lucide-react";
+import { Loader2, Info, ChevronRight, X } from "lucide-react";
 import {
   TABS,
   useEstablishment
@@ -22,7 +22,8 @@ export default function BusinessPage() {
     isEditMode,
     updateField,
     saveEstablishment,
-    toggleEditMode
+    toggleEditMode,
+    refresh
   } = useEstablishment();
 
   const handleTabClick = (tabId: string) => {
@@ -79,7 +80,20 @@ export default function BusinessPage() {
         isEditMode ? (
           <>
             <GeneralInfoTab formData={formData} updateField={updateField} establishmentId={establishmentId} />
-            <div className="w-full flex justify-end mt-4">
+            <div className="w-full flex justify-end items-center gap-3 mt-4">
+              {isProfileComplete && (
+                <Button
+                  variant="outline"
+                  className="rounded-xl px-6 lg:px-8 h-10 lg:h-12 text-sm lg:text-base font-semibold cursor-pointer border-gray-200 text-gray-600 hover:bg-gray-50"
+                  onClick={() => refresh()}
+                  disabled={saving}
+                >
+                  <div className="flex items-center gap-2">
+                    <X size={18} />
+                    <span>Retour</span>
+                  </div>
+                </Button>
+              )}
               <Button
                 variant="primary"
                 className="bg-primary hover:bg-primary-dark rounded-xl px-6 lg:px-8 h-10 lg:h-12 text-sm lg:text-base font-semibold shadow-lg shadow-primary/20 cursor-pointer disabled:opacity-50"

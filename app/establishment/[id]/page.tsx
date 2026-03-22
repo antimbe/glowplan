@@ -78,6 +78,12 @@ export default function EstablishmentPage() {
         .single();
 
       if (estError || !est) throw new Error("Établissement introuvable");
+      
+      // Ensure the establishment is ready for clients
+      if (!est.is_profile_complete) {
+        throw new Error("Cet établissement n'est pas encore prêt à recevoir des réservations.");
+      }
+      
       setEstablishment(est as Establishment);
 
       // Fetch services
