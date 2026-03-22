@@ -7,7 +7,7 @@ import {
   TABS,
   useEstablishment
 } from "@/components/features/dashboard/business";
-import { GeneralInfoTab, GeneralInfoPreview, UnderConstructionTab, ServicesTab, OpeningHoursTab, AppointmentsTab, ReviewsTab } from "@/components/features/dashboard/business/tabs";
+import { GeneralInfoTab, GeneralInfoPreview, UnderConstructionTab, ServicesTab, OpeningHoursTab, AppointmentsTab, ReviewsTab, RemindersTab, PaymentTab } from "@/components/features/dashboard/business/tabs";
 
 export default function BusinessPage() {
   const [activeTab, setActiveTab] = useState("general");
@@ -113,8 +113,17 @@ export default function BusinessPage() {
         <ServicesTab establishmentId={establishmentId} />
       ) : activeTab === "sections" && establishmentId ? (
         <AppointmentsTab establishmentId={establishmentId} />
+      ) : activeTab === "rappels" && establishmentId ? (
+        <RemindersTab establishmentId={establishmentId} />
       ) : activeTab === "horaires" && establishmentId ? (
         <OpeningHoursTab establishmentId={establishmentId} />
+      ) : activeTab === "paiement" ? (
+        <PaymentTab 
+          formData={formData} 
+          updateField={updateField} 
+          saveEstablishment={saveEstablishment} 
+          saving={saving} 
+        />
       ) : activeTab === "avis" && establishmentId ? (
         <ReviewsTab establishmentId={establishmentId} />
       ) : (

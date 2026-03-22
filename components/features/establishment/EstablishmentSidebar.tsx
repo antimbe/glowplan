@@ -101,7 +101,7 @@ export function EstablishmentSidebar({
     };
 
     const handleSubmitBooking = async () => {
-        const result = await confirmBooking(clientInfo);
+        const result = await confirmBooking(clientInfo, establishment.require_deposit);
         if (result.success) {
             setStep("confirmation");
             onBookingComplete();

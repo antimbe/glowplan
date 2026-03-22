@@ -21,6 +21,10 @@ export interface Establishment {
     auto_confirm_appointments: boolean;
     hide_exact_address: boolean;
     photos?: Photo[];
+    require_deposit?: boolean;
+    deposit_amount?: string;
+    payment_links?: { provider: string; url: string }[];
+    payment_instructions?: string;
 }
 
 export interface Review {

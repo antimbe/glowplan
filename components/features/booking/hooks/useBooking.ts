@@ -160,7 +160,7 @@ export function useBooking(establishmentId: string, openingHours: OpeningHour[])
         }
     }, [editingIndex]);
 
-    const confirmBooking = useCallback(async (clientInfo: ClientInfo) => {
+    const confirmBooking = useCallback(async (clientInfo: ClientInfo, requireDeposit = false) => {
         setIsConfirming(true);
         try {
             const { data: { user } } = await supabase.auth.getUser();
@@ -195,6 +195,14 @@ export function useBooking(establishmentId: string, openingHours: OpeningHour[])
 
             if (error) throw error;
             if (!data.success) throw new Error(data.error);
+
+            // If deposit required, update status to pending_deposit
+            if (requireDeposit && data.appointment_ids && data.appointment_ids.length > 0) {
+                await supabase
+                    .from("appointments")
+                    .update({ status: 'pending_deposit' })
+                    .in("id", data.appointment_ids);
+            }
 
             setCart([]);
             return { success: true, appointmentIds: data.appointment_ids };

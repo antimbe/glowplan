@@ -19,6 +19,10 @@ export interface EstablishmentData {
   photo_format: string;
   photo_display: string;
   main_photo_url: string;
+  require_deposit: boolean;
+  deposit_amount: string;
+  payment_links: { provider: string; url: string }[];
+  payment_instructions: string;
 }
 
 export interface TabProps {

@@ -220,6 +220,7 @@ export default function AppointmentsTab({ establishmentId }: AppointmentsTabProp
                 "bg-white rounded-2xl p-5 border",
                 apt.status === "cancelled" ? "border-red-200 bg-red-50/30" :
                 apt.status === "confirmed" ? "border-green-200" :
+                apt.status === "pending_deposit" ? "border-orange-200 bg-orange-50/10" :
                 "border-gray-100"
               )}
             >
@@ -302,11 +303,13 @@ export default function AppointmentsTab({ establishmentId }: AppointmentsTabProp
                       "px-3 py-1 rounded-full text-[10px] sm:text-xs font-semibold whitespace-nowrap",
                       apt.status === "confirmed" ? "bg-green-100 text-green-700" :
                       apt.status === "pending" ? "bg-yellow-100 text-yellow-700" :
+                      apt.status === "pending_deposit" ? "bg-orange-100 text-orange-700 border border-orange-200" :
                       apt.status === "cancelled" ? "bg-red-100 text-red-700" :
                       "bg-gray-100 text-gray-700"
                     )}>
                       {apt.status === "confirmed" ? "Confirmé" :
                        apt.status === "pending" ? "En attente" :
+                       apt.status === "pending_deposit" ? "Acompte en attente" :
                        apt.status === "cancelled" ? "Annulé" : apt.status}
                     </span>
  
@@ -315,16 +318,22 @@ export default function AppointmentsTab({ establishmentId }: AppointmentsTabProp
                     </span>
                   </div>
 
-                  {apt.status === "pending" && (
+                  {(apt.status === "pending" || apt.status === "pending_deposit") && (
                     <div className="flex gap-2">
                       <Button
                         variant="primary"
                         size="sm"
                         onClick={() => handleUpdateStatus(apt.id, "confirmed")}
                         disabled={updating === apt.id}
-                        className="cursor-pointer"
+                        className={cn("cursor-pointer", apt.status === "pending_deposit" && "bg-orange-600 hover:bg-orange-700 text-xs px-3")}
                       >
-                        {updating === apt.id ? <Loader2 className="animate-spin" size={16} /> : <Check size={16} />}
+                        {updating === apt.id ? (
+                          <Loader2 className="animate-spin" size={16} />
+                        ) : apt.status === "pending_deposit" ? (
+                          <>Valider l'acompte & Confirmer</>
+                        ) : (
+                          <Check size={16} />
+                        )}
                       </Button>
                       <Button
                         variant="outline"

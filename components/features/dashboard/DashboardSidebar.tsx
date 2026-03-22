@@ -11,14 +11,15 @@ import {
   Briefcase, 
   CreditCard, 
   LogOut,
-  X
+  X,
+  TrendingUp
 } from "lucide-react";
 
 const navigationItems = [
   { 
-    label: "Mon établissement", 
-    href: "/dashboard/construction?page=etablissement", 
-    icon: Building2 
+    label: "Mes statistiques", 
+    href: "/dashboard/statistics", 
+    icon: TrendingUp 
   },
   { 
     label: "Portefeuille", 

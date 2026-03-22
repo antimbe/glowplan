@@ -36,6 +36,10 @@ const INITIAL_FORM_DATA: EstablishmentData = {
     photo_format: "generate",
     photo_display: "fill",
     main_photo_url: "",
+    require_deposit: false,
+    deposit_amount: "",
+    payment_links: [],
+    payment_instructions: "",
 };
 
 export function useEstablishment() {
@@ -124,6 +128,10 @@ export function useEstablishment() {
                 photo_format: data.photo_format || "generate",
                 photo_display: data.photo_display || "fill",
                 main_photo_url: data.main_photo_url || "",
+                require_deposit: data.require_deposit || false,
+                deposit_amount: data.deposit_amount || "",
+                payment_links: data.payment_links || [],
+                payment_instructions: data.payment_instructions || "",
             };
 
             const missing = getMissingFields(currentFormData);

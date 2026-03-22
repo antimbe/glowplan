@@ -5,7 +5,7 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
-import { Check, Clock, Calendar, ArrowRight, ChevronLeft, User, Mail, Phone, Instagram, FileText, LogIn, UserPlus, Trash2, ShoppingCart } from "lucide-react";
+import { Check, Clock, Calendar, ArrowRight, ChevronLeft, User, Mail, Phone, Instagram, FileText, LogIn, UserPlus, Trash2, ShoppingCart, CreditCard, Link as LinkIcon, Info } from "lucide-react";
 import { Button } from "@/components/ui";
 import { cn } from "@/lib/utils/cn";
 import Link from "next/link";
@@ -450,6 +450,55 @@ export function BookingTunnel({
     }
 
     if (step === "confirmation") {
+        if (establishment?.require_deposit) {
+            return (
+                <div className="bg-white rounded-2xl p-6 border border-gray-100 text-center py-8">
+                    <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-5">
+                        <CreditCard size={32} className="text-blue-600" />
+                    </div>
+                    <h2 className="text-2xl font-black text-gray-900 mb-3">Acompte requis</h2>
+                    <p className="text-gray-600 mb-6 text-sm">
+                        Votre demande est enregistrée. Pour valider et confirmer définitivement votre rendez-vous, veuillez régler l'acompte demandé.
+                    </p>
+
+                    <div className="bg-gray-50 rounded-2xl p-5 mb-6 text-left border border-gray-100">
+                        {establishment?.deposit_amount && (
+                            <div className="mb-4 pb-4 border-b border-gray-200">
+                                <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Montant de l'acompte</span>
+                                <p className="text-xl font-black text-gray-900 mt-1">{establishment.deposit_amount}</p>
+                            </div>
+                        )}
+                        
+                        {establishment?.payment_instructions && (
+                            <div className="mb-4">
+                                <div className="flex items-center gap-2 mb-2 text-primary font-semibold text-sm">
+                                    <Info size={16} /> Instructions
+                                </div>
+                                <p className="text-sm text-gray-600 whitespace-pre-line">{establishment.payment_instructions}</p>
+                            </div>
+                        )}
+
+                        {establishment?.payment_links && establishment.payment_links.length > 0 && (
+                            <div className="mt-5 space-y-3">
+                                {establishment.payment_links.map((link: any, i: number) => (
+                                    <a key={i} href={link.url} target="_blank" rel="noopener noreferrer" className="block w-full">
+                                        <Button variant="outline" className="w-full flex justify-between items-center h-12 border-primary/20 hover:bg-primary/5 hover:border-primary/50 group transition-all">
+                                            <span className="font-bold text-gray-900 group-hover:text-primary transition-colors">Payer via {link.provider || "Lien externe"}</span>
+                                            <LinkIcon size={16} className="text-gray-400 group-hover:text-primary transition-colors" />
+                                        </Button>
+                                    </a>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    <Button variant="primary" onClick={() => router.push("/")} className="cursor-pointer w-full">
+                        Retour à l'accueil
+                    </Button>
+                </div>
+            );
+        }
+
         return (
             <div className="bg-white rounded-2xl p-6 border border-gray-100 text-center py-12">
                 <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">

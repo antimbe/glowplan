@@ -5,3 +5,5 @@ export { default as ServicesTab } from "./ServicesTab";
 export { default as OpeningHoursTab } from "./OpeningHoursTab";
 export { default as AppointmentsTab } from "./AppointmentsTab";
 export { default as ReviewsTab } from "./ReviewsTab";
+export { default as RemindersTab } from "./RemindersTab";
+export { default as PaymentTab } from "./PaymentTab";
