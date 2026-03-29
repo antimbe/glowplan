@@ -964,6 +964,38 @@ export const EmailTemplates = {
 
   // --- G. SYSTEME / ERREURS ---
 
+  appointmentFollowupPro: (data: {
+    provider_name: string;
+    client_name: string;
+    service_name: string;
+    appointment_date: string;
+    appointment_time: string;
+    dashboard_link: string;
+  }) => {
+    const content = `
+      <h2 style="color: ${MAIL_PALETTE.primary}; font-size: 22px; font-weight: 700; margin-top: 0;">Comment s'est passé votre rendez-vous ?</h2>
+      <p>Bonjour ${data.provider_name},</p>
+      <p>Le rendez-vous suivant vient de se terminer :</p>
+      
+      ${getInfoBox("Détails du rendez-vous", [
+        { label: "Cliente", value: data.client_name },
+        { label: "Prestation", value: data.service_name },
+        { label: "Date", value: data.appointment_date },
+        { label: "Heure", value: data.appointment_time }
+      ])}
+      
+      <p>Le client s'est-il bien présenté ?</p>
+      <p>Si ce n'est pas le cas, vous avez la possibilité de déclarer une absence non honorée ("poser un lapin") directement depuis votre tableau de bord.</p>
+      
+      ${getButton("Gérer ce rendez-vous", data.dashboard_link)}
+      <p>L'équipe Glowplan</p>
+    `;
+    return {
+      subject: "Suivi de rendez-vous : " + data.client_name,
+      html: getBaseLayout("Suivi de votre agenda", content),
+    };
+  },
+
   criticalEmailFailedPro: (data: {
     provider_name: string;
     email_type: string;

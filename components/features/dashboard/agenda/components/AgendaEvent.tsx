@@ -67,8 +67,13 @@ export default function AgendaEvent({
                 e.stopPropagation();
                 onEventClick(event);
             }}
-            className={`absolute left-0.5 right-0.5 rounded-md cursor-pointer hover:shadow-lg transition-all overflow-hidden ${isAppointment
-                ? "bg-gradient-to-r from-primary to-primary/80 border-l-2 border-primary-dark z-20"
+            className={`absolute left-0.5 right-0.5 rounded-md cursor-pointer hover:shadow-lg transition-all overflow-hidden ${
+                isAppointment
+                ? (event.data as any)?.status === "completed"
+                  ? "bg-gradient-to-r from-gray-500 to-gray-400 border-l-2 border-gray-600 z-10"
+                  : (event.data as any)?.status === "no_show"
+                    ? "bg-gradient-to-r from-orange-500 to-orange-400 border-l-2 border-orange-600 z-10"
+                    : "bg-gradient-to-r from-primary to-primary/80 border-l-2 border-primary-dark z-20"
                 : "bg-gradient-to-r from-red-500 to-red-400 border-l-2 border-red-600 z-10"
                 } text-white text-[10px] lg:text-xs px-1.5 py-0.5`}
             style={{

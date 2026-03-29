@@ -119,6 +119,68 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // --- 3. AUTO-COMPLETION DES RDV TERMINÉS & NOTIFICATION PRO ---
+    // Trouver les RDV "confirmed" dont le "end_time" est passé
+    const { data: pastApts } = await supabase
+      .from("appointments")
+      .select(`
+        *,
+        services(name),
+        establishments(id, name, email, user_id)
+      `)
+      .eq("status", "confirmed")
+      .lte("end_time", now.toISOString());
+
+    if (pastApts && pastApts.length > 0) {
+      for (const apt of pastApts) {
+        // Mettre à jour en "completed"
+        await supabase
+          .from("appointments")
+          .update({ status: "completed" })
+          .eq("id", apt.id);
+
+        if (apt.establishments?.user_id) {
+          const { data: prefs } = await supabase
+            .from("notification_preferences")
+            .select("email_ask_review_pro, app_ask_review_pro")
+            .eq("user_id", apt.establishments.user_id)
+            .single();
+
+          const finalPrefs = prefs || { email_ask_review_pro: true, app_ask_review_pro: true };
+
+          // Notification Web
+          if (finalPrefs.app_ask_review_pro) {
+            await supabase.from("notifications").insert({
+              establishment_id: apt.establishment_id,
+              type: "appointment_followup_pro",
+              title: "Rendez-vous à valider",
+              content: `${apt.client_first_name} s'est-il bien présenté pour sa prestation ?`,
+              link: `/dashboard/agenda?date=${apt.start_time.split('T')[0]}`
+            });
+          }
+
+          // Notification Email
+          if (finalPrefs.email_ask_review_pro && apt.establishments.email) {
+            const startDate = new Date(apt.start_time);
+            const emailData = EmailTemplates.appointmentFollowupPro({
+              provider_name: apt.establishments.name || "Prestataire",
+              client_name: `${apt.client_first_name} ${apt.client_last_name}`,
+              service_name: apt.services?.name || "Prestation",
+              appointment_date: formatDateFull(startDate),
+              appointment_time: formatTime(startDate),
+              dashboard_link: `${baseUrl}/dashboard/agenda?date=${apt.start_time.split('T')[0]}`
+            });
+
+            await sendEmail({
+              to: apt.establishments.email,
+              subject: emailData.subject,
+              html: emailData.html
+            });
+          }
+        }
+      }
+    }
+
     return NextResponse.json({ success: true, message: "Cron jobs processed" });
   } catch (error) {
     console.error("Error in reminder cron:", error);

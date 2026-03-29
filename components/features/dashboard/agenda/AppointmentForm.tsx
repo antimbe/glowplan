@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { User, Mail, Phone, FileText, Clock, X, AlertTriangle, Loader2 } from "lucide-react";
+import { User, Mail, Phone, FileText, Clock, X, AlertTriangle, Loader2, Ban } from "lucide-react";
 import { Button, Input, Textarea, Select, FormField, FormModal, Modal } from "@/components/ui";
 import { AppointmentData } from "./types";
 import { checkAppointmentConflicts, ConflictResult } from "./hooks";
@@ -359,11 +359,31 @@ export default function AppointmentForm({
     }
   };
 
-  const [modalMode, setModalMode] = useState<"cancel" | "refuse">("cancel");
+  const handleMarkNoShow = async () => {
+    if (!appointment?.id) return;
+    setCancelling(true);
+    try {
+      const response = await fetch("/api/booking/mark-no-show", {
+         method: "POST",
+         headers: { "Content-Type": "application/json" },
+         body: JSON.stringify({ appointmentId: appointment.id }),
+      });
+      if (!response.ok) throw new Error("Erreur");
+      
+      setCancelModal(false);
+      onSave({ ...appointment, status: "no_show" } as AppointmentData);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setCancelling(false);
+    }
+  };
+
+  const [modalMode, setModalMode] = useState<"cancel" | "refuse" | "no_show">("cancel");
 
   const footer = (
     <div className="flex flex-wrap items-center gap-2">
-      {appointment && (appointment.status === "pending" || appointment.status === "confirmed") && (
+      {appointment && (appointment.status === "pending" || appointment.status === "confirmed" || appointment.status === "completed") && (
         <Button variant="danger" onClick={() => { setModalMode("cancel"); setCancelModal(true); }} size="sm">
           <X size={14} className="mr-1" />
           Annuler le RDV
@@ -373,6 +393,12 @@ export default function AppointmentForm({
         <Button variant="outline" onClick={() => { setModalMode("refuse"); setCancelModal(true); }} size="sm" className="text-red-600 border-red-200 hover:bg-red-50">
           <X size={14} className="mr-1" />
           Refuser le RDV
+        </Button>
+      )}
+      {appointment?.status === "completed" && (
+        <Button variant="outline" onClick={() => { setModalMode("no_show"); setCancelModal(true); }} size="sm" className="text-orange-600 border-orange-200 hover:bg-orange-50">
+          <Ban size={14} className="mr-1" />
+          Marquer Lapin
         </Button>
       )}
       <div className="flex-1" />
@@ -566,13 +592,17 @@ export default function AppointmentForm({
                 <AlertTriangle className="text-red-600" size={20} />
               </div>
               <h3 className="text-lg font-bold text-gray-900">
-                {modalMode === "cancel" ? "Annuler le rendez-vous" : "Refuser le rendez-vous"}
+                {modalMode === "cancel" ? "Annuler le rendez-vous" : 
+                 modalMode === "refuse" ? "Refuser le rendez-vous" : 
+                 "Marquer comme non honoré (Lapin)"}
               </h3>
             </div>
             <p className="text-gray-600 mb-4">
               {modalMode === "cancel" 
                 ? "Êtes-vous sûr de vouloir annuler ce rendez-vous ? Un email sera envoyé au client pour l'informer."
-                : "Êtes-vous sûr de vouloir refuser cette demande ? Le créneau sera libéré et un email de refus sera envoyé au client."
+                : modalMode === "refuse" 
+                  ? "Êtes-vous sûr de vouloir refuser cette demande ? Le créneau sera libéré et un email de refus sera envoyé au client."
+                  : "Le client ne s'est pas présenté ? Cette action le marquera comme non honoré (lapin)."
               }
             </p>
             <div className="mb-4">
@@ -597,7 +627,11 @@ export default function AppointmentForm({
               </Button>
               <Button
                 variant="danger"
-                onClick={modalMode === "cancel" ? handleCancelAppointment : handleRefuseAppointment}
+                onClick={
+                  modalMode === "cancel" ? handleCancelAppointment : 
+                  modalMode === "refuse" ? handleRefuseAppointment : 
+                  handleMarkNoShow
+                }
                 disabled={cancelling}
                 size="sm"
               >

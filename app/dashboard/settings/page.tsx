@@ -37,7 +37,9 @@ export default function SettingsPage() {
     email_cancellation: true,
     app_new_booking: true,
     app_review: true,
-    app_deposit: true
+    app_deposit: true,
+    email_ask_review_pro: true,
+    app_ask_review_pro: true
   });
   const [loadingNotif, setLoadingNotif] = useState(false);
   const [successNotif, setSuccessNotif] = useState(false);
@@ -80,7 +82,9 @@ export default function SettingsPage() {
             email_cancellation: prefs.email_cancellation,
             app_new_booking: prefs.app_new_booking,
             app_review: prefs.app_review,
-            app_deposit: prefs.app_deposit
+            app_deposit: prefs.app_deposit,
+            email_ask_review_pro: prefs.email_ask_review_pro ?? true,
+            app_ask_review_pro: prefs.app_ask_review_pro ?? true
           });
         }
       }
@@ -341,6 +345,16 @@ export default function SettingsPage() {
                           onChange={() => togglePreference('email_cancellation')}
                         />
                       </div>
+                      <div className="flex items-center justify-between py-4 first:pt-0 last:pb-0">
+                        <div className="pr-4">
+                          <p className="font-medium text-gray-900">Demande de confirmation (Ex: Lapin)</p>
+                          <p className="text-sm text-gray-500 mt-1">Recevoir un email après chaque rendez-vous pour confirmer la présence du client.</p>
+                        </div>
+                        <Switch 
+                          checked={notifPreferences.email_ask_review_pro} 
+                          onChange={() => togglePreference('email_ask_review_pro')}
+                        />
+                      </div>
                     </div>
                   </Card>
 
@@ -358,6 +372,16 @@ export default function SettingsPage() {
                         <Switch 
                           checked={notifPreferences.app_new_booking} 
                           onChange={() => togglePreference('app_new_booking')}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between py-4 first:pt-0 last:pb-0">
+                        <div className="pr-4">
+                          <p className="font-medium text-gray-900">Demande de confirmation (Ex: Lapin)</p>
+                          <p className="text-sm text-gray-500 mt-1">Recevoir une notification web après chaque rendez-vous pour confirmer la présence du client.</p>
+                        </div>
+                        <Switch 
+                          checked={notifPreferences.app_ask_review_pro} 
+                          onChange={() => togglePreference('app_ask_review_pro')}
                         />
                       </div>
                       <div className="flex items-center justify-between py-4 first:pt-0 last:pb-0">
