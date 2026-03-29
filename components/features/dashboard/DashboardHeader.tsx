@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu, Search, Bell, Settings } from "lucide-react";
+import { Menu, Search, Bell } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils/cn";
 import Link from "next/link";
@@ -72,13 +72,7 @@ export default function DashboardHeader({ userEmail, onMenuClick, establishmentI
             )}
           </div>
 
-          {/* Settings - hidden on mobile */}
-          <Link 
-            href="/dashboard/settings"
-            className="hidden sm:flex w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 items-center justify-center transition-colors cursor-pointer"
-          >
-            <Settings size={20} className="text-white/70" />
-          </Link>
+
 
           {/* User Profile */}
           <div className="flex items-center gap-3 pl-3 lg:pl-4 border-l border-white/10">

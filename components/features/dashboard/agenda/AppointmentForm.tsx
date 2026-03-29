@@ -239,6 +239,16 @@ export default function AppointmentForm({
           .single();
 
         if (error) throw error;
+
+        // Envoyer l'email de notification pour création manuelle
+        if (data.client_email) {
+          await fetch("/api/booking/manual-create", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ appointmentId: data.id }),
+          });
+        }
+
         onSave(data);
       }
     } catch (error) {
@@ -287,6 +297,30 @@ export default function AppointmentForm({
     }
   };
 
+  const handleRefuseAppointment = async () => {
+    if (!appointment?.id) return;
+
+    setCancelling(true);
+    try {
+      await fetch("/api/booking/refuse", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          appointmentId: appointment.id,
+          reason: cancelReason || null,
+        }),
+      });
+
+      setCancelModal(false);
+      setCancelReason("");
+      onSave({ ...appointment, status: "refused" } as AppointmentData);
+    } catch (error) {
+      console.error("Error refusing appointment:", error);
+    } finally {
+      setCancelling(false);
+    }
+  };
+
   const handleCancelAppointment = async () => {
     if (!appointment?.id) return;
 
@@ -325,12 +359,20 @@ export default function AppointmentForm({
     }
   };
 
+  const [modalMode, setModalMode] = useState<"cancel" | "refuse">("cancel");
+
   const footer = (
     <div className="flex flex-wrap items-center gap-2">
       {appointment && (appointment.status === "pending" || appointment.status === "confirmed") && (
-        <Button variant="danger" onClick={() => setCancelModal(true)} size="sm">
+        <Button variant="danger" onClick={() => { setModalMode("cancel"); setCancelModal(true); }} size="sm">
           <X size={14} className="mr-1" />
           Annuler le RDV
+        </Button>
+      )}
+      {appointment?.status === "pending" && (
+        <Button variant="outline" onClick={() => { setModalMode("refuse"); setCancelModal(true); }} size="sm" className="text-red-600 border-red-200 hover:bg-red-50">
+          <X size={14} className="mr-1" />
+          Refuser le RDV
         </Button>
       )}
       <div className="flex-1" />
@@ -515,27 +557,32 @@ export default function AppointmentForm({
         }}
       />
 
-      {/* Modal d'annulation */}
+      {/* Modal d'annulation / refuse */}
       {cancelModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full mx-4 shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 overflow-hidden">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full mx-4 shadow-xl animate-in zoom-in-95 duration-200">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
                 <AlertTriangle className="text-red-600" size={20} />
               </div>
-              <h3 className="text-lg font-bold text-gray-900">Annuler le rendez-vous</h3>
+              <h3 className="text-lg font-bold text-gray-900">
+                {modalMode === "cancel" ? "Annuler le rendez-vous" : "Refuser le rendez-vous"}
+              </h3>
             </div>
             <p className="text-gray-600 mb-4">
-              Êtes-vous sûr de vouloir annuler ce rendez-vous ? Un email sera envoyé au client pour l'informer.
+              {modalMode === "cancel" 
+                ? "Êtes-vous sûr de vouloir annuler ce rendez-vous ? Un email sera envoyé au client pour l'informer."
+                : "Êtes-vous sûr de vouloir refuser cette demande ? Le créneau sera libéré et un email de refus sera envoyé au client."
+              }
             </p>
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Motif d'annulation (optionnel)
+                Motif {modalMode === "cancel" ? "d'annulation" : "du refus"} (optionnel)
               </label>
               <Textarea
                 value={cancelReason}
                 onChange={(e) => setCancelReason(e.target.value)}
-                placeholder="Ex: Indisponibilité, urgence personnelle..."
+                placeholder="Ex: Indisponibilité, créneau complet..."
                 rows={2}
                 fullWidth
               />
@@ -550,12 +597,12 @@ export default function AppointmentForm({
               </Button>
               <Button
                 variant="danger"
-                onClick={handleCancelAppointment}
+                onClick={modalMode === "cancel" ? handleCancelAppointment : handleRefuseAppointment}
                 disabled={cancelling}
                 size="sm"
               >
                 {cancelling ? <Loader2 className="animate-spin mr-1" size={14} /> : null}
-                Confirmer l'annulation
+                {modalMode === "cancel" ? "Confirmer l'annulation" : "Confirmer le refus"}
               </Button>
             </div>
           </div>

@@ -1,7 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
-import { Resend } from "resend";
 import { formatDateFull, formatTime } from "@/lib/utils/formatters";
+import { EmailTemplates } from "@/lib/mail/templates";
+import { sendEmail, checkProPreference, getBaseUrl } from "@/lib/mail";
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,9 +27,9 @@ export async function POST(request: NextRequest) {
     // Get establishment details
     const { data: establishment, error: estError } = await supabase
       .from("establishments")
-      .select("name, email, phone")
+      .select("name, email, phone, user_id, address, city, show_conditions_online, general_conditions, deposit_amount, payment_links")
       .eq("id", establishmentId)
-      .single();
+      .single() as { data: any, error: any };
 
     if (estError || !establishment) {
       return NextResponse.json({ error: "Establishment not found" }, { status: 404 });
@@ -36,111 +37,109 @@ export async function POST(request: NextRequest) {
 
     const startDate = new Date(appointment.start_time);
     const endDate = new Date(appointment.end_time);
+    const baseUrl = getBaseUrl();
 
+    // Professional Notification
+    const proTemplate = EmailTemplates.bookingRequestPro({
+      provider_name: establishment.name,
+      client_name: `${appointment.client_first_name} ${appointment.client_last_name}`,
+      service_name: appointment.services?.name || "Non spécifiée",
+      appointment_date: formatDateFull(startDate),
+      appointment_time: `${formatTime(startDate)} - ${formatTime(endDate)}`,
+      client_note: appointment.notes || "",
+      dashboard_link: `${baseUrl}/dashboard/agenda?date=${startDate.toISOString().split('T')[0]}`,
+      isManualValidation: !autoConfirm
+    });
 
-    // Email content for establishment (always sent)
-    const establishmentEmailContent = {
-      to: establishment.email,
-      subject: `Nouvelle demande de réservation - ${appointment.client_first_name} ${appointment.client_last_name}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <div style="background: #32422c; padding: 20px; text-align: center;">
-            <h1 style="color: white; margin: 0;">GlowPlan</h1>
-          </div>
-          <div style="padding: 30px; background: #f9f9f9;">
-            <h2 style="color: #32422c;">Nouvelle demande de réservation</h2>
-            <p>Vous avez reçu une nouvelle demande de réservation :</p>
-            
-            <div style="background: white; padding: 20px; border-radius: 10px; margin: 20px 0;">
-              <h3 style="margin-top: 0; color: #32422c;">Détails du client</h3>
-              <p><strong>Nom :</strong> ${appointment.client_first_name} ${appointment.client_last_name}</p>
-              <p><strong>Email :</strong> ${appointment.client_email}</p>
-              <p><strong>Téléphone :</strong> ${appointment.client_phone}</p>
-              ${appointment.client_instagram ? `<p><strong>Instagram :</strong> ${appointment.client_instagram}</p>` : ""}
-              ${appointment.notes ? `<p><strong>Notes :</strong> ${appointment.notes}</p>` : ""}
-            </div>
-            
-            <div style="background: white; padding: 20px; border-radius: 10px; margin: 20px 0;">
-              <h3 style="margin-top: 0; color: #32422c;">Détails de la réservation</h3>
-              <p><strong>Prestation :</strong> ${appointment.services?.name || "Non spécifiée"}</p>
-              <p><strong>Date :</strong> ${formatDateFull(startDate)}</p>
-              <p><strong>Heure :</strong> ${formatTime(startDate)} - ${formatTime(endDate)}</p>
-              <p><strong>Prix :</strong> ${appointment.services?.price || "—"}€</p>
-            </div>
-            
-            ${!autoConfirm ? `
-              <p style="color: #666;">Cette réservation est en attente de confirmation. Connectez-vous à votre espace pour la confirmer ou la refuser.</p>
-            ` : `
-              <p style="color: #32422c; font-weight: bold;">Cette réservation a été automatiquement confirmée selon vos paramètres.</p>
-            `}
-          </div>
-          <div style="background: #32422c; padding: 15px; text-align: center;">
-            <p style="color: white; margin: 0; font-size: 12px;">© ${new Date().getFullYear()} GlowPlan - Tous droits réservés</p>
-          </div>
-        </div>
-      `,
-    };
-
-    // Email content for client (only if auto-confirm is enabled)
-    const clientEmailContent = autoConfirm ? {
-      to: appointment.client_email,
-      subject: `Confirmation de votre réservation chez ${establishment.name}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <div style="background: #32422c; padding: 20px; text-align: center;">
-            <h1 style="color: white; margin: 0;">GlowPlan</h1>
-          </div>
-          <div style="padding: 30px; background: #f9f9f9;">
-            <h2 style="color: #32422c;">Votre réservation est confirmée !</h2>
-            <p>Bonjour ${appointment.client_first_name},</p>
-            <p>Votre réservation chez <strong>${establishment.name}</strong> a été confirmée.</p>
-            
-            <div style="background: white; padding: 20px; border-radius: 10px; margin: 20px 0;">
-              <h3 style="margin-top: 0; color: #32422c;">Récapitulatif</h3>
-              <p><strong>Prestation :</strong> ${appointment.services?.name || "Non spécifiée"}</p>
-              <p><strong>Date :</strong> ${formatDateFull(startDate)}</p>
-              <p><strong>Heure :</strong> ${formatTime(startDate)} - ${formatTime(endDate)}</p>
-              <p><strong>Prix :</strong> ${appointment.services?.price || "—"}€</p>
-            </div>
-            
-            <p>À bientôt !</p>
-          </div>
-          <div style="background: #32422c; padding: 15px; text-align: center;">
-            <p style="color: white; margin: 0; font-size: 12px;">© ${new Date().getFullYear()} GlowPlan - Tous droits réservés</p>
-          </div>
-        </div>
-      `,
-    } : null;
-
-    const apiKey = process.env.RESEND_API_KEY;
-
-    if (!apiKey) {
-      console.warn("RESEND_API_KEY manquante : les emails de notification ne seront pas envoyés.");
-    } else {
-      const resend = new Resend(apiKey);
-
-      await resend.emails.send({
-        from: "GlowPlan <noreply@glowplan.fr>",
-        to: establishmentEmailContent.to,
-        subject: establishmentEmailContent.subject,
-        html: establishmentEmailContent.html,
-      });
-
-      if (clientEmailContent) {
-        await resend.emails.send({
-          from: "GlowPlan <noreply@glowplan.fr>",
-          to: clientEmailContent.to,
-          subject: clientEmailContent.subject,
-          html: clientEmailContent.html,
-        });
+    // Client Notification
+    let clientEmailData;
+    if (appointment.status === "pending_deposit") {
+      // Get deposit info from establishment
+      const depositAmount = establishment.deposit_amount || "À définir";
+      console.log("DEBUG - raw establishmentId:", establishmentId);
+      console.log("DEBUG - raw payment_links:", establishment.payment_links);
+      
+      let paymentLink = establishment.payment_links && establishment.payment_links.length > 0 
+        ? (establishment.payment_links[0].url || establishment.payment_links[0]) 
+        : `${baseUrl}/establishment/${establishmentId}?booking=${appointmentId}`;
+      
+      console.log("DEBUG - intermediate paymentLink:", paymentLink);
+      
+      // Ensure paymentLink is absolute
+      if (typeof paymentLink === 'string' && !paymentLink.startsWith('http')) {
+        paymentLink = paymentLink.startsWith('/') ? `${baseUrl}${paymentLink}` : `${baseUrl}/${paymentLink}`;
       }
+      
+      console.log("Final payment link being sent:", paymentLink);
+      
+      // Deadline: 2 hours after the booking request by default, or 24h before the appointment
+      const deadlineDate = new Date();
+      deadlineDate.setHours(deadlineDate.getHours() + 2);
+      
+      clientEmailData = EmailTemplates.depositRequestUser({
+        first_name: appointment.client_first_name,
+        provider_name: establishment.name,
+        service_name: appointment.services?.name || "Non spécifiée",
+        appointment_date: formatDateFull(startDate),
+        appointment_time: `${formatTime(startDate)} - ${formatTime(endDate)}`,
+        deposit_amount: depositAmount,
+        deposit_deadline: `${formatTime(deadlineDate)} ce jour`,
+        payment_link: paymentLink
+      });
+    } else if (autoConfirm) {
+      clientEmailData = EmailTemplates.bookingConfirmedUser({
+        first_name: appointment.client_first_name,
+        provider_name: establishment.name,
+        service_name: appointment.services?.name || "Non spécifiée",
+        appointment_date: formatDateFull(startDate),
+        appointment_time: `${formatTime(startDate)} - ${formatTime(endDate)}`,
+        price: `${appointment.services?.price || "—"}€`,
+        booking_reference: appointment.id.slice(0, 8).toUpperCase(),
+        address_or_24h_message: establishment.address ? `${establishment.address}, ${establishment.city}` : "L'adresse vous sera communiquée prochainement.",
+        conditions_block: establishment.show_conditions_online ? establishment.general_conditions : undefined,
+        booking_link: `${baseUrl}/establishment/${establishmentId}?booking=${appointmentId}`
+      });
+    } else {
+      clientEmailData = EmailTemplates.bookingRequestUser({
+        first_name: appointment.client_first_name,
+        provider_name: establishment.name,
+        service_name: appointment.services?.name || "Non spécifiée",
+        appointment_date: formatDateFull(startDate),
+        appointment_time: `${formatTime(startDate)} - ${formatTime(endDate)}`,
+        price: `${appointment.services?.price || "—"}€`,
+        address_or_24h_message: establishment.address ? `${establishment.address}, ${establishment.city}` : "L'adresse vous sera communiquée 24h avant votre rendez-vous.",
+        booking_link: `${baseUrl}/establishment/${establishmentId}?booking=${appointmentId}`
+      });
     }
+
+    // Send emails
+    let establishmentNotified = false;
+    let clientNotified = false;
+
+    // Check pro preference
+    const sendToPro = establishment.user_id ? await checkProPreference(establishment.user_id, "email_new_booking") : true;
+
+    if (sendToPro) {
+      const proResult = await sendEmail({
+        to: establishment.email,
+        subject: proTemplate.subject,
+        html: proTemplate.html
+      });
+      establishmentNotified = proResult.success;
+    }
+
+    const clientResult = await sendEmail({
+      to: appointment.client_email,
+      subject: clientEmailData.subject,
+      html: clientEmailData.html
+    });
+    clientNotified = clientResult.success;
 
     return NextResponse.json({ 
       success: true, 
-      message: "Notification emails queued",
-      establishmentNotified: true,
-      clientNotified: autoConfirm,
+      message: "Notification emails processed",
+      establishmentNotified,
+      clientNotified
     });
   } catch (error) {
     console.error("Error sending notification:", error);

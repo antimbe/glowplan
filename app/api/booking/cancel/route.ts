@@ -1,7 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
-import { Resend } from "resend";
 import { formatDateFull, formatTime } from "@/lib/utils/formatters";
+import { EmailTemplates } from "@/lib/mail/templates";
+import { sendEmail, checkProPreference, getBaseUrl } from "@/lib/mail";
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,14 +10,13 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createClient();
 
-    // Get appointment details with establishment and service info
+    // Get appointment details with establishment info
     const { data: appointment, error: aptError } = await supabase
       .from("appointments")
       .select(`
         *,
-        services(name, price, duration),
-        establishments(name, email),
-        client_profiles(first_name, last_name)
+        services(name),
+        establishments(id, name, email, user_id)
       `)
       .eq("id", appointmentId)
       .single();
@@ -27,66 +27,37 @@ export async function POST(request: NextRequest) {
 
     const startDate = new Date(appointment.start_time);
     const endDate = new Date(appointment.end_time);
+    const baseUrl = getBaseUrl();
 
+    // Email content for professional
+    const proTemplate = EmailTemplates.bookingCancelledPro({
+      provider_name: appointment.establishments?.name || "Prestataire",
+      client_name: `${appointment.client_first_name} ${appointment.client_last_name}`,
+      service_name: appointment.services?.name || "Non spécifiée",
+      appointment_date: formatDateFull(startDate),
+      appointment_time: `${formatTime(startDate)} - ${formatTime(endDate)}`,
+      dashboard_link: `${baseUrl}/dashboard/agenda`
+    });
 
-    const clientName = appointment.client_profiles 
-      ? `${appointment.client_profiles.first_name} ${appointment.client_profiles.last_name}`
-      : `${appointment.client_first_name || ""} ${appointment.client_last_name || appointment.client_name || ""}`.trim();
+    // Check professional notification preference
+    const sendToPro = appointment.establishments?.user_id ? await checkProPreference(appointment.establishments.user_id, "email_cancellation") : true;
 
-    // Email to establishment about cancellation
-    const establishmentEmailContent = {
-      to: appointment.establishments?.email,
-      subject: `Annulation de réservation - ${clientName}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <div style="background: #32422c; padding: 20px; text-align: center;">
-            <h1 style="color: white; margin: 0;">GlowPlan</h1>
-          </div>
-          <div style="padding: 30px; background: #f9f9f9;">
-            <h2 style="color: #dc2626;">Réservation annulée</h2>
-            <p>Le client <strong>${clientName}</strong> a annulé sa réservation.</p>
-            
-            <div style="background: white; padding: 20px; border-radius: 10px; margin: 20px 0; border-left: 4px solid #dc2626;">
-              <h3 style="margin-top: 0; color: #32422c;">Détails de la réservation annulée</h3>
-              <p><strong>Client :</strong> ${clientName}</p>
-              <p><strong>Email :</strong> ${appointment.client_email || "Non renseigné"}</p>
-              <p><strong>Téléphone :</strong> ${appointment.client_phone || "Non renseigné"}</p>
-              <p><strong>Prestation :</strong> ${appointment.services?.name || "Non spécifiée"}</p>
-              <p><strong>Date :</strong> ${formatDateFull(startDate)}</p>
-              <p><strong>Heure :</strong> ${formatTime(startDate)} - ${formatTime(endDate)}</p>
-              <p><strong>Prix :</strong> ${appointment.services?.price || "—"}€</p>
-            </div>
-            
-            <p style="color: #666;">Ce créneau est maintenant disponible pour d'autres réservations.</p>
-          </div>
-          <div style="background: #32422c; padding: 15px; text-align: center;">
-            <p style="color: white; margin: 0; font-size: 12px;">© ${new Date().getFullYear()} GlowPlan - Tous droits réservés</p>
-          </div>
-        </div>
-      `,
-    };
-
-    const apiKey = process.env.RESEND_API_KEY;
-
-    if (!apiKey) {
-      console.warn("RESEND_API_KEY manquante : l'email d'annulation établissement n'a pas été envoyé.");
-    } else if (establishmentEmailContent.to) {
-      const resend = new Resend(apiKey);
-
-      await resend.emails.send({
-        from: "GlowPlan <noreply@glowplan.fr>",
-        to: establishmentEmailContent.to,
-        subject: establishmentEmailContent.subject,
-        html: establishmentEmailContent.html,
+    let success = true;
+    if (sendToPro) {
+      const result = await sendEmail({
+        to: appointment.establishments?.email || "",
+        subject: proTemplate.subject,
+        html: proTemplate.html
       });
+      success = result.success;
     }
 
     return NextResponse.json({ 
-      success: true, 
-      message: "Cancellation notification sent",
+      success, 
+      message: success ? "Cancellation notification processed" : "Failed to send notification" 
     });
   } catch (error) {
     console.error("Error sending cancellation notification:", error);
-    return NextResponse.json({ error: "Failed to send notification" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to send cancellation notification" }, { status: 500 });
   }
 }

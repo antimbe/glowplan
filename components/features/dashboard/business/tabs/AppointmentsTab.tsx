@@ -72,6 +72,9 @@ export default function AppointmentsTab({ establishmentId }: AppointmentsTabProp
   };
 
   const handleUpdateStatus = async (appointmentId: string, newStatus: string) => {
+    const appointment = appointments.find(a => a.id === appointmentId);
+    const wasPendingDeposit = appointment?.status === "pending_deposit";
+
     setUpdating(appointmentId);
     try {
       const { error } = await supabase
@@ -80,6 +83,22 @@ export default function AppointmentsTab({ establishmentId }: AppointmentsTabProp
         .eq("id", appointmentId);
 
       if (error) throw error;
+
+      // Si c'était un acompte en attente et qu'on confirme, envoyer l'email de validation d'acompte
+      if (wasPendingDeposit && newStatus === "confirmed") {
+        await fetch("/api/booking/deposit-validated", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ appointmentId }),
+        });
+      } else if (newStatus === "confirmed") {
+        // Sinon, si c'est une confirmation standard (ex: de 'pending' à 'confirmed')
+        await fetch("/api/booking/confirm", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ appointmentId }),
+        });
+      }
 
       setAppointments(prev =>
         prev.map(apt => apt.id === appointmentId ? { ...apt, status: newStatus } : apt)

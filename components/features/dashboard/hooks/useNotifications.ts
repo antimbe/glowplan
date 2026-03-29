@@ -85,20 +85,33 @@ export function useNotifications(establishmentId: string | null) {
       .on(
         'postgres_changes',
         {
-          event: 'INSERT',
+          event: '*',
           schema: 'public',
           table: 'notifications',
           filter: `establishment_id=eq.${establishmentId}`
         },
         (payload) => {
-          const newNotif = payload.new as Notification;
-          setNotifications(prev => [newNotif, ...prev].slice(0, 20));
-          
-          // Play a sound or show a toast can be added here
-          try {
-             const audio = new Audio('/sounds/notification.mp3');
-             audio.play().catch(() => {}); // Browser might block autoplay
-          } catch (e) {}
+          if (payload.eventType === 'INSERT') {
+            const newNotif = payload.new as Notification;
+            setNotifications(prev => {
+              // Only add if it doesn't already exist to avoid duplicates
+              if (prev.some(n => n.id === newNotif.id)) return prev;
+              return [newNotif, ...prev].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 20);
+            });
+            
+            try {
+               const audio = new Audio('/sounds/notification.mp3');
+               audio.play().catch(() => {});
+            } catch (e) {}
+          } else if (payload.eventType === 'UPDATE') {
+            const updatedNotif = payload.new as Notification;
+            setNotifications(prev => prev.map(n => 
+              n.id === updatedNotif.id ? updatedNotif : n
+            ));
+          } else if (payload.eventType === 'DELETE') {
+            const deletedId = payload.old.id;
+            setNotifications(prev => prev.filter(n => n.id !== deletedId));
+          }
         }
       )
       .subscribe();

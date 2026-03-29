@@ -115,8 +115,12 @@ export default function RemindersTab({ establishmentId }: RemindersTabProps) {
 
       if (error) throw error;
 
-      // 2. Optionnel : Appeler une API route pour envoyer le vrai email/sms
-      // await fetch("/api/reminders/send", { ... })
+      // 2. Appeler l'API pour envoyer l'email
+      await fetch("/api/booking/reminder/manual", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ appointmentId }),
+      });
 
       // 3. Mettre à jour l'affichage
       setAppointments(prev => prev.map(apt => {

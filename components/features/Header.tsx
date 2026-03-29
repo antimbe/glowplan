@@ -69,14 +69,16 @@ export default function Header() {
         <Flex as="nav" align="center" justify="between">
           {/* Logo Section */}
           <Box className="flex-shrink-0 transition-all duration-500">
-            <Logo 
-              variant="light" 
-              size={scrolled ? "md" : "lg"} 
-              className={cn(
-                "w-auto transition-all duration-500",
-                scrolled ? "h-8" : "h-10"
-              )} 
-            />
+            <Link href="/">
+              <Logo 
+                variant="light" 
+                size={scrolled ? "md" : "lg"} 
+                className={cn(
+                  "w-auto transition-all duration-500",
+                  scrolled ? "h-8" : "h-10"
+                )} 
+              />
+            </Link>
           </Box>
 
           {/* Desktop Navigation */}

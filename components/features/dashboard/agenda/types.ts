@@ -7,7 +7,7 @@ export interface AppointmentData {
   client_phone?: string;
   start_time: string;
   end_time: string;
-  status: "pending" | "confirmed" | "cancelled" | "completed" | "no_show";
+  status: "pending" | "confirmed" | "cancelled" | "completed" | "no_show" | "refused";
   notes?: string;
   is_manual: boolean;
   service?: {
