@@ -5,12 +5,72 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
-import { Check, Clock, Calendar, ArrowRight, ChevronLeft, User, Mail, Phone, Instagram, FileText, LogIn, UserPlus, Trash2, ShoppingCart, CreditCard, Link as LinkIcon, Info } from "lucide-react";
+import { Check, Clock, Calendar, ArrowRight, ChevronLeft, User, Mail, Phone, Instagram, FileText, LogIn, UserPlus, Trash2, ShoppingCart, CreditCard, Link as LinkIcon, Info, Loader2, ShieldCheck, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui";
 import { cn } from "@/lib/utils/cn";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Service, AvailableSlot, ClientInfo, BookingStep, OpeningHour, CartItem } from "./types";
+import { useEffect as useReactEffect } from "react";
+
+const REASSURANCE_MESSAGES = [
+    "Préparation de votre rendez-vous...",
+    "Vérification finale du créneau...",
+    "Envoi de la demande à l'établissement...",
+    "Presque terminé, merci de votre patience !",
+    "Sécurisation de votre réservation...",
+    "Finalisation de votre demande..."
+];
+
+function BookingLoadingOverlay() {
+    const [messageIndex, setMessageIndex] = useState(0);
+
+    useReactEffect(() => {
+        const interval = setInterval(() => {
+            setMessageIndex((prev) => (prev + 1) % REASSURANCE_MESSAGES.length);
+        }, 2500);
+        return () => clearInterval(interval);
+    }, []);
+
+    return (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 sm:p-12">
+            {/* Background avec effet de flou prononcé */}
+            <div className="absolute inset-0 bg-white/80 backdrop-blur-xl animate-in fade-in duration-500" />
+            
+            <div className="relative z-10 max-w-sm w-full bg-white rounded-[2.5rem] p-10 shadow-2xl shadow-primary/10 border border-primary/5 text-center animate-in zoom-in-95 duration-300">
+                <div className="relative mb-8">
+                    {/* Double spinner effect */}
+                    <div className="absolute inset-0 flex items-center justify-center animate-spin duration-[3000ms]">
+                        <div className="w-20 h-20 border-4 border-primary/10 border-t-primary rounded-full" />
+                    </div>
+                    <div className="flex items-center justify-center">
+                        <div className="w-20 h-20 bg-primary/5 rounded-full flex items-center justify-center text-primary">
+                            <Sparkles size={32} className="animate-pulse" />
+                        </div>
+                    </div>
+                </div>
+
+                <h3 className="text-xl font-black text-gray-900 mb-3 tracking-tight">Confirmation en cours</h3>
+                
+                <div className="h-10 flex items-center justify-center">
+                    <p className="text-primary font-bold text-base transition-all duration-500 animate-in slide-in-from-bottom-2">
+                        {REASSURANCE_MESSAGES[messageIndex]}
+                    </p>
+                </div>
+
+                <div className="mt-8 pt-8 border-t border-gray-100">
+                    <div className="flex items-center justify-center gap-2 text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-4">
+                        <ShieldCheck size={16} className="text-green-500" />
+                        Réservation sécurisée
+                    </div>
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-relaxed">
+                        Veuillez ne pas quitter ou rafraîchir cette page pendant le traitement.
+                    </p>
+                </div>
+            </div>
+        </div>
+    );
+}
 
 interface BookingTunnelProps {
     step: BookingStep;
@@ -97,6 +157,10 @@ export function BookingTunnel({
         const hours = openingHours.find(h => h.day_of_week === dbDay);
         return hours?.is_open ?? false;
     };
+
+    if (submitting) {
+        return <BookingLoadingOverlay />;
+    }
 
     if (step === "info") {
         return (

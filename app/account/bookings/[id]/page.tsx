@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Loader2, ArrowLeft, Calendar, Clock, MapPin, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
-import { Button, Card, Badge, Stack, Heading, Text, Separator } from "@/components/ui";
+import { Button, Badge, Heading, Separator } from "@/components/ui";
 import { formatDateFull, formatTime } from "@/lib/utils/formatters";
 import Image from "next/image";
 import Link from "next/link";
@@ -85,7 +85,6 @@ export default function BookingDetailsPage() {
     
     setCancelling(true);
     try {
-      // 1. Mettre à jour en base
       const { error } = await supabase
         .from("appointments")
         .update({
@@ -98,7 +97,6 @@ export default function BookingDetailsPage() {
 
       if (error) throw error;
 
-      // 2. Envoyer la notification email via l'API
       await fetch("/api/booking/cancel-by-client", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -108,7 +106,6 @@ export default function BookingDetailsPage() {
         }),
       });
 
-      // Mettre à jour l'état local
       setAppointment((prev: any) => ({ ...prev, status: "cancelled" }));
       setShowCancelModal(false);
     } catch (error) {
@@ -134,7 +131,7 @@ export default function BookingDetailsPage() {
             <h2 className="text-xl font-bold text-gray-900 mb-2">Erreur</h2>
             <p className="text-gray-600 mb-6">{error}</p>
             <Link href="/account">
-               <Button variant="primary" fullWidth>Retour à mon compte</Button>
+               <Button variant="primary" className="w-full">Retour à mon compte</Button>
             </Link>
          </div>
       </div>
@@ -155,205 +152,266 @@ export default function BookingDetailsPage() {
   const canCancel = isFuture && hasCancelableStatus;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pb-12">
       <Header />
       
-      <div className="pt-24 pb-12">
-        <div className="max-w-3xl mx-auto px-4">
-          <button onClick={() => router.back()} className="inline-flex items-center text-sm font-medium text-gray-500 hover:text-gray-900 mb-6 transition-colors">
-            <ArrowLeft size={16} className="mr-1" />
-            Retour
-          </button>
+      <div className="pt-24">
+        <div className="max-w-4xl mx-auto px-4">
+          <div className="mb-6">
+            <Link href="/">
+               <Button 
+                  variant="ghost" 
+                  className="text-gray-500 hover:text-primary transition-colors font-bold group px-0"
+               >
+                  <ArrowLeft size={16} className="mr-2 group-hover:-translate-x-1 transition-transform" />
+                  Retour
+               </Button>
+            </Link>
+          </div>
           
-          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-            {/* Header / État */}
-            <div className="bg-primary/5 p-6 md:p-8 flex items-start justify-between border-b border-gray-100">
-               <div>
-                  <Badge variant="outline" className={`${statusInfo.color} mb-3 flex w-max items-center font-semibold px-2.5 py-1`}>
+          <div className="bg-white rounded-[2.5rem] shadow-xl shadow-gray-200/50 border border-gray-100 overflow-hidden">
+            {/* Hero Banner Section */}
+            <div className="relative h-48 md:h-64 lg:h-80 w-full bg-gray-200">
+               {appointment.establishments?.main_photo_url ? (
+                  <Image 
+                     src={appointment.establishments.main_photo_url} 
+                     alt={appointment.establishments.name}
+                     fill
+                     className="object-cover"
+                     priority
+                  />
+               ) : (
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center">
+                     <span className="text-primary/40 font-black text-2xl uppercase tracking-tighter opacity-50">{appointment.establishments?.name}</span>
+                  </div>
+               )}
+               {/* Overlay items */}
+               <div className="absolute top-6 right-6">
+                  <Badge variant="outline" className={`${statusInfo.color} flex w-max items-center font-bold px-4 py-2 text-sm shadow-lg backdrop-blur-md rounded-full border-white/20`}>
                      {statusInfo.icon}
                      {statusInfo.label}
                   </Badge>
-                  <Heading level={1} className="text-2xl md:text-3xl font-black text-gray-900 mb-1">Détails de la réservation</Heading>
-                  <p className="text-gray-500 text-sm">Réf: <span className="uppercase text-gray-700 font-mono">{appointment.id.slice(0, 8)}</span></p>
                </div>
                
-               {canCancel && (
-                  <Button 
-                     variant="outline" 
-                     className="text-red-500 border-red-200 hover:bg-red-500 hover:text-white hover:border-red-500 rounded-xl transition-colors"
-                     onClick={() => setShowCancelModal(true)}
-                  >
-                     Annuler le rendez-vous
-                  </Button>
-               )}
+               {/* Bottom curve/fade */}
+               <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-white to-transparent" />
             </div>
 
-            <div className="p-6 md:p-8">
-               <div className="flex flex-col md:flex-row gap-8">
-                  {/* Left Column: Infos */}
-                  <div className="flex-1 space-y-8">
+            <div className="relative px-6 md:px-12 pb-12 -mt-12">
+               <div className="flex flex-col lg:flex-row gap-12">
+                  {/* Main Content Area */}
+                  <div className="flex-1 space-y-10">
                      
-                     {/* Deposit Timeline */}
-                     {appointment.deposit_amount && displayStatus !== "cancelled" && displayStatus !== "refused" && displayStatus !== "no_show" && (
-                       <section>
-                          <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">Suivi de la réservation</h2>
-                          <div className="bg-gray-50 rounded-2xl p-5 border border-gray-100 overflow-hidden">
-                             <div className="flex items-center justify-between mt-2 mb-2 relative">
-                               {/* Ligne de fond */}
-                               <div className="absolute top-4 left-6 right-6 h-1 bg-gray-200 -z-0"></div>
-                               {/* Ligne de progression */}
-                               <div className={`absolute top-4 left-6 h-1 bg-primary -z-0 transition-all ${
-                                 displayStatus === 'pending_deposit' ? 'w-0' :
-                                 (displayStatus === 'confirmed' ? 'w-1/2' : 'w-full')
-                               }`}></div>
+                     {/* Establishment Header Info */}
+                     <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                        <div className="space-y-2">
+                           <Heading level={1} className="text-3xl md:text-4xl font-black text-gray-900 leading-tight">
+                              {appointment.establishments?.name}
+                           </Heading>
+                           <div className="flex items-center gap-2 text-gray-500">
+                              <MapPin size={18} className="text-primary shrink-0" />
+                              <p className="text-base font-medium">{appointment.establishments?.address}, {appointment.establishments?.city}</p>
+                           </div>
+                           <p className="text-gray-400 text-xs font-medium tracking-widest uppercase">Réf: {appointment.id.slice(0, 8)}</p>
+                        </div>
+                        
+                        {canCancel && (
+                           <Button 
+                              variant="outline" 
+                              className="text-red-500 border-red-100 hover:bg-red-50 hover:text-red-600 hover:border-red-200 rounded-2xl transition-all px-6 py-6 h-auto text-base font-bold shadow-sm"
+                              onClick={() => setShowCancelModal(true)}
+                           >
+                              <XCircle className="mr-2" size={20} />
+                              Annuler le rendez-vous
+                           </Button>
+                        )}
+                     </div>
 
-                               {/* Étape 1 */}
-                               <div className="flex flex-col items-center z-10 w-20">
-                                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${
-                                    displayStatus !== 'pending_deposit' 
-                                      ? 'bg-primary text-white' 
-                                      : 'bg-primary/10 text-primary border-2 border-primary'
-                                 }`}>
-                                    {displayStatus !== 'pending_deposit' ? <CheckCircle2 size={16} /> : "1"}
-                                 </div>
-                                 <p className={`text-[10px] mt-2 font-medium text-center ${displayStatus !== 'pending_deposit' ? 'text-gray-900' : 'text-primary'}`}>Acompte payé</p>
-                               </div>
+                     <Separator className="bg-gray-100" />
 
-                               {/* Étape 2 */}
-                               <div className="flex flex-col items-center z-10 w-20">
-                                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${
-                                    displayStatus === 'completed' 
-                                      ? 'bg-primary text-white' 
-                                      : (displayStatus === 'confirmed' ? 'bg-primary/10 text-primary border-2 border-primary' : 'bg-gray-200 text-gray-400')
-                                 }`}>
-                                    {displayStatus === 'completed' ? <CheckCircle2 size={16} /> : "2"}
-                                 </div>
-                                 <p className={`text-[10px] mt-2 font-medium text-center ${
-                                   displayStatus === 'completed' ? 'text-gray-900' : 
-                                   (displayStatus === 'confirmed' ? 'text-primary' : 'text-gray-400')
-                                 }`}>Confirmé</p>
-                               </div>
-
-                               {/* Étape 3 */}
-                               <div className="flex flex-col items-center z-10 w-20">
-                                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${
-                                    displayStatus === 'completed' 
-                                      ? 'bg-primary/10 text-primary border-2 border-primary' 
-                                      : 'bg-gray-200 text-gray-400'
-                                 }`}>
-                                    3
-                                 </div>
-                                 <p className={`text-[10px] mt-2 font-medium text-center ${displayStatus === 'completed' ? 'text-primary' : 'text-gray-400'}`}>Honoré</p>
-                               </div>
-                             </div>
-                          </div>
-                       </section>
-                     )}
-
-                     <section>
-                        <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">Prestation</h2>
-                        <div className="flex items-center gap-4">
+                     {/* Prestation Section avec GRANDE IMAGE */}
+                     <section className="bg-gray-50/50 p-6 md:p-8 rounded-[2rem] border border-gray-100">
+                        <h2 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-6 text-center md:text-left">Détails de la prestation</h2>
+                        <div className="flex flex-col md:flex-row items-center gap-8">
                            {appointment.services?.image_url ? (
-                              <div className="w-12 h-12 rounded-xl relative overflow-hidden bg-gray-100 flex-shrink-0">
+                              <div className="w-32 h-32 md:w-48 md:h-48 rounded-[2rem] relative overflow-hidden shadow-2xl shadow-primary/10 bg-white ring-8 ring-white flex-shrink-0 group">
                                  <Image 
                                     src={appointment.services.image_url}
                                     alt={appointment.services.name || "Prestation"}
                                     fill
-                                    className="object-cover"
+                                    className="object-cover transition-transform duration-700 group-hover:scale-110"
                                  />
                               </div>
                            ) : (
-                              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
-                                 <CheckCircle2 size={24} />
+                              <div className="w-32 h-32 md:w-48 md:h-48 rounded-[2rem] bg-primary/10 flex items-center justify-center text-primary flex-shrink-0 ring-8 ring-white shadow-xl">
+                                 <CheckCircle2 size={64} className="opacity-30" />
                               </div>
                            )}
-                           <div>
-                              <p className="font-bold text-gray-900 text-lg">{appointment.services?.name || "Prestation personnalisée"}</p>
-                              {appointment.services?.duration && (
-                                 <p className="text-gray-500 text-sm">{appointment.services.duration} minutes</p>
+                           <div className="text-center md:text-left space-y-3">
+                              <p className="font-extrabold text-gray-900 text-2xl md:text-3xl leading-none">{appointment.services?.name || "Prestation personnalisée"}</p>
+                              <div className="flex flex-wrap justify-center md:justify-start gap-3">
+                                 {appointment.services?.duration && (
+                                    <Badge variant="secondary" className="bg-white border-gray-100 text-gray-600 px-3 py-1.5 rounded-xl font-bold">
+                                       <Clock size={14} className="mr-2 text-primary" />
+                                       {appointment.services.duration} minutes
+                                    </Badge>
+                                 )}
+                                 <Badge variant="secondary" className="bg-primary/10 border-transparent text-primary px-3 py-1.5 rounded-xl font-bold">
+                                    {appointment.services?.price ? `${appointment.services.price}€` : "—"}
+                                 </Badge>
+                              </div>
+                              {appointment.services?.description && appointment.services.description !== "Mystère" && (
+                                 <p className="text-gray-500 max-w-md text-sm leading-relaxed mt-4 italic border-l-2 border-primary/10 pl-4">{appointment.services.description}</p>
                               )}
                            </div>
                         </div>
                      </section>
 
-                     <section>
-                        <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">Date et Heure</h2>
-                        <div className="grid grid-cols-2 gap-4">
-                           <div className="flex items-center gap-3 bg-gray-50 p-4 rounded-2xl border border-gray-100">
-                              <Calendar className="text-primary" size={20} />
-                              <div>
-                                 <p className="text-xs text-gray-500 font-medium mb-0.5">Date</p>
-                                 <p className="font-bold text-gray-900">{formatDateFull(startDate)}</p>
+                     {/* Date, Heure et Facturation */}
+                     <div className="grid md:grid-cols-2 gap-8">
+                        <section className="space-y-4">
+                           <h2 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Rendez-vous</h2>
+                           <div className="space-y-4">
+                              <div className="flex items-center gap-4 bg-white p-6 rounded-3xl border border-gray-100 shadow-sm shadow-gray-100">
+                                 <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
+                                    <Calendar size={24} />
+                                 </div>
+                                 <div>
+                                    <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mb-0.5">Date</p>
+                                    <p className="font-black text-gray-900 text-lg uppercase">{formatDateFull(startDate)}</p>
+                                 </div>
+                              </div>
+                              <div className="flex items-center gap-4 bg-white p-6 rounded-3xl border border-gray-100 shadow-sm shadow-gray-100">
+                                 <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
+                                    <Clock size={24} />
+                                 </div>
+                                 <div>
+                                    <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mb-0.5">Heure de début</p>
+                                    <p className="font-black text-gray-900 text-2xl tracking-tight">{formatTime(startDate)}</p>
+                                 </div>
                               </div>
                            </div>
-                           <div className="flex items-center gap-3 bg-gray-50 p-4 rounded-2xl border border-gray-100">
-                              <Clock className="text-primary" size={20} />
-                              <div>
-                                 <p className="text-xs text-gray-500 font-medium mb-0.5">Heure</p>
-                                 <p className="font-bold text-gray-900">{formatTime(startDate)}</p>
-                              </div>
-                           </div>
-                        </div>
-                     </section>
-                     
-                     <section>
-                         <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">Facturation</h2>
-                         <div className="bg-gray-50 rounded-2xl p-5 border border-gray-100">
-                           <div className="flex justify-between items-center mb-3">
-                              <span className="text-gray-600 font-medium">Prix de la prestation</span>
-                              <span className="font-bold text-gray-900">{appointment.services?.price ? `${appointment.services.price}€` : "—"}</span>
-                           </div>
-                           
-                           {appointment.deposit_amount && (
-                              <>
-                                 <div className="flex justify-between items-center text-primary mb-3">
-                                    <span className="font-medium">Acompte à payer</span>
-                                    <span className="font-bold">{appointment.deposit_amount}€</span>
-                                 </div>
-                                 <Separator className="my-3 border-gray-200" />
-                                 <div className="flex justify-between items-center">
-                                    <span className="text-gray-900 font-bold">Reste à payer sur place</span>
-                                    <span className="font-bold text-xl text-gray-900">
-                                       {appointment.services?.price ? `${appointment.services.price - appointment.deposit_amount}€` : "—"}
-                                    </span>
-                                 </div>
-                              </>
-                           )}
-                         </div>
-                     </section>
-                  </div>
+                        </section>
 
-                  {/* Right Column: Établissement */}
-                  <div className="md:w-72 shrink-0">
-                     <div className="bg-gray-50 rounded-2xl border border-gray-100 overflow-hidden sticky top-24">
-                        {appointment.establishments?.main_photo_url ? (
-                           <div className="aspect-video relative bg-gray-200">
-                              <Image 
-                                 src={appointment.establishments.main_photo_url} 
-                                 alt={appointment.establishments.name}
-                                 fill
-                                 className="object-cover"
-                              />
+                        <section className="space-y-4">
+                           <h2 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Paiement</h2>
+                           <div className="bg-white border-2 border-primary/5 rounded-[2.5rem] p-8 shadow-xl shadow-gray-200/40 relative overflow-hidden group">
+                              {/* Background pattern elements */}
+                              <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-primary/10 transition-colors" />
+                              
+                              <div className="relative z-10 space-y-6">
+                                 <div className="flex justify-between items-center text-gray-500">
+                                    <span className="text-sm font-bold uppercase tracking-widest">Total prestation</span>
+                                    <span className="text-xl font-black">{appointment.services?.price ? `${appointment.services.price}€` : "—"}</span>
+                                 </div>
+                                 
+                                 {appointment.deposit_amount && (
+                                    <>
+                                       <Separator className="bg-gray-100" />
+                                       <div className="flex justify-between items-center">
+                                          <div className="space-y-1">
+                                             <span className="text-primary text-xs font-black uppercase tracking-widest">Acompte payé</span>
+                                             <p className="text-xs text-gray-400 italic">Réservé en ligne</p>
+                                          </div>
+                                          <Badge className="bg-primary/10 text-primary border-0 px-4 py-2 rounded-xl font-black text-lg">
+                                             -{appointment.deposit_amount}€
+                                          </Badge>
+                                       </div>
+                                       <div className="pt-4 mt-4 border-t border-dashed border-gray-100">
+                                          <div className="flex justify-between items-end">
+                                             <span className="text-sm font-bold uppercase tracking-widest mb-1 text-gray-900">Reste à payer</span>
+                                             <span className="text-4xl font-black text-primary tracking-tighter">
+                                                {appointment.services?.price ? `${appointment.services.price - (appointment.deposit_amount || 0)}€` : "—"}
+                                             </span>
+                                          </div>
+                                          <p className="text-right text-[10px] text-gray-400 mt-2 font-bold uppercase tracking-widest">À régler sur place au salon</p>
+                                       </div>
+                                    </>
+                                 )}
+                                 
+                                 {!appointment.deposit_amount && (
+                                    <div className="pt-4">
+                                       <div className="flex justify-between items-end">
+                                          <span className="text-sm font-bold uppercase tracking-widest mb-1 text-gray-900">À régler sur place</span>
+                                          <span className="text-4xl font-black text-primary tracking-tighter">
+                                             {appointment.services?.price ? `${appointment.services.price}€` : "—"}
+                                          </span>
+                                       </div>
+                                    </div>
+                                 )}
+                              </div>
                            </div>
-                        ) : (
-                           <div className="aspect-video bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-                              <span className="text-primary/40 font-bold">{appointment.establishments?.name}</span>
-                           </div>
-                        )}
-                        <div className="p-5">
-                           <h3 className="font-bold text-gray-900 text-lg mb-2">{appointment.establishments?.name}</h3>
-                           <div className="flex items-start gap-2 text-gray-600 text-sm mb-4">
-                              <MapPin size={16} className="shrink-0 mt-0.5 text-primary" />
-                              <p>{appointment.establishments?.address}, <br/> {appointment.establishments?.city}</p>
-                           </div>
-                           <Link href={`/establishment/${appointment.establishments?.id}`}>
-                              <Button variant="outline" fullWidth className="rounded-xl">Voir la page pro</Button>
-                           </Link>
-                        </div>
+                        </section>
                      </div>
+
+                     {/* Timeline - Track de la réservation */}
+                     {appointment.deposit_amount && displayStatus !== "cancelled" && displayStatus !== "refused" && displayStatus !== "no_show" && (
+                       <section className="pt-8">
+                          <h2 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-8 text-center">Progression de la réservation</h2>
+                          <div className="max-w-md mx-auto">
+                             <div className="flex items-center justify-between relative px-2">
+                               {/* Ligne de fond */}
+                               <div className="absolute top-5 left-10 right-10 h-0.5 bg-gray-200 -z-0"></div>
+                               {/* Ligne de progression */}
+                               <div className={`absolute top-5 left-10 h-0.5 bg-primary -z-0 transition-all duration-1000 ease-out ${
+                                 displayStatus === 'pending_deposit' ? 'w-0' :
+                                 (displayStatus === 'confirmed' ? 'w-1/2' : 'w-[calc(100%-80px)]')
+                               }`}></div>
+
+                               {/* Étape 1 */}
+                               <div className="flex flex-col items-center z-10 w-20">
+                                 <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-sm font-bold transition-all duration-500 ${
+                                    displayStatus !== 'pending_deposit' 
+                                      ? 'bg-primary text-white shadow-lg shadow-primary/20 scale-110' 
+                                      : 'bg-white text-primary border-2 border-primary shadow-sm'
+                                 }`}>
+                                    {displayStatus !== 'pending_deposit' ? <CheckCircle2 size={20} /> : "1"}
+                                 </div>
+                                 <p className={`text-[10px] mt-3 font-black uppercase tracking-widest text-center ${displayStatus !== 'pending_deposit' ? 'text-gray-900' : 'text-primary'}`}>Payé</p>
+                               </div>
+
+                               {/* Étape 2 */}
+                               <div className="flex flex-col items-center z-10 w-20">
+                                 <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-sm font-bold transition-all duration-500 ${
+                                    displayStatus === 'completed' 
+                                      ? 'bg-primary text-white shadow-lg shadow-primary/20' 
+                                      : (displayStatus === 'confirmed' ? 'bg-white text-primary border-2 border-primary scale-110 shadow-lg shadow-primary/20' : 'bg-gray-100 text-gray-400')
+                                 }`}>
+                                    {displayStatus === 'completed' ? <CheckCircle2 size={20} /> : "2"}
+                                 </div>
+                                 <p className={`text-[10px] mt-3 font-black uppercase tracking-widest text-center ${
+                                   displayStatus === 'completed' ? 'text-gray-900' : 
+                                   (displayStatus === 'confirmed' ? 'text-primary animate-pulse' : 'text-gray-400')
+                                 }`}>Confirmé</p>
+                               </div>
+
+                               {/* Étape 3 */}
+                               <div className="flex flex-col items-center z-10 w-20">
+                                 <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-sm font-bold transition-all duration-500 ${
+                                    displayStatus === 'completed' 
+                                      ? 'bg-white text-primary border-2 border-primary scale-110 shadow-lg shadow-primary/20' 
+                                      : 'bg-gray-100 text-gray-400'
+                                 }`}>
+                                    {displayStatus === 'completed' ? <CheckCircle2 size={18} className="animate-bounce" /> : "3"}
+                                 </div>
+                                 <p className={`text-[10px] mt-3 font-black uppercase tracking-widest text-center ${displayStatus === 'completed' ? 'text-primary' : 'text-gray-400'}`}>Honoré</p>
+                               </div>
+                             </div>
+                          </div>
+                       </section>
+                     )}
                   </div>
                </div>
             </div>
+          </div>
+          
+          <div className="mt-8 flex justify-center">
+             <Link href={`/establishment/${appointment.establishments?.id}`}>
+                <Button variant="ghost" className="text-gray-500 hover:text-primary transition-colors font-bold group">
+                   Une question ? Contacter l'établissement
+                   <ArrowLeft className="ml-2 rotate-180 group-hover:translate-x-1 transition-transform" size={16} />
+                </Button>
+             </Link>
           </div>
         </div>
       </div>

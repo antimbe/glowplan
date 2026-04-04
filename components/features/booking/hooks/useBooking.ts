@@ -215,10 +215,10 @@ export function useBooking(establishmentId: string, openingHours: OpeningHour[])
 
             setCart([]);
 
-            // Trigger notifications for each appointment created
+            // Trigger notifications for each appointment created in parallel
             if (data.appointment_ids && data.appointment_ids.length > 0) {
-                for (const appointmentId of data.appointment_ids) {
-                    await fetch("/api/booking/notify", {
+                await Promise.all(data.appointment_ids.map((appointmentId: string) => 
+                    fetch("/api/booking/notify", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ 
@@ -226,8 +226,8 @@ export function useBooking(establishmentId: string, openingHours: OpeningHour[])
                             establishmentId, 
                             autoConfirm: !requireDeposit && autoConfirm
                         }),
-                    });
-                }
+                    })
+                ));
             }
 
             return { success: true, appointmentIds: data.appointment_ids };

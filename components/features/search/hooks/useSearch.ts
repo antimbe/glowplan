@@ -75,26 +75,28 @@ export function useSearch(query: string, location: string) {
             if (requestId !== lastRequestId.current) return;
             if (error) throw error;
 
-            const formatted = (data || []).map((est: any) => {
-                const reviewCount = est.reviews?.length || 0;
-                const avgRating = reviewCount > 0
-                    ? Math.round((est.reviews.reduce((sum: number, r: any) => sum + r.rating, 0) / reviewCount) * 10) / 10
-                    : null;
+            const formatted = (data || [])
+                .filter((est: any) => est.services && est.services.length > 0)
+                .map((est: any) => {
+                    const reviewCount = est.reviews?.length || 0;
+                    const avgRating = reviewCount > 0
+                        ? Math.round((est.reviews.reduce((sum: number, r: any) => sum + r.rating, 0) / reviewCount) * 10) / 10
+                        : null;
 
-                return {
-                    id: est.id,
-                    name: est.name,
-                    city: est.city,
-                    activity_sectors: est.activity_sectors || [],
-                    main_photo_url: est.main_photo_url,
-                    description: est.description,
-                    min_price: est.services?.length > 0
-                        ? Math.min(...est.services.map((s: any) => s.price))
-                        : null,
-                    average_rating: avgRating,
-                    review_count: reviewCount,
-                };
-            });
+                    return {
+                        id: est.id,
+                        name: est.name,
+                        city: est.city,
+                        activity_sectors: est.activity_sectors || [],
+                        main_photo_url: est.main_photo_url,
+                        description: est.description,
+                        min_price: est.services?.length > 0
+                            ? Math.min(...est.services.map((s: any) => s.price))
+                            : null,
+                        average_rating: avgRating,
+                        review_count: reviewCount,
+                    };
+                });
 
             setResults(formatted);
         } catch (error) {

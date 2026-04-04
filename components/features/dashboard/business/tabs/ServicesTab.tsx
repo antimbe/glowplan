@@ -84,7 +84,16 @@ export default function ServicesTab({ establishmentId }: ServicesTabProps) {
         .eq("id", deleteModal.serviceId);
 
       if (error) throw error;
-      setServices(prev => prev.filter(s => s.id !== deleteModal.serviceId));
+      const updatedServices = services.filter(s => s.id !== deleteModal.serviceId);
+      setServices(updatedServices);
+
+      // If no services left, mark profile as incomplete
+      if (updatedServices.length === 0) {
+        await supabase
+          .from("establishments")
+          .update({ is_profile_complete: false })
+          .eq("id", establishmentId);
+      }
     } catch (error) {
       console.error("Erreur suppression:", error);
     } finally {

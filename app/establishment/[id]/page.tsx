@@ -93,6 +93,11 @@ export default function EstablishmentPage() {
         .eq("establishment_id", establishmentId)
         .order("price");
       setServices((servs as Service[]) || []);
+      
+      // Ensure the establishment has services
+      if (!servs || servs.length === 0) {
+        throw new Error("Cet établissement n'a pas encore configuré ses prestations et n'est pas encore ouvert aux réservations.");
+      }
 
       // Fetch opening hours
       const { data: hours } = await supabase
@@ -273,12 +278,20 @@ export default function EstablishmentPage() {
 
       <div className="pt-24 pb-12">
         <div className="max-w-6xl mx-auto px-4">
-          <div className="flex items-center gap-2 text-sm text-gray-500 mb-6 font-medium">
-            <Link href="/" className="hover:text-primary transition-colors">Accueil</Link>
-            <ChevronRight size={14} />
-            <Link href="/search" className="hover:text-primary transition-colors">Recherche</Link>
-            <ChevronRight size={14} />
-            <span className="text-gray-900 font-bold truncate">{establishment.name}</span>
+          <div className="flex items-center gap-1 text-sm text-gray-500 mb-6 font-medium">
+            <Link href="/">
+               <Button variant="ghost" className="h-auto py-1 px-2 text-gray-500 hover:text-primary transition-colors font-bold text-sm">
+                  Accueil
+               </Button>
+            </Link>
+            <ChevronRight size={14} className="text-gray-300" />
+            <Link href="/search">
+               <Button variant="ghost" className="h-auto py-1 px-2 text-gray-500 hover:text-primary transition-colors font-bold text-sm">
+                  Recherche
+               </Button>
+            </Link>
+            <ChevronRight size={14} className="text-gray-300" />
+            <span className="text-gray-900 font-bold px-2 truncate">{establishment.name}</span>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
