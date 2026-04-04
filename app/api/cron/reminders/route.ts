@@ -181,6 +181,22 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // --- 4. AUTO-CANCELLATION DES RDV EXPIRÉS ---
+    // Trouver les RDV "pending" ou "pending_deposit" dont le "end_time" est passé
+    const { data: expiredApts } = await supabase
+      .from("appointments")
+      .select("id")
+      .in("status", ["pending", "pending_deposit"])
+      .lte("end_time", now.toISOString());
+
+    if (expiredApts && expiredApts.length > 0) {
+      const expiredIds = expiredApts.map(a => a.id);
+      await supabase
+        .from("appointments")
+        .update({ status: "cancelled" })
+        .in("id", expiredIds);
+    }
+
     return NextResponse.json({ success: true, message: "Cron jobs processed" });
   } catch (error) {
     console.error("Error in reminder cron:", error);

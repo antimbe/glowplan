@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
       appointment_date: formatDateFull(startDate),
       appointment_time: `${formatTime(startDate)} - ${formatTime(endDate)}`,
       deposit_amount: appointment.establishments?.deposit_amount || "—",
-      booking_link: `${baseUrl}/establishment/${appointment.establishments?.id}?booking=${appointment.id}`
+      booking_link: `${baseUrl}/account/bookings/${appointment.id}`
     });
 
     const result = await sendEmail({

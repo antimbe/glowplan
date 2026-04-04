@@ -160,7 +160,7 @@ export function useBooking(establishmentId: string, openingHours: OpeningHour[])
         }
     }, [editingIndex]);
 
-    const confirmBooking = useCallback(async (clientInfo: ClientInfo, requireDeposit = false) => {
+    const confirmBooking = useCallback(async (clientInfo: ClientInfo, requireDeposit = false, autoConfirm = false) => {
         setIsConfirming(true);
         try {
             const { data: { user } } = await supabase.auth.getUser();
@@ -195,12 +195,21 @@ export function useBooking(establishmentId: string, openingHours: OpeningHour[])
 
             if (error) throw error;
             if (!data.success) throw new Error(data.error);
+            // Golden Rule for Status
+            // 1. If deposit required => pending_deposit (overrides auto_confirm)
+            // 2. If no deposit AND auto_confirm => confirmed
+            // 3. Otherwise => pending (handled by default in RPC or we force it here to be safe)
+            if (data.appointment_ids && data.appointment_ids.length > 0) {
+                let finalStatus = 'pending';
+                if (requireDeposit) {
+                    finalStatus = 'pending_deposit';
+                } else if (autoConfirm) {
+                    finalStatus = 'confirmed';
+                }
 
-            // If deposit required, update status to pending_deposit
-            if (requireDeposit && data.appointment_ids && data.appointment_ids.length > 0) {
                 await supabase
                     .from("appointments")
-                    .update({ status: 'pending_deposit' })
+                    .update({ status: finalStatus })
                     .in("id", data.appointment_ids);
             }
 
@@ -215,7 +224,7 @@ export function useBooking(establishmentId: string, openingHours: OpeningHour[])
                         body: JSON.stringify({ 
                             appointmentId, 
                             establishmentId, 
-                            autoConfirm: !requireDeposit // In a real app, this should depend on provider settings
+                            autoConfirm: !requireDeposit && autoConfirm
                         }),
                     });
                 }

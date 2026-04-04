@@ -81,7 +81,8 @@ export async function middleware(request: NextRequest) {
   }
 
   // Restrict /account access strictly to 'client' users
-  if (request.nextUrl.pathname.startsWith('/account')) {
+  // Exclude /account/bookings/ so guests can view their booking recap via email link
+  if (request.nextUrl.pathname.startsWith('/account') && !request.nextUrl.pathname.startsWith('/account/bookings/')) {
     if (!user) {
       const url = request.nextUrl.clone()
       url.pathname = '/auth/client/login'

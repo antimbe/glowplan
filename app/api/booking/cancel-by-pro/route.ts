@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
           appointment_date: formatDateFull(startDate),
           appointment_time: `${formatTime(startDate)} - ${formatTime(endDate)}`,
           cancelled_by: appointment.establishments?.name || "le prestataire",
-          booking_link: `${baseUrl}/establishment/${appointment.establishments?.id}`
+          booking_link: `${baseUrl}/account/bookings/${appointment.id}`
         }))
       : EmailTemplates.bookingCancelledUser({
           first_name: appointment.client_first_name,
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
           appointment_date: formatDateFull(startDate),
           appointment_time: `${formatTime(startDate)} - ${formatTime(endDate)}`,
           cancelled_by: appointment.establishments?.name || "le prestataire",
-          booking_link: `${baseUrl}/establishment/${appointment.establishments?.id}`
+          booking_link: `${baseUrl}/account/bookings/${appointment.id}`
         });
 
     const result = await sendEmail({

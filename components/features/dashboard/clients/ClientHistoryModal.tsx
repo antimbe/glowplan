@@ -48,6 +48,12 @@ export function ClientHistoryModal({
                     icon: () => AlertCircle,
                     color: () => "bg-yellow-100 text-yellow-700"
                 };
+            case "no_show":
+                return {
+                    label: () => "Lapin (Non-honoré)",
+                    icon: () => AlertCircle,
+                    color: () => "bg-orange-100 text-orange-700"
+                };
             default:
                 return {
                     label: () => status,

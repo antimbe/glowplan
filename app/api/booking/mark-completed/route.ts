@@ -41,46 +41,47 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Un rendez-vous ne peut être marqué comme "no_show" que s'il est "completed" ou "confirmed" (passé)
-    if (appointment.status !== "completed" && appointment.status !== "confirmed") {
+    // Un rendez-vous ne peut être marqué comme "completed" que s'il est "confirmed" (passé) ou "no_show" (erreur de saisie)
+    if (appointment.status !== "confirmed" && appointment.status !== "no_show" && appointment.status !== "completed") {
       return NextResponse.json(
-        { error: "Seul un rendez-vous confirmé/terminé peut être marqué comme non honoré." },
+        { error: "Seul un rendez-vous confirmé ou marqué comme absent peut être marqué comme honoré." },
         { status: 400 }
       );
     }
 
-    // 3. Mettre le statut à "no_show"
+    // 3. Mettre le statut à "completed"
     const { error: updateError } = await supabase
       .from("appointments")
-      .update({ status: "no_show" })
+      .update({ status: "completed" })
       .eq("id", appointmentId);
 
     if (updateError) throw updateError;
 
-    // 4. Mettre à jour le compteur "Lapin" sur le profil client
-    if (appointment.client_profile_id) {
-      // Lire la valeur actuelle
-      const { data: profile } = await supabase
-        .from("client_profiles")
-        .select("no_show_count")
-        .eq("id", appointment.client_profile_id)
-        .single();
-      
-      const currentCount = profile?.no_show_count || 0;
+    // 4. Si c'était un "no_show", décrémenter le compteur Lapin (optionnel/bonus)
+    if (appointment.status === "no_show" && appointment.client_profile_id) {
+       // Lire la valeur actuelle
+       const { data: profile } = await supabase
+         .from("client_profiles")
+         .select("no_show_count")
+         .eq("id", appointment.client_profile_id)
+         .single();
+       
+       const currentCount = profile?.no_show_count || 0;
 
-      // Incrémenter manuellement (faute de fonction RPC pour l'instant)
-      await supabase
-        .from("client_profiles")
-        .update({ no_show_count: currentCount + 1 })
-        .eq("id", appointment.client_profile_id);
+       if (currentCount > 0) {
+         await supabase
+           .from("client_profiles")
+           .update({ no_show_count: currentCount - 1 })
+           .eq("id", appointment.client_profile_id);
+       }
     }
 
     return NextResponse.json({
       success: true,
-      message: "Rendez-vous marqué comme non honoré (lapin)"
+      message: "Rendez-vous marqué comme honoré"
     });
   } catch (error) {
-    console.error("Error marking no-show:", error);
+    console.error("Error marking completed:", error);
     return NextResponse.json(
       { error: "Erreur interne" },
       { status: 500 }

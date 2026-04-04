@@ -88,10 +88,9 @@ export function useStatistics(establishmentId: string) {
       const validApts = (apts || []) as unknown as RawApt[];
       const totalBookings = validApts.length;
       
-      const confirmedApts = validApts.filter(a => a.status === "confirmed" || a.status === "pending" || a.status === "pending_deposit");
-      // Wait: user wants CA on CONFIRMED. Should pending be included in CA? Probably only confirmed. Let's strictly use confirmed for CA, but totalBookings includes all? 
-      // Actually user said: "Nb de réservation (toutes) et Nb de réservations confirmées".
-      const strictlyConfirmedApts = validApts.filter(a => a.status === "confirmed");
+      const confirmedApts = validApts.filter(a => ["confirmed", "completed", "pending", "pending_deposit"].includes(a.status));
+      // Revenu et réservations officiellement validées (donc confirmées ou déjà effectuées)
+      const strictlyConfirmedApts = validApts.filter(a => ["confirmed", "completed"].includes(a.status));
       const confirmedBookingsCount = strictlyConfirmedApts.length;
 
       // Revenus
@@ -109,9 +108,9 @@ export function useStatistics(establishmentId: string) {
       
       validApts.forEach(a => {
         const d = new Date(a.start_time);
-        const isConfirmed = a.status === "confirmed";
+        const isOfficial = ["confirmed", "completed"].includes(a.status);
         const s = Array.isArray(a.services) ? a.services[0] : a.services;
-        const price = (isConfirmed && s?.price) ? s.price : 0;
+        const price = (isOfficial && s?.price) ? s.price : 0;
         
         let key = "";
         if (filter === "all_time") {
@@ -140,8 +139,8 @@ export function useStatistics(establishmentId: string) {
         const s = Array.isArray(a.services) ? a.services[0] : a.services;
         if (!s) return;
         const sName = s.name;
-        const isConfirmed = a.status === "confirmed";
-        const price = (isConfirmed && s.price) ? s.price : 0;
+        const isOfficial = ["confirmed", "completed"].includes(a.status);
+        const price = (isOfficial && s.price) ? s.price : 0;
 
         const existing = serviceMap.get(sName) || { count: 0, revenue: 0, name: sName };
         existing.count += 1;

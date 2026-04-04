@@ -175,15 +175,23 @@ export default function AppointmentsTab({ establishmentId }: AppointmentsTabProp
   };
 
   const now = new Date();
-  const filteredAppointments = appointments.filter(apt => {
-    const aptDate = new Date(apt.start_time);
-    if (filter === "upcoming") return aptDate >= now && apt.status !== "cancelled";
-    if (filter === "past") return aptDate < now || apt.status === "cancelled";
+  
+  const activeAppointments = appointments.filter(apt => {
+    const isPast = new Date(apt.end_time) < now;
+    // Les pending/pending_deposit passés ne sont plus valides (ils sont morts)
+    if (isPast && (apt.status === "pending" || apt.status === "pending_deposit")) return false;
     return true;
   });
 
-  const upcomingCount = appointments.filter(apt => new Date(apt.start_time) >= now && apt.status !== "cancelled").length;
-  const pastCount = appointments.filter(apt => new Date(apt.start_time) < now || apt.status === "cancelled").length;
+  const filteredAppointments = activeAppointments.filter(apt => {
+    const isPast = new Date(apt.end_time) < now;
+    if (filter === "upcoming") return !isPast && apt.status !== "cancelled";
+    if (filter === "past") return isPast || apt.status === "cancelled";
+    return true;
+  });
+
+  const upcomingCount = activeAppointments.filter(apt => new Date(apt.end_time) >= now && apt.status !== "cancelled").length;
+  const pastCount = activeAppointments.filter(apt => new Date(apt.end_time) < now || apt.status === "cancelled").length;
 
   if (loading) {
     return (
@@ -321,15 +329,19 @@ export default function AppointmentsTab({ establishmentId }: AppointmentsTabProp
                     <span className={cn(
                       "px-3 py-1 rounded-full text-[10px] sm:text-xs font-semibold whitespace-nowrap",
                       apt.status === "confirmed" ? "bg-green-100 text-green-700" :
+                      apt.status === "completed" ? "bg-primary/20 text-primary-dark border border-primary/20" :
                       apt.status === "pending" ? "bg-yellow-100 text-yellow-700" :
                       apt.status === "pending_deposit" ? "bg-orange-100 text-orange-700 border border-orange-200" :
                       apt.status === "cancelled" ? "bg-red-100 text-red-700" :
+                      apt.status === "no_show" ? "bg-red-600 text-white shadow-sm" :
                       "bg-gray-100 text-gray-700"
                     )}>
                       {apt.status === "confirmed" ? "Confirmé" :
+                       apt.status === "completed" ? "Honoré" :
                        apt.status === "pending" ? "En attente" :
                        apt.status === "pending_deposit" ? "Acompte en attente" :
-                       apt.status === "cancelled" ? "Annulé" : apt.status}
+                       apt.status === "cancelled" ? "Annulé" : 
+                       apt.status === "no_show" ? "Lapin" : apt.status}
                     </span>
  
                     <span className="font-bold text-primary text-base sm:text-lg whitespace-nowrap">
@@ -366,7 +378,50 @@ export default function AppointmentsTab({ establishmentId }: AppointmentsTabProp
                     </div>
                   )}
 
-                  {apt.status === "confirmed" && new Date(apt.start_time) >= now && (
+                  {apt.status === "confirmed" && new Date(apt.end_time) < now && (
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={async () => {
+                          setUpdating(apt.id);
+                          await fetch("/api/booking/mark-completed", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ appointmentId: apt.id }),
+                          });
+                          setAppointments(prev => prev.map(a => a.id === apt.id ? { ...a, status: "completed" } : a));
+                          setUpdating(null);
+                        }}
+                        disabled={updating === apt.id}
+                        className="text-green-600 border-green-200 hover:bg-green-50 cursor-pointer"
+                      >
+                        {updating === apt.id ? <Loader2 className="animate-spin" size={16} /> : <UserCheck size={16} />}
+                        <span className="ml-1 hidden sm:inline">Honoré</span>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={async () => {
+                          setUpdating(apt.id);
+                          await fetch("/api/booking/mark-no-show", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ appointmentId: apt.id }),
+                          });
+                          setAppointments(prev => prev.map(a => a.id === apt.id ? { ...a, status: "no_show" } : a));
+                          setUpdating(null);
+                        }}
+                        disabled={updating === apt.id}
+                        className="text-red-600 border-red-200 hover:bg-red-50 cursor-pointer"
+                      >
+                        {updating === apt.id ? <Loader2 className="animate-spin" size={16} /> : <UserX size={16} />}
+                        <span className="ml-1 hidden sm:inline">Lapin</span>
+                      </Button>
+                    </div>
+                  )}
+
+                  {apt.status === "confirmed" && new Date(apt.end_time) >= now && (
                     <Button
                       variant="outline"
                       size="sm"

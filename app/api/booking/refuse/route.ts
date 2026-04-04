@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
       appointment_date: formatDateFull(startDate),
       appointment_time: `${formatTime(startDate)} - ${formatTime(endDate)}`,
       reason: reason || undefined,
-      booking_link: `${baseUrl}/establishment/${appointment.establishments?.id}`
+      booking_link: `${baseUrl}/account/bookings/${appointment.id}`
     });
 
     // Email to pro (confirmation of refusal)

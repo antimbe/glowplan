@@ -11,6 +11,7 @@ export interface ClientStats {
     total_cancellations: number;
     last_visit: string | null;
     is_blocked: boolean;
+    no_show_count: number;
 }
 
 export type SortField = "name" | "visits" | "spent" | "last_visit";

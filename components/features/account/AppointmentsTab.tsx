@@ -4,6 +4,7 @@ import { Calendar, Clock, Check, X, Star } from "lucide-react";
 import { Button } from "@/components/ui";
 import { cn } from "@/lib/utils/cn";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Appointment } from "./types";
 
 interface AppointmentsTabProps {
@@ -21,11 +22,13 @@ export function AppointmentsTab({
     formatDate,
     formatTime
 }: AppointmentsTabProps) {
+    const router = useRouter();
+    
     const upcomingAppointments = appointments.filter(
-        a => new Date(a.start_time) > new Date() && a.status !== "cancelled"
+        a => new Date(a.end_time) > new Date() && a.status !== "cancelled"
     );
     const pastAppointments = appointments.filter(
-        a => new Date(a.start_time) <= new Date() || a.status === "cancelled"
+        a => new Date(a.end_time) <= new Date() || a.status === "cancelled"
     );
 
     return (
@@ -35,7 +38,11 @@ export function AppointmentsTab({
                     <h2 className="text-lg font-bold text-gray-900 mb-4">Réservations à venir</h2>
                     <div className="space-y-4 mb-8">
                         {upcomingAppointments.map((apt) => (
-                            <div key={apt.id} className="border border-gray-200 rounded-xl p-4">
+                            <div 
+                                key={apt.id} 
+                                onClick={() => router.push(`/account/bookings/${apt.id}`)}
+                                className="border border-gray-200 rounded-xl p-4 cursor-pointer hover:border-primary/40 hover:shadow-sm transition-all"
+                            >
                                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
                                     <div className="flex-1 min-w-0">
                                         <h3 className="font-semibold text-gray-900 truncate">{apt.establishments?.name}</h3>
@@ -55,12 +62,14 @@ export function AppointmentsTab({
                                             <span className={cn(
                                                 "inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full",
                                                 apt.status === "confirmed" ? "bg-green-100 text-green-700" :
-                                                    apt.status === "pending" ? "bg-yellow-100 text-yellow-700" :
-                                                        "bg-gray-100 text-gray-700"
+                                                apt.status === "pending_deposit" ? "bg-orange-100 text-orange-700" :
+                                                apt.status === "pending" ? "bg-yellow-100 text-yellow-700" :
+                                                "bg-gray-100 text-gray-700"
                                             )}>
                                                 <Check size={12} />
                                                 {apt.status === "confirmed" ? "RDV Confirmé" :
-                                                    apt.status === "pending" ? "En attente" : apt.status}
+                                                 apt.status === "pending_deposit" ? "Acompte en attente" :
+                                                 apt.status === "pending" ? "En attente" : apt.status}
                                             </span>
                                         </div>
                                     </div>
@@ -69,7 +78,10 @@ export function AppointmentsTab({
                                         <Button
                                             variant="ghost"
                                             size="sm"
-                                            onClick={() => onCancelClick(apt)}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onCancelClick(apt);
+                                            }}
                                             className="text-red-500 hover:text-red-600 hover:bg-red-50"
                                         >
                                             Annuler
@@ -87,12 +99,19 @@ export function AppointmentsTab({
                     <h2 className="text-lg font-bold text-gray-900 mb-4">Historique</h2>
                     <div className="space-y-4">
                         {pastAppointments.map((apt) => {
-                            const canReview = apt.status !== "cancelled" && !apt.has_review;
+                            const isPast = new Date(apt.end_time) <= new Date();
+                            const displayStatus = (apt.status === "confirmed" && isPast) ? "completed" : apt.status;
+                            const canReview = displayStatus === "completed" && !apt.has_review;
+
                             return (
-                                <div key={apt.id} className={cn(
-                                    "border rounded-xl p-4",
-                                    apt.status === "cancelled" ? "border-red-200 bg-red-50/50" : "border-gray-200"
-                                )}>
+                                <div 
+                                    key={apt.id} 
+                                    onClick={() => router.push(`/account/bookings/${apt.id}`)}
+                                    className={cn(
+                                        "border rounded-xl p-4 cursor-pointer hover:shadow-sm transition-all hover:border-gray-300",
+                                        apt.status === "cancelled" ? "border-red-200 bg-red-50/50 hover:border-red-300" : "border-gray-200"
+                                    )}
+                                >
                                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
                                         <div className="flex-1 min-w-0">
                                             <h3 className="font-semibold text-gray-900 truncate">{apt.establishments?.name}</h3>
@@ -111,9 +130,21 @@ export function AppointmentsTab({
                                                         {apt.cancelled_by_client ? "Annulé" : "Annulé par l'établissement"}
                                                     </span>
                                                 )}
-                                                {apt.has_review && (
+                                                {displayStatus === "completed" && (
                                                     <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-green-100 text-green-700">
                                                         <Check size={12} />
+                                                        Honoré
+                                                    </span>
+                                                )}
+                                                {displayStatus === "no_show" && (
+                                                    <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-red-600 text-white shadow-sm">
+                                                        <X size={12} />
+                                                        Absent (Lapin)
+                                                    </span>
+                                                )}
+                                                {apt.has_review && (
+                                                    <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700 font-medium border border-blue-200">
+                                                        <Star size={12} />
                                                         Avis laissé
                                                     </span>
                                                 )}
@@ -125,7 +156,10 @@ export function AppointmentsTab({
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
-                                                    onClick={() => onReviewClick(apt)}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        onReviewClick(apt);
+                                                    }}
                                                     className="text-primary hover:text-primary-dark hover:bg-primary/5"
                                                 >
                                                     <Star size={14} className="mr-1" />

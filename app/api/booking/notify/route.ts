@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
         booking_reference: appointment.id.slice(0, 8).toUpperCase(),
         address_or_24h_message: establishment.address ? `${establishment.address}, ${establishment.city}` : "L'adresse vous sera communiquée prochainement.",
         conditions_block: establishment.show_conditions_online ? establishment.general_conditions : undefined,
-        booking_link: `${baseUrl}/establishment/${establishmentId}?booking=${appointmentId}`
+        booking_link: `${baseUrl}/account/bookings/${appointmentId}`
       });
     } else {
       clientEmailData = EmailTemplates.bookingRequestUser({
@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
         appointment_time: `${formatTime(startDate)} - ${formatTime(endDate)}`,
         price: `${appointment.services?.price || "—"}€`,
         address_or_24h_message: establishment.address ? `${establishment.address}, ${establishment.city}` : "L'adresse vous sera communiquée 24h avant votre rendez-vous.",
-        booking_link: `${baseUrl}/establishment/${establishmentId}?booking=${appointmentId}`
+        booking_link: `${baseUrl}/account/bookings/${appointmentId}`
       });
     }
 

@@ -31,7 +31,9 @@ export function useClientsData() {
             status,
             cancelled_by_client,
             start_time,
-            services(price)
+            end_time,
+            services(price),
+            client_profiles(no_show_count)
           `)
                     .eq("establishment_id", estId)
                     .not("client_profile_id", "is", null),
@@ -52,7 +54,7 @@ export function useClientsData() {
                 if (!apt.client_profile_id) return;
 
                 const existing = clientMap.get(apt.client_profile_id);
-                const isCompleted = apt.status === "confirmed" && new Date(apt.start_time) < new Date();
+                const isCompleted = apt.status === "completed" || (apt.status === "confirmed" && new Date(apt.end_time) < new Date());
                 const isCancelledByClient = apt.status === "cancelled" && apt.cancelled_by_client === true;
                 const price = (apt.services as any)?.price || 0;
 
@@ -81,6 +83,9 @@ export function useClientsData() {
                         total_cancellations: isCancelledByClient ? 1 : 0,
                         last_visit: isCompleted ? apt.start_time : null,
                         is_blocked: blockedIds.has(apt.client_profile_id),
+                        no_show_count: Array.isArray(apt.client_profiles) 
+                          ? (apt.client_profiles[0] as any)?.no_show_count || 0 
+                          : (apt.client_profiles as any)?.no_show_count || 0,
                     });
                 }
             });

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { User, Mail, Phone, FileText, Clock, X, AlertTriangle, Loader2, Ban } from "lucide-react";
+import { User, Mail, Phone, FileText, Clock, X, AlertTriangle, Loader2, Ban, UserCheck } from "lucide-react";
 import { Button, Input, Textarea, Select, FormField, FormModal, Modal } from "@/components/ui";
 import { AppointmentData } from "./types";
 import { checkAppointmentConflicts, ConflictResult } from "./hooks";
@@ -378,31 +378,60 @@ export default function AppointmentForm({
       setCancelling(false);
     }
   };
+  
+  const handleMarkCompleted = async () => {
+    if (!appointment?.id) return;
+    setSaving(true);
+    try {
+      const response = await fetch("/api/booking/mark-completed", {
+         method: "POST",
+         headers: { "Content-Type": "application/json" },
+         body: JSON.stringify({ appointmentId: appointment.id }),
+      });
+      if (!response.ok) throw new Error("Erreur");
+      
+      setCancelModal(false);
+      onSave({ ...appointment, status: "completed" } as AppointmentData);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setSaving(false);
+    }
+  };
 
-  const [modalMode, setModalMode] = useState<"cancel" | "refuse" | "no_show">("cancel");
+  const [modalMode, setModalMode] = useState<"cancel" | "refuse" | "no_show" | "completed">("cancel");
+
+  // Vérifier si le rendez-vous est totalement terminé
+  const isPast = appointment?.end_time ? new Date(appointment.end_time) < new Date() : false;
 
   const footer = (
     <div className="flex flex-wrap items-center gap-2">
-      {appointment && (appointment.status === "pending" || appointment.status === "confirmed" || appointment.status === "completed") && (
+      {appointment && (appointment.status === "pending" || appointment.status === "confirmed") && !isPast && (
         <Button variant="danger" onClick={() => { setModalMode("cancel"); setCancelModal(true); }} size="sm">
           <X size={14} className="mr-1" />
           Annuler le RDV
         </Button>
       )}
-      {appointment?.status === "pending" && (
+      {appointment?.status === "pending" && !isPast && (
         <Button variant="outline" onClick={() => { setModalMode("refuse"); setCancelModal(true); }} size="sm" className="text-red-600 border-red-200 hover:bg-red-50">
           <X size={14} className="mr-1" />
           Refuser le RDV
         </Button>
       )}
-      {appointment?.status === "completed" && (
+      {appointment && (appointment.status === "confirmed" || appointment.status === "completed") && isPast && (
         <Button variant="outline" onClick={() => { setModalMode("no_show"); setCancelModal(true); }} size="sm" className="text-orange-600 border-orange-200 hover:bg-orange-50">
           <Ban size={14} className="mr-1" />
           Marquer Lapin
         </Button>
       )}
+      {appointment?.status === "confirmed" && isPast && (
+        <Button variant="primary" onClick={() => { setModalMode("completed"); setCancelModal(true); }} size="sm" className="bg-green-600 hover:bg-green-700 text-white border-none">
+          <UserCheck size={14} className="mr-1" />
+          Marquer Honoré
+        </Button>
+      )}
       <div className="flex-1" />
-      {appointment?.status === "pending" && (
+      {appointment?.status === "pending" && !isPast && (
         <Button
           variant="primary"
           onClick={handleConfirmAppointment}
@@ -415,7 +444,7 @@ export default function AppointmentForm({
       <Button
         variant="primary"
         onClick={() => handleSubmit()}
-        disabled={!isValid || saving}
+        disabled={!isValid || saving || isPast}
         loading={saving}
         size="sm"
       >
@@ -594,7 +623,8 @@ export default function AppointmentForm({
               <h3 className="text-lg font-bold text-gray-900">
                 {modalMode === "cancel" ? "Annuler le rendez-vous" : 
                  modalMode === "refuse" ? "Refuser le rendez-vous" : 
-                 "Marquer comme non honoré (Lapin)"}
+                 modalMode === "no_show" ? "Marquer comme non honoré (Lapin)" :
+                 "Marquer comme honoré"}
               </h3>
             </div>
             <p className="text-gray-600 mb-4">
@@ -602,7 +632,9 @@ export default function AppointmentForm({
                 ? "Êtes-vous sûr de vouloir annuler ce rendez-vous ? Un email sera envoyé au client pour l'informer."
                 : modalMode === "refuse" 
                   ? "Êtes-vous sûr de vouloir refuser cette demande ? Le créneau sera libéré et un email de refus sera envoyé au client."
-                  : "Le client ne s'est pas présenté ? Cette action le marquera comme non honoré (lapin)."
+                  : modalMode === "no_show"
+                    ? "Le client ne s'est pas présenté ? Cette action le marquera comme non honoré (lapin)."
+                    : "Le client s'est bien présenté ? Cette action marquera le rendez-vous comme effectué."
               }
             </p>
             <div className="mb-4">
@@ -628,15 +660,19 @@ export default function AppointmentForm({
               <Button
                 variant="danger"
                 onClick={
-                  modalMode === "cancel" ? handleCancelAppointment : 
-                  modalMode === "refuse" ? handleRefuseAppointment : 
-                  handleMarkNoShow
+                   modalMode === "cancel" ? handleCancelAppointment : 
+                   modalMode === "refuse" ? handleRefuseAppointment : 
+                   modalMode === "no_show" ? handleMarkNoShow :
+                   handleMarkCompleted
                 }
-                disabled={cancelling}
+                disabled={cancelling || saving}
                 size="sm"
               >
-                {cancelling ? <Loader2 className="animate-spin mr-1" size={14} /> : null}
-                {modalMode === "cancel" ? "Confirmer l'annulation" : "Confirmer le refus"}
+                {(cancelling || saving) ? <Loader2 className="animate-spin mr-1" size={14} /> : null}
+                {modalMode === "cancel" ? "Confirmer l'annulation" : 
+                 modalMode === "refuse" ? "Confirmer le refus" :
+                 modalMode === "no_show" ? "Confirmer Lapin" :
+                 "Confirmer Honoré"}
               </Button>
             </div>
           </div>

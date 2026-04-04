@@ -37,7 +37,8 @@ export function ClientsTable({ clients, onBlock, blockingClient, onClientClick }
                             <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell">Contact</th>
                             <th className="text-center px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Visites</th>
                             <th className="text-center px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden md:table-cell">Dépensé</th>
-                            <th className="text-center px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell">Annulations</th>
+                            <th className="text-center px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden sm:table-cell">Annulations</th>
+                            <th className="text-center px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden sm:table-cell">Lapins</th>
                             <th className="text-center px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden md:table-cell">Dernière visite</th>
                             <th className="text-right px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
                         </tr>
@@ -104,7 +105,7 @@ export function ClientsTable({ clients, onBlock, blockingClient, onClientClick }
                                         {client.total_spent.toFixed(0)}€
                                     </span>
                                 </td>
-                                <td className="px-6 py-4 text-center hidden lg:table-cell">
+                                <td className="px-6 py-4 text-center hidden sm:table-cell">
                                     <span className={cn(
                                         "inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-semibold",
                                         client.total_cancellations > 2
@@ -115,6 +116,19 @@ export function ClientsTable({ clients, onBlock, blockingClient, onClientClick }
                                     )}>
                                         <XCircle size={14} />
                                         {client.total_cancellations}
+                                    </span>
+                                </td>
+                                <td className="px-6 py-4 text-center hidden sm:table-cell">
+                                    <span className={cn(
+                                        "inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-semibold",
+                                        client.no_show_count > 1
+                                            ? "bg-red-600 text-white shadow-sm"
+                                            : client.no_show_count > 0
+                                                ? "bg-red-100 text-red-700"
+                                                : "bg-gray-100 text-gray-500"
+                                    )}>
+                                        <Ban size={14} />
+                                        {client.no_show_count}
                                     </span>
                                 </td>
                                 <td className="px-6 py-4 text-center hidden md:table-cell">
