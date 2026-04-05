@@ -5,7 +5,7 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
-import { Check, Clock, Calendar, ArrowRight, ChevronLeft, User, Mail, Phone, Instagram, FileText, LogIn, UserPlus, Trash2, ShoppingCart, CreditCard, Link as LinkIcon, Info, Loader2, ShieldCheck, Sparkles } from "lucide-react";
+import { Check, Clock, Calendar, ArrowRight, ChevronLeft, User, Mail, Phone, Instagram, FileText, LogIn, UserPlus, Trash2, ShoppingCart, CreditCard, Link as LinkIcon, Info, Loader2, ShieldCheck, Sparkles, MapPin } from "lucide-react";
 import { Button } from "@/components/ui";
 import { cn } from "@/lib/utils/cn";
 import Link from "next/link";
@@ -524,6 +524,17 @@ export function BookingTunnel({
                     <p className="text-gray-600 mb-6 text-sm">
                         Votre demande est enregistrée. Pour valider et confirmer définitivement votre rendez-vous, veuillez régler l'acompte demandé.
                     </p>
+                    
+                    {establishment?.hide_exact_address && (
+                        <div className="mb-8 p-4 bg-primary/5 border border-primary/10 rounded-2xl flex items-center gap-3 text-left">
+                            <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-primary shadow-sm shrink-0">
+                                <MapPin size={20} />
+                            </div>
+                            <p className="text-xs text-primary font-bold italic">
+                                Note : L'adresse exacte vous sera communiquée 24h avant votre rendez-vous.
+                            </p>
+                        </div>
+                    )}
 
                     <div className="bg-gray-50 rounded-2xl p-5 mb-6 text-left border border-gray-100">
                         {establishment?.deposit_amount && (
@@ -574,6 +585,17 @@ export function BookingTunnel({
                         ? "Votre réservation a été confirmée. Vous recevrez un email de confirmation."
                         : "Votre demande a été envoyée. L'établissement vous contactera pour confirmer."}
                 </p>
+
+                {establishment?.hide_exact_address && (
+                    <div className="mb-8 p-4 bg-primary/5 border border-primary/10 rounded-2xl flex items-center gap-3 text-left mx-auto max-w-sm">
+                        <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-primary shadow-sm shrink-0">
+                            <MapPin size={20} />
+                        </div>
+                        <p className="text-xs text-primary font-bold italic">
+                            Note : L'adresse exacte vous sera communiquée 24h avant votre rendez-vous.
+                        </p>
+                    </div>
+                )}
                 <Button variant="primary" onClick={() => router.push("/")} className="cursor-pointer">
                     Retour à l'accueil
                 </Button>

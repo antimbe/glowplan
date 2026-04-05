@@ -1,7 +1,7 @@
 "use client";
 
 import { User, Ban } from "lucide-react";
-import { CalendarEvent, UnavailabilityType } from "../types";
+import { CalendarEvent, UnavailabilityType, AppointmentData } from "../types";
 import { AGENDA_CONFIG, UNAVAILABILITY_TYPE_LABELS } from "../constants";
 
 interface AgendaEventProps {
@@ -55,11 +55,14 @@ export default function AgendaEvent({
     let label = title;
 
     if (event.type === "unavailability") {
-        const unavData = event.data as any; // Using any to avoid complex cast since we check type
+        const unavData = event.data as any;
         const typeLabel = UNAVAILABILITY_TYPE_LABELS[unavData.unavailability_type as keyof typeof UNAVAILABILITY_TYPE_LABELS] || "Indisponible";
         const reason = unavData.reason;
         label = reason && reason !== "Indisponible" ? `${typeLabel} : ${reason}` : typeLabel;
     }
+
+    const isCancelled = isAppointment && (event.data as any)?.status === "cancelled";
+    if (isCancelled) label = `[ANNULÉ] ${label}`;
 
     return (
         <div
@@ -69,13 +72,15 @@ export default function AgendaEvent({
             }}
             className={`absolute left-0.5 right-0.5 rounded-md cursor-pointer hover:shadow-lg transition-all overflow-hidden ${
                 isAppointment
-                ? (event.data as any)?.status === "completed"
-                  ? "bg-gradient-to-r from-gray-500 to-gray-400 border-l-2 border-gray-600 z-10"
-                  : (event.data as any)?.status === "no_show"
-                    ? "bg-gradient-to-r from-orange-500 to-orange-400 border-l-2 border-orange-600 z-10"
-                    : "bg-gradient-to-r from-primary to-primary/80 border-l-2 border-primary-dark z-20"
+                ? (event.data as any)?.status === "cancelled"
+                  ? "bg-gray-100 border-l-2 border-gray-300 text-gray-400 opacity-60 z-10 line-through select-none"
+                  : (event.data as any)?.status === "completed"
+                    ? "bg-gradient-to-r from-gray-500 to-gray-400 border-l-2 border-gray-600 z-10"
+                    : (event.data as any)?.status === "no_show"
+                      ? "bg-gradient-to-r from-orange-500 to-orange-400 border-l-2 border-orange-600 z-10"
+                      : "bg-gradient-to-r from-primary to-primary/80 border-l-2 border-primary-dark z-20"
                 : "bg-gradient-to-r from-red-500 to-red-400 border-l-2 border-red-600 z-10"
-                } text-white text-[10px] lg:text-xs px-1.5 py-0.5`}
+                } ${isCancelled ? "text-gray-400" : "text-white"} text-[10px] lg:text-xs px-1.5 py-0.5`}
             style={{
                 top: `${topPercent}%`,
                 height: `${heightPercent}%`,
@@ -83,8 +88,12 @@ export default function AgendaEvent({
             }}
         >
             <div className="font-semibold truncate flex items-center gap-1">
-                {isAppointment ? <User size={10} /> : <Ban size={10} />}
-                {label}
+                {isAppointment ? <User size={10} className="shrink-0" /> : <Ban size={10} className="shrink-0" />}
+                <span className="truncate">
+                    {isAppointment 
+                        ? `${(event.data as AppointmentData).client_name} - ${label}` 
+                        : label}
+                </span>
             </div>
         </div>
     );

@@ -12,6 +12,11 @@ export function useAgenda() {
   const [loading, setLoading] = useState(true);
   const [establishmentId, setEstablishmentId] = useState<string | null>(null);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [filters, setFilters] = useState({
+    showAppointments: true,
+    showUnavailabilities: true,
+    showCancelled: false,
+  });
   
   // Initialisation à partir des paramètres d'URL (ex: notifications)
   const initialDate = useMemo(() => {
@@ -135,6 +140,17 @@ export function useAgenda() {
     }
   }, [establishmentId, currentDate, view, supabase]);
 
+  const filteredEvents = useMemo(() => {
+    return events.filter(e => {
+      if (e.type === "appointment") {
+        const apt = e.data as AppointmentData;
+        if (apt.status === "cancelled") return filters.showCancelled;
+        return filters.showAppointments;
+      }
+      return filters.showUnavailabilities;
+    });
+  }, [events, filters]);
+
   const deleteEvent = useCallback(async (event: CalendarEvent) => {
     try {
       const table = event.type === "appointment" ? "appointments" : "unavailabilities";
@@ -187,7 +203,10 @@ export function useAgenda() {
   return {
     loading,
     establishmentId,
-    events,
+    events: filteredEvents,
+    allEvents: events,
+    filters,
+    setFilters,
     currentDate,
     view,
     setCurrentDate,

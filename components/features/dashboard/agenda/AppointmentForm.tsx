@@ -401,8 +401,13 @@ export default function AppointmentForm({
 
   const [modalMode, setModalMode] = useState<"cancel" | "refuse" | "no_show" | "completed">("cancel");
 
-  // Vérifier si le rendez-vous est totalement terminé
+  // Vérifier si le rendez-vous est totalement terminé ou dans un état final
   const isPast = appointment?.end_time ? new Date(appointment.end_time) < new Date() : false;
+  const isFinalStatus = !!(appointment?.status && ["completed", "no_show", "cancelled", "refused"].includes(appointment.status));
+  const isReadOnly = isPast || isFinalStatus;
+  
+  // Vérifier si le RDV vient d'un client (externe)
+  const isExternal = !!(appointment && !appointment.is_manual);
 
   const footer = (
     <div className="flex flex-wrap items-center gap-2">
@@ -431,24 +436,26 @@ export default function AppointmentForm({
         </Button>
       )}
       <div className="flex-1" />
-      {appointment?.status === "pending" && !isPast && (
+      {appointment?.status === "pending" && !isReadOnly && (
         <Button
           variant="primary"
           onClick={handleConfirmAppointment}
           disabled={saving}
           size="sm"
+          className="bg-green-600 hover:bg-green-700 text-white border-none"
         >
+          <UserCheck size={14} className="mr-1" />
           Confirmer le RDV
         </Button>
       )}
       <Button
         variant="primary"
-        onClick={() => handleSubmit()}
-        disabled={!isValid || saving || isPast}
+        onClick={isReadOnly ? onCancel : () => handleSubmit()}
+        disabled={(!isReadOnly && !isValid) || saving}
         loading={saving}
         size="sm"
       >
-        {appointment ? "Modifier" : "Créer le RDV"}
+        {isReadOnly ? "Fermer" : (appointment ? "Modifier" : "Créer le RDV")}
       </Button>
     </div>
   );
@@ -458,8 +465,8 @@ export default function AppointmentForm({
       <FormModal
         isOpen={true}
         onClose={onCancel}
-        title={appointment ? "Modifier le RDV" : "Nouveau rendez-vous"}
-        subtitle="Remplissez les informations client"
+        title={isReadOnly ? "Détails du rendez-vous" : (appointment ? "Modifier le rendez-vous" : "Nouveau rendez-vous")}
+        subtitle={isReadOnly ? "Consultation des informations" : "Remplissez les informations client"}
         icon={<User className="w-5 h-5 text-white" />}
         variant="primary"
         footer={footer}
@@ -482,6 +489,7 @@ export default function AppointmentForm({
               placeholder="Nom complet du client"
               fullWidth
               className="h-11"
+              disabled={isReadOnly || isExternal}
             />
           </FormField>
 
@@ -497,6 +505,7 @@ export default function AppointmentForm({
                 placeholder="email@exemple.com"
                 fullWidth
                 className="h-11"
+                disabled={isReadOnly || isExternal}
               />
             </FormField>
             <FormField
@@ -510,6 +519,7 @@ export default function AppointmentForm({
                 placeholder="06 12 34 56 78"
                 fullWidth
                 className="h-11"
+                disabled={isReadOnly || isExternal}
               />
             </FormField>
           </div>
@@ -523,6 +533,7 @@ export default function AppointmentForm({
                 options={serviceOptions}
                 fullWidth
                 size="md"
+                disabled={isReadOnly}
               />
               {(formData.service_id as string) === "other" && (
                 <Input
@@ -552,6 +563,7 @@ export default function AppointmentForm({
                     min={new Date().toISOString().split("T")[0]}
                     fullWidth
                     className="h-11 !p-3"
+                    disabled={isReadOnly}
                   />
                 </div>
                 <div className="flex flex-col">
@@ -562,6 +574,7 @@ export default function AppointmentForm({
                     options={timeOptions}
                     fullWidth
                     size="md"
+                    disabled={isReadOnly}
                   />
                 </div>
                 <div className="flex flex-col">
@@ -572,6 +585,7 @@ export default function AppointmentForm({
                     options={timeOptions}
                     fullWidth
                     size="md"
+                    disabled={isReadOnly}
                   />
                 </div>
               </div>
@@ -588,6 +602,7 @@ export default function AppointmentForm({
               placeholder="Informations complémentaires sur le rendez-vous..."
               rows={2}
               fullWidth
+              disabled={isReadOnly}
             />
           </FormField>
         </div>

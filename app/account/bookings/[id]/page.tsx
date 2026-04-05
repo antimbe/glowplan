@@ -209,8 +209,18 @@ export default function BookingDetailsPage() {
                               {appointment.establishments?.name}
                            </Heading>
                            <div className="flex items-center gap-2 text-gray-500">
-                              <MapPin size={18} className="text-primary shrink-0" />
-                              <p className="text-base font-medium">{appointment.establishments?.address}, {appointment.establishments?.city}</p>
+                               <MapPin size={18} className="text-primary shrink-0" />
+                               {appointment.establishments?.hide_exact_address && 
+                                (new Date(appointment.start_time).getTime() - new Date().getTime() > 24 * 60 * 60 * 1000) ? (
+                                   <div className="space-y-1">
+                                      <p className="text-base font-medium">{appointment.establishments?.city} {appointment.establishments?.zip_code}</p>
+                                      <p className="text-xs text-primary font-bold italic bg-primary/5 px-3 py-1 rounded-lg border border-primary/10">
+                                         L'adresse exacte vous sera communiquée 24h avant votre rendez-vous.
+                                      </p>
+                                   </div>
+                                ) : (
+                                   <p className="text-base font-medium">{appointment.establishments?.address}, {appointment.establishments?.city}</p>
+                                )}
                            </div>
                            <p className="text-gray-400 text-xs font-medium tracking-widest uppercase">Réf: {appointment.id.slice(0, 8)}</p>
                         </div>

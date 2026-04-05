@@ -22,7 +22,6 @@ export async function fetchOccupationData(
             .from('appointments')
             .select('*, service:services(name, duration, price)')
             .eq('establishment_id', establishmentId)
-            .neq('status', 'cancelled')
             .lte('start_time', endDate)
             .gte('end_time', startDate),
         supabase

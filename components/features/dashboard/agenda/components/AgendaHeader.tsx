@@ -11,6 +11,8 @@ interface AgendaHeaderProps {
     onNavigateNext: () => void;
     onGoToToday: () => void;
     onViewChange: (view: CalendarViewType) => void;
+    filters: { showAppointments: boolean; showUnavailabilities: boolean; showCancelled: boolean };
+    onFiltersChange: (filters: { showAppointments: boolean; showUnavailabilities: boolean; showCancelled: boolean }) => void;
 }
 
 export default function AgendaHeader({
@@ -19,7 +21,9 @@ export default function AgendaHeader({
     onNavigatePrev,
     onNavigateNext,
     onGoToToday,
-    onViewChange
+    onViewChange,
+    filters,
+    onFiltersChange
 }: AgendaHeaderProps) {
     return (
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between p-3 lg:p-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white gap-2 lg:gap-0">
@@ -48,6 +52,43 @@ export default function AgendaHeader({
                     <span className="hidden lg:inline">{formatDateHeader()}</span>
                     <span className="lg:hidden">{formatDateHeader(true)}</span>
                 </h2>
+            </div>
+
+            {/* Filtres de type */}
+            <div className="flex items-center gap-1.5 bg-gray-50/50 p-1 rounded-xl border border-gray-100">
+                <button
+                    onClick={() => onFiltersChange({ ...filters, showAppointments: !filters.showAppointments })}
+                    className={`px-2.5 py-1.5 text-[10px] lg:text-xs font-medium rounded-lg flex items-center gap-1.5 transition-all cursor-pointer shadow-sm border ${
+                        filters.showAppointments 
+                        ? "bg-white text-primary border-primary/20" 
+                        : "bg-transparent text-gray-400 border-transparent hover:text-gray-600"
+                    }`}
+                >
+                    <div className={`w-1.5 h-1.5 rounded-full ${filters.showAppointments ? "bg-primary shadow-[0_0_4px_rgba(var(--primary-rgb),0.5)]" : "bg-gray-300"}`} />
+                    RDV
+                </button>
+                <button
+                    onClick={() => onFiltersChange({ ...filters, showUnavailabilities: !filters.showUnavailabilities })}
+                    className={`px-2.5 py-1.5 text-[10px] lg:text-xs font-medium rounded-lg flex items-center gap-1.5 transition-all cursor-pointer shadow-sm border ${
+                        filters.showUnavailabilities 
+                        ? "bg-white text-red-600 border-red-100" 
+                        : "bg-transparent text-gray-400 border-transparent hover:text-gray-600"
+                    }`}
+                >
+                    <div className={`w-1.5 h-1.5 rounded-full ${filters.showUnavailabilities ? "bg-red-500 shadow-[0_0_4px_rgba(239,68,68,0.5)]" : "bg-gray-300"}`} />
+                    Indispo.
+                </button>
+                <button
+                    onClick={() => onFiltersChange({ ...filters, showCancelled: !filters.showCancelled })}
+                    className={`px-2.5 py-1.5 text-[10px] lg:text-xs font-medium rounded-lg flex items-center gap-1.5 transition-all cursor-pointer shadow-sm border ${
+                        filters.showCancelled 
+                        ? "bg-white text-gray-600 border-gray-200" 
+                        : "bg-transparent text-gray-400 border-transparent hover:text-gray-600"
+                    }`}
+                >
+                    <div className={`w-1.5 h-1.5 rounded-full ${filters.showCancelled ? "bg-gray-500 shadow-[0_0_4px_rgba(107,114,128,0.5)]" : "bg-gray-300"}`} />
+                    Annulés
+                </button>
             </div>
 
             <div className="flex bg-gray-100/80 rounded-xl p-1 shadow-inner">

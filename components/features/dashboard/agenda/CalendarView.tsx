@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { CalendarViewType, CalendarEvent } from "./types";
 import { DAYS_DB, MONTHS } from "@/lib/utils/formatters";
+import { cn } from "@/lib/utils/cn";
 import { AGENDA_CONFIG, UNAVAILABILITY_TYPE_LABELS } from "./constants";
 import { UnavailabilityData } from "./types";
 import AgendaHeader from "./components/AgendaHeader";
@@ -18,6 +19,8 @@ interface CalendarViewProps {
   onViewChange: (view: CalendarViewType) => void;
   onEventClick: (event: CalendarEvent) => void;
   onSlotClick: (date: Date) => void;
+  filters: { showAppointments: boolean; showUnavailabilities: boolean; showCancelled: boolean };
+  onFiltersChange: (filters: { showAppointments: boolean; showUnavailabilities: boolean; showCancelled: boolean }) => void;
 }
 
 const HOURS = Array.from(
@@ -34,6 +37,8 @@ export default function CalendarView({
   onViewChange,
   onEventClick,
   onSlotClick,
+  filters,
+  onFiltersChange,
 }: CalendarViewProps) {
 
   const navigatePrev = () => {
@@ -246,16 +251,28 @@ export default function CalendarView({
                     })}
 
                     {/* Appointment dots/labels */}
-                    {appointments.slice(0, 3).map((apt, idx) => (
-                      <div
-                        key={idx}
-                        onClick={(e) => { e.stopPropagation(); onEventClick(apt); }}
-                        className="text-[9px] lg:text-[10px] bg-primary/10 text-primary rounded px-1 py-0.5 font-medium truncate cursor-pointer hover:bg-primary/20 transition-colors flex items-center gap-0.5"
-                      >
-                        <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
-                        {apt.title}
-                      </div>
-                    ))}
+                    {appointments.slice(0, 3).map((apt, idx) => {
+                      const isCancelled = (apt.data as any)?.status === "cancelled";
+                      return (
+                        <div
+                          key={idx}
+                          onClick={(e) => { e.stopPropagation(); onEventClick(apt); }}
+                          className={cn(
+                            "text-[9px] lg:text-[10px] rounded px-1 py-0.5 font-medium truncate cursor-pointer transition-colors flex items-center gap-0.5",
+                            isCancelled 
+                              ? "bg-gray-100 text-gray-400 line-through opacity-70 border border-gray-200" 
+                              : "bg-primary/10 text-primary hover:bg-primary/20"
+                          )}
+                        >
+                          <span className={cn(
+                            "w-1.5 h-1.5 rounded-full flex-shrink-0",
+                            isCancelled ? "bg-gray-300" : "bg-primary"
+                          )} />
+                          {isCancelled && <span className="mr-0.5 text-[8px] font-bold">[X]</span>}
+                          <span className="truncate">{(apt.data as any).client_name} - {apt.title}</span>
+                        </div>
+                      );
+                    })}
                     {appointments.length > 3 && (
                       <div className="text-[9px] text-gray-400 px-1">+{appointments.length - 3} autre{appointments.length - 3 > 1 ? "s" : ""}</div>
                     )}
@@ -279,6 +296,8 @@ export default function CalendarView({
         onNavigateNext={navigateNext}
         onGoToToday={goToToday}
         onViewChange={onViewChange}
+        filters={filters}
+        onFiltersChange={onFiltersChange}
       />
       <div className="flex-1 overflow-hidden">
         {view === "day" && (

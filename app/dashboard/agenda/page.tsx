@@ -19,6 +19,8 @@ export default function AgendaPage() {
     loading,
     establishmentId,
     events,
+    filters,
+    setFilters,
     currentDate,
     view,
     setCurrentDate,
@@ -89,6 +91,8 @@ export default function AgendaPage() {
           onViewChange={setView}
           onEventClick={modals.handleEventClick}
           onSlotClick={modals.handleSlotClick}
+          filters={filters}
+          onFiltersChange={setFilters}
         />
       </div>
 
