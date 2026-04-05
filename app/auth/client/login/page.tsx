@@ -94,8 +94,8 @@ function ClientAuthForm() {
         });
         if (error) throw error;
 
-        // Créer le profil client immédiatement (confirmation email désactivée)
-        if (data.user) {
+        if (data.session && data.user) {
+          // Email confirmation OFF → auto-connected, create profile then sign out
           await supabase.from("client_profiles").insert({
             user_id: data.user.id,
             first_name: firstName,
@@ -103,12 +103,15 @@ function ClientAuthForm() {
             phone: phone || null,
             user_type: "client",
           });
-
-          router.push(redirectUrl || "/search");
-        } else {
-          showSuccess("Inscription réussie", "Vous pouvez maintenant vous connecter !");
-          setIsLogin(true);
+          // Sign out to force email confirmation
+          await supabase.auth.signOut();
         }
+
+        showSuccess(
+          "Vérifiez votre boîte mail 📬",
+          "Un email de confirmation GlowPlan a été envoyé à " + email + ". Cliquez sur le lien pour activer votre compte avant de vous connecter."
+        );
+        setIsLogin(true);
       }
     } catch (err: any) {
       setError(err.message || "Une erreur est survenue");

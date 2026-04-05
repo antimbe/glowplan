@@ -1,18 +1,14 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { NextRequest, NextResponse } from "next/server";
 import { formatDateFull, formatTime } from "@/lib/utils/formatters";
 import { EmailTemplates } from "@/lib/mail/templates";
 import { sendEmail, getBaseUrl } from "@/lib/mail";
 
 export async function GET(request: NextRequest) {
-  // Optionnel : vérification d'une clé secrète CRON pour la sécurité
-  // const authHeader = request.headers.get('authorization');
-  // if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-  //   return new Response('Unauthorized', { status: 401 });
-  // }
-
   try {
     const supabase = await createClient();
+    const supabaseAdmin = createAdminClient();
     const baseUrl = getBaseUrl();
     const now = new Date();
 
@@ -31,7 +27,7 @@ export async function GET(request: NextRequest) {
       .select(`
         *,
         services(name),
-        establishments(name, email, address, city, zip_code, access_info, general_conditions, show_conditions_online, hide_exact_address),
+        establishments(name, email, address, city, postal_code, address_complement, general_conditions, show_conditions_online, hide_exact_address),
         appointment_reminders!left(id, type)
       `)
       .eq("status", "confirmed")
@@ -47,20 +43,20 @@ export async function GET(request: NextRequest) {
         const startDate = new Date(apt.start_time);
         const addressParts = [
           apt.establishments?.address,
-          apt.establishments?.zip_code,
+          apt.establishments?.postal_code,
           apt.establishments?.city
         ].filter(Boolean);
         
         const fullAddress = addressParts.join(', ');
         
         const emailData = EmailTemplates.reminder24hUser({
-          first_name: apt.client_first_name,
+          first_name: apt.client_first_name || (apt.client_name ? apt.client_name.split(' ')[0] : "Client"),
           provider_name: apt.establishments?.name || "Votre prestataire",
           service_name: apt.services?.name || "Non spécifiée",
           appointment_date: formatDateFull(startDate),
           appointment_time: formatTime(startDate),
           full_address: fullAddress || "L'adresse vous sera communiquée sur place.",
-          access_info: apt.establishments?.access_info || undefined,
+          access_info: apt.establishments?.address_complement || undefined,
           conditions_block: apt.establishments?.show_conditions_online ? apt.establishments.general_conditions : undefined
         });
 
@@ -105,7 +101,7 @@ export async function GET(request: NextRequest) {
         if (alreadySent) continue;
 
         const emailData = EmailTemplates.reviewRequestUser({
-          first_name: apt.client_first_name,
+          first_name: apt.client_first_name || (apt.client_name ? apt.client_name.split(' ')[0] : "Client"),
           provider_name: apt.establishments?.name || "Votre prestataire",
           review_link: `${baseUrl}/establishment/${apt.establishments?.id}#reviews`
         });
@@ -162,7 +158,7 @@ export async function GET(request: NextRequest) {
               establishment_id: apt.establishment_id,
               type: "appointment_followup_pro",
               title: "Rendez-vous à valider",
-              content: `${apt.client_first_name} s'est-il bien présenté pour sa prestation ?`,
+              content: `${apt.client_first_name || apt.client_name || "Le client"} s'est-il bien présenté pour sa prestation ?`,
               link: `/dashboard/agenda?date=${apt.start_time.split('T')[0]}`
             });
           }
@@ -172,7 +168,9 @@ export async function GET(request: NextRequest) {
             const startDate = new Date(apt.start_time);
             const emailData = EmailTemplates.appointmentFollowupPro({
               provider_name: apt.establishments.name || "Prestataire",
-              client_name: `${apt.client_first_name} ${apt.client_last_name}`,
+              client_name: (apt.client_first_name && apt.client_last_name) 
+                ? `${apt.client_first_name} ${apt.client_last_name}` 
+                : (apt.client_name || "Client"),
               service_name: apt.services?.name || "Prestation",
               appointment_date: formatDateFull(startDate),
               appointment_time: formatTime(startDate),

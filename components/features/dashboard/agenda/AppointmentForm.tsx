@@ -166,9 +166,9 @@ export default function AppointmentForm({
     try {
       // Normaliser service_id : "other" et "none" ne sont pas de vraies FK
       const resolvedServiceId =
-        (formData.service_id as string) === "other" || (formData.service_id as string) === "none"
+        (formData.service_id as string) === "other" || (formData.service_id as string) === "none" || !formData.service_id
           ? null
-          : formData.service_id ?? null;
+          : formData.service_id;
 
       // Si "Autre", préfixer le nom saisi dans les notes
       const resolvedNotes =
@@ -177,12 +177,16 @@ export default function AppointmentForm({
           : formData.notes ?? null;
 
       const appointmentData = {
-        ...formData,
-        service_id: resolvedServiceId,
-        notes: resolvedNotes,
         establishment_id: establishmentId,
+        service_id: resolvedServiceId,
+        client_name: formData.client_name,
+        client_email: formData.client_email || null,
+        client_phone: formData.client_phone || null,
         start_time: startDateTime.toISOString(),
         end_time: endDateTime.toISOString(),
+        status: formData.status || "confirmed",
+        is_manual: true,
+        notes: resolvedNotes,
       };
 
       if (appointment?.id) {
@@ -251,8 +255,15 @@ export default function AppointmentForm({
 
         onSave(data);
       }
-    } catch (error) {
-      console.error("Erreur sauvegarde:", error);
+    } catch (error: any) {
+      console.error("Erreur détaillée sauvegarde:", {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+        fullError: error
+      });
+      setGlobalError(error.message || "Une erreur est survenue lors de la sauvegarde.");
     } finally {
       setSaving(false);
     }

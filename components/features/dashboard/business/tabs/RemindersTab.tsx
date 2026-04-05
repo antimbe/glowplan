@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { useModal } from "@/contexts/ModalContext";
 import { Calendar, Clock, User, Mail, Phone, Instagram, Send, Loader2, CheckCircle2, History } from "lucide-react";
 import { Button } from "@/components/ui";
 import { cn } from "@/lib/utils/cn";
@@ -97,6 +98,7 @@ export default function RemindersTab({ establishmentId }: RemindersTabProps) {
       setLoading(false);
     }
   };
+  const { showSuccess, showError } = useModal();
 
   const handleSendManualReminder = async (appointmentId: string) => {
     setSendingId(appointmentId);
@@ -116,11 +118,17 @@ export default function RemindersTab({ establishmentId }: RemindersTabProps) {
       if (error) throw error;
 
       // 2. Appeler l'API pour envoyer l'email
-      await fetch("/api/booking/reminder/manual", {
+      const response = await fetch("/api/booking/reminder/manual", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ appointmentId }),
       });
+
+      const result = await response.json();
+      
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || result.message || "Échec de l'envoi de l'email");
+      }
 
       // 3. Mettre à jour l'affichage
       setAppointments(prev => prev.map(apt => {
@@ -132,9 +140,13 @@ export default function RemindersTab({ establishmentId }: RemindersTabProps) {
         }
         return apt;
       }));
-    } catch (error) {
+      
+      showSuccess("Succès", "Le rappel a été envoyé avec succès !");
+    } catch (error: any) {
       console.error("Erreur lors de l'envoi du rappel manuel :", error);
-      alert("Erreur lors de l'enregistrement du rappel. Vérifiez que la base de données est à jour.");
+      const message = error.message || "Vérifiez votre configuration email.";
+      const details = error.details ? ` (${error.details})` : "";
+      showError("Erreur d'envoi", `${message}${details}`);
     } finally {
       setSendingId(null);
     }

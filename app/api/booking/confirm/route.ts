@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
       .select(`
         *,
         services(name, price, duration),
-        establishments(id, name, email, phone, address, city, hide_exact_address, show_conditions_online, general_conditions)
+        establishments(id, name, email, phone, address, city, postal_code, address_complement, hide_exact_address, show_conditions_online, general_conditions)
       `)
       .eq("id", appointmentId)
       .single();
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
 
     // Email content for client
     const emailData = EmailTemplates.bookingConfirmedUser({
-      first_name: appointment.client_first_name,
+      first_name: appointment.client_first_name || (appointment.client_name ? appointment.client_name.split(' ')[0] : "Client"),
       provider_name: appointment.establishments?.name || "Votre prestataire",
       service_name: appointment.services?.name || "Non spécifiée",
       appointment_date: formatDateFull(startDate),

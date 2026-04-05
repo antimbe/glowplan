@@ -23,9 +23,14 @@ export async function sendEmail(params: {
       subject: params.subject,
       html: params.html,
     });
+    console.log(`Email envoyé à ${params.to} avec succès. Resend ID: ${data.data?.id || (data as any).id}`);
     return { success: true, data };
-  } catch (error) {
-    console.error(`Error sending email to ${params.to}:`, error);
+  } catch (error: any) {
+    console.error(`Erreur critique lors de l'envoi de l'email à ${params.to}:`, {
+      message: error.message,
+      name: error.name,
+      fullError: error
+    });
     return { success: false, error };
   }
 }

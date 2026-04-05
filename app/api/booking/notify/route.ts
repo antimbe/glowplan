@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     // Get establishment details
     const { data: establishment, error: estError } = await supabase
       .from("establishments")
-      .select("name, email, phone, user_id, address, city, zip_code, show_conditions_online, general_conditions, deposit_amount, payment_links, hide_exact_address")
+      .select("name, email, phone, user_id, address, city, postal_code, address_complement, show_conditions_online, general_conditions, deposit_amount, payment_links, hide_exact_address")
       .eq("id", establishmentId)
       .single() as { data: any, error: any };
 
@@ -42,7 +42,9 @@ export async function POST(request: NextRequest) {
     // Professional Notification
     const proTemplate = EmailTemplates.bookingRequestPro({
       provider_name: establishment.name,
-      client_name: `${appointment.client_first_name} ${appointment.client_last_name}`,
+      client_name: (appointment.client_first_name && appointment.client_last_name)
+        ? `${appointment.client_first_name} ${appointment.client_last_name}`
+        : (appointment.client_name || "Client"),
       service_name: appointment.services?.name || "Non spécifiée",
       appointment_date: formatDateFull(startDate),
       appointment_time: `${formatTime(startDate)} - ${formatTime(endDate)}`,
@@ -103,13 +105,15 @@ export async function POST(request: NextRequest) {
       });
     } else {
       clientEmailData = EmailTemplates.bookingRequestUser({
-        first_name: appointment.client_first_name,
+        first_name: appointment.client_first_name || (appointment.client_name ? appointment.client_name.split(' ')[0] : "Client"),
         provider_name: establishment.name,
         service_name: appointment.services?.name || "Non spécifiée",
         appointment_date: formatDateFull(startDate),
         appointment_time: `${formatTime(startDate)} - ${formatTime(endDate)}`,
         price: `${appointment.services?.price || "—"}€`,
-        address_or_24h_message: establishment.address ? `${establishment.address}, ${establishment.city}` : "L'adresse vous sera communiquée 24h avant votre rendez-vous.",
+        address_or_24h_message: establishment.hide_exact_address
+          ? `L'adresse exacte (${establishment.city}) vous sera communiquée 24h avant votre rendez-vous.`
+          : (establishment.address ? `${establishment.address}, ${establishment.city}` : "L'adresse vous sera communiquée prochainement."),
         booking_link: `${baseUrl}/account/bookings/${appointmentId}`
       });
     }

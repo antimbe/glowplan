@@ -69,7 +69,7 @@ function ProAuthForm() {
         if (password !== confirmPassword) {
           throw new Error("Les mots de passe ne correspondent pas");
         }
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -80,7 +80,17 @@ function ProAuthForm() {
           },
         });
         if (error) throw error;
-        showSuccess("Inscription réussie", "Vérifiez votre email pour confirmer votre inscription !");
+
+        if (data.session) {
+          // Email confirmation is OFF → user is auto-signed in, we sign them out
+          // to force them to confirm via email first
+          await supabase.auth.signOut();
+        }
+
+        showSuccess(
+          "Vérifiez votre boîte mail 📬",
+          "Un email de confirmation GlowPlan a été envoyé à " + email + ". Cliquez sur le lien pour activer votre compte avant de vous connecter."
+        );
         setIsLogin(true);
       }
     } catch (err: any) {

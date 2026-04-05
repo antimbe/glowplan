@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
       .select(`
         *,
         services(name, price, duration),
-        establishments(id, name, email, user_id, address, city, zip_code, hide_exact_address, require_deposit, deposit_amount, general_conditions)
+        establishments(id, name, email, user_id, address, city, postal_code, hide_exact_address, require_deposit, deposit_amount, general_conditions)
       `)
       .eq("id", appointmentId)
       .single();

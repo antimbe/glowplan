@@ -996,6 +996,33 @@ export const EmailTemplates = {
     };
   },
 
+  // --- H. AUTHENTIFICATION ---
+
+  accountConfirmation: (data: {
+    user_type: "pro" | "client";
+    confirmation_url: string;
+  }) => {
+    const isMasculin = data.user_type === "pro";
+    const content = `
+      <h2 style="color: ${MAIL_PALETTE.primary}; font-size: 22px; font-weight: 700; margin-top: 0;">Bienvenue sur GlowPlan ✨</h2>
+      <p>Merci pour votre inscription !</p>
+      <p>Pour activer votre compte ${isMasculin ? "professionnel" : "client"} et commencer à utiliser GlowPlan, veuillez confirmer votre adresse email en cliquant sur le bouton ci-dessous.</p>
+      
+      <div style="background-color: #f8faf7; border-left: 4px solid ${MAIL_PALETTE.primary}; padding: 16px 20px; border-radius: 8px; margin: 25px 0;">
+        <p style="margin: 0; color: ${MAIL_PALETTE.textLight}; font-size: 14px;">⚠️ Ce lien est valable <strong>24 heures</strong>. Passé ce délai, il faudra faire une nouvelle demande d'inscription.</p>
+      </div>
+      
+      ${getButton("Confirmer mon compte", data.confirmation_url)}
+      
+      <p style="color: ${MAIL_PALETTE.textLight}; font-size: 13px;">Si vous n'êtes pas à l'origine de cette inscription, vous pouvez ignorer cet email.</p>
+      <p>À très bientôt,<br>L'équipe GlowPlan</p>
+    `;
+    return {
+      subject: "Confirmez votre adresse email GlowPlan",
+      html: getBaseLayout("Confirmer votre compte", content),
+    };
+  },
+
   criticalEmailFailedPro: (data: {
     provider_name: string;
     email_type: string;
