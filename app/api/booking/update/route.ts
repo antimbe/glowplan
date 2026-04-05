@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
       .select(`
         *,
         services(name, price),
-        establishments(id, name, email, user_id, address, city)
+        establishments(id, name, email, user_id, address, city, hide_exact_address)
       `)
       .eq("id", appointmentId)
       .single();
@@ -58,7 +58,9 @@ export async function POST(request: NextRequest) {
         service_name: appointment.services?.name || "Non spécifiée",
         appointment_date: formatDateFull(startDate),
         appointment_time: `${formatTime(startDate)} - ${formatTime(endDate)}`,
-        address_or_24h_message: appointment.establishments?.address ? `${appointment.establishments.address}, ${appointment.establishments.city}` : "L'adresse vous sera communiquée prochainement.",
+        address_or_24h_message: appointment.establishments?.hide_exact_address
+          ? `L'adresse exacte (${appointment.establishments.city}) vous sera communiquée 24h avant votre rendez-vous.`
+          : (appointment.establishments?.address ? `${appointment.establishments.address}, ${appointment.establishments.city}` : "L'adresse vous sera communiquée prochainement."),
         booking_link: `${baseUrl}/account/bookings/${appointment.id}`,
         changesDescription: changesHtml || undefined
       }) || EmailTemplates.bookingModifiedUser({
@@ -67,7 +69,9 @@ export async function POST(request: NextRequest) {
         service_name: appointment.services?.name || "Non spécifiée",
         appointment_date: formatDateFull(startDate),
         appointment_time: `${formatTime(startDate)} - ${formatTime(endDate)}`,
-        address_or_24h_message: appointment.establishments?.address ? `${appointment.establishments.address}, ${appointment.establishments.city}` : "L'adresse vous sera communiquée prochainement.",
+        address_or_24h_message: appointment.establishments?.hide_exact_address
+          ? `L'adresse exacte (${appointment.establishments.city}) vous sera communiquée 24h avant votre rendez-vous.`
+          : (appointment.establishments?.address ? `${appointment.establishments.address}, ${appointment.establishments.city}` : "L'adresse vous sera communiquée prochainement."),
         booking_link: `${baseUrl}/account/bookings/${appointment.id}`,
         changesDescription: changesHtml || undefined
       });
@@ -88,7 +92,9 @@ export async function POST(request: NextRequest) {
         service_name: appointment.services?.name || "Non spécifiée",
         appointment_date: formatDateFull(startDate),
         appointment_time: `${formatTime(startDate)} - ${formatTime(endDate)}`,
-        address_or_24h_message: appointment.establishments?.address ? `${appointment.establishments.address}, ${appointment.establishments.city}` : "L'adresse vous sera communiquée prochainement.",
+        address_or_24h_message: appointment.establishments?.hide_exact_address
+          ? `L'adresse exacte (${appointment.establishments.city}) vous sera communiquée 24h avant votre rendez-vous.`
+          : (appointment.establishments?.address ? `${appointment.establishments.address}, ${appointment.establishments.city}` : "L'adresse vous sera communiquée prochainement."),
         booking_link: `${baseUrl}/account/bookings/${appointment.id}`,
         changesDescription: changesHtml || undefined
       });

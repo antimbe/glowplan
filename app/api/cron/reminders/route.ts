@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
       .select(`
         *,
         services(name),
-        establishments(name, email, address, city, access_info, general_conditions, show_conditions_online),
+        establishments(name, email, address, city, zip_code, access_info, general_conditions, show_conditions_online, hide_exact_address),
         appointment_reminders!left(id, type)
       `)
       .eq("status", "confirmed")
@@ -45,13 +45,21 @@ export async function GET(request: NextRequest) {
         if (alreadySent) continue;
 
         const startDate = new Date(apt.start_time);
+        const addressParts = [
+          apt.establishments?.address,
+          apt.establishments?.zip_code,
+          apt.establishments?.city
+        ].filter(Boolean);
+        
+        const fullAddress = addressParts.join(', ');
+        
         const emailData = EmailTemplates.reminder24hUser({
           first_name: apt.client_first_name,
           provider_name: apt.establishments?.name || "Votre prestataire",
           service_name: apt.services?.name || "Non spécifiée",
           appointment_date: formatDateFull(startDate),
           appointment_time: formatTime(startDate),
-          full_address: apt.establishments?.address ? `${apt.establishments.address}, ${apt.establishments.city}` : "L'adresse vous sera communiquée prochainement.",
+          full_address: fullAddress || "L'adresse vous sera communiquée sur place.",
           access_info: apt.establishments?.access_info || undefined,
           conditions_block: apt.establishments?.show_conditions_online ? apt.establishments.general_conditions : undefined
         });

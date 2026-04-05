@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
       .select(`
         *,
         services(name, price, duration),
-        establishments(id, name, email, phone, address, city, show_conditions_online, general_conditions)
+        establishments(id, name, email, phone, address, city, hide_exact_address, show_conditions_online, general_conditions)
       `)
       .eq("id", appointmentId)
       .single();
@@ -43,7 +43,9 @@ export async function POST(request: NextRequest) {
       appointment_time: `${formatTime(startDate)} - ${formatTime(endDate)}`,
       price: `${appointment.services?.price || "—"}€`,
       booking_reference: appointment.id.slice(0, 8).toUpperCase(),
-      address_or_24h_message: appointment.establishments?.address ? `${appointment.establishments.address}, ${appointment.establishments.city}` : "L'adresse vous sera communiquée prochainement.",
+      address_or_24h_message: appointment.establishments?.hide_exact_address
+        ? `L'adresse exacte (${appointment.establishments.city}) vous sera communiquée 24h avant votre rendez-vous.`
+        : (appointment.establishments?.address ? `${appointment.establishments.address}, ${appointment.establishments.city}` : "L'adresse vous sera communiquée prochainement."),
       conditions_block: appointment.establishments?.show_conditions_online ? appointment.establishments.general_conditions : undefined,
       booking_link: `${baseUrl}/account/bookings/${appointment.id}`
     });
