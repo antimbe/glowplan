@@ -10,6 +10,8 @@ interface Review {
     comment: string | null;
     client_name: string | null;
     created_at: string;
+    provider_reply: string | null;
+    replied_at: string | null;
     client_profiles?: {
         first_name: string;
         last_name: string;
@@ -98,6 +100,14 @@ export function EstablishmentReviews({
                             </div>
                             {review.comment && (
                                 <p className="text-sm text-gray-600 italic">"{review.comment}"</p>
+                            )}
+
+                            {review.provider_reply && (
+                                <div className="mt-3 ml-4 bg-gray-50 rounded-xl p-4 border-l-2 border-primary/40 relative">
+                                    <div className="absolute top-4 -left-2 w-0 h-0 border-y-[6px] border-y-transparent border-r-[8px] border-r-gray-50"></div>
+                                    <h4 className="text-xs font-bold text-gray-900 mb-1">Réponse de l'établissement</h4>
+                                    <p className="text-sm text-gray-600">{review.provider_reply}</p>
+                                </div>
                             )}
                         </div>
                     ))

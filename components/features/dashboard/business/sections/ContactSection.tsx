@@ -4,8 +4,17 @@ import { Mail, Phone } from "lucide-react";
 import SectionCard from "../SectionCard";
 import FormInput from "../FormInput";
 import { TabProps } from "../types";
+import { isValidEmail, isValidPhone } from "@/lib/utils/validation";
 
 export default function ContactSection({ formData, updateField }: TabProps) {
+  const emailError = formData.email && !isValidEmail(formData.email) 
+    ? "Email invalide" 
+    : undefined;
+    
+  const phoneError = formData.phone && !isValidPhone(formData.phone)
+    ? "Numéro de téléphone invalide (ex: 0612345678 ou +33...)"
+    : undefined;
+
   return (
     <SectionCard
       icon={Mail}
@@ -21,6 +30,7 @@ export default function ContactSection({ formData, updateField }: TabProps) {
           value={formData.email}
           onChange={(value) => updateField("email", value)}
           required
+          error={emailError}
         />
         <FormInput
           label="Téléphone"
@@ -29,6 +39,7 @@ export default function ContactSection({ formData, updateField }: TabProps) {
           placeholder="06 12 34 56 78"
           value={formData.phone}
           onChange={(value) => updateField("phone", value)}
+          error={phoneError}
         />
       </div>
     </SectionCard>

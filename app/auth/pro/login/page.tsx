@@ -8,6 +8,7 @@ import { ArrowLeft, Briefcase, Loader2 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useModal } from "@/contexts/ModalContext";
+import { isValidEmail } from "@/lib/utils/validation";
 
 function ProAuthForm() {
   const router = useRouter();
@@ -28,6 +29,14 @@ function ProAuthForm() {
     setError(null);
 
     try {
+      if (!isValidEmail(email)) {
+        throw new Error("Veuillez entrer une adresse email valide");
+      }
+
+      if (!isLogin && password.length < 6) {
+        throw new Error("Le mot de passe doit contenir au moins 6 caractères");
+      }
+
       if (isLogin) {
         const { data, error } = await supabase.auth.signInWithPassword({
           email,

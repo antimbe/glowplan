@@ -3,13 +3,14 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Loader2, ArrowLeft, Calendar, Clock, MapPin, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
+import { Loader2, ArrowLeft, Calendar, Clock, MapPin, CheckCircle2, XCircle, AlertCircle, CalendarClock } from "lucide-react";
 import { Button, Badge, Heading, Separator } from "@/components/ui";
 import { formatDateFull, formatTime } from "@/lib/utils/formatters";
 import Image from "next/image";
 import Link from "next/link";
 import Header from "@/components/features/Header";
 import { CancelModal } from "@/components/features/account/CancelModal";
+import { RescheduleModal } from "@/components/features/account/RescheduleModal";
 
 // Helper function to get status text & color
 const getStatusDisplay = (status: string) => {
@@ -44,6 +45,9 @@ export default function BookingDetailsPage() {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
   const [cancelling, setCancelling] = useState(false);
+
+  // States for reschedule
+  const [showRescheduleModal, setShowRescheduleModal] = useState(false);
 
   const supabase = createClient();
 
@@ -226,14 +230,24 @@ export default function BookingDetailsPage() {
                         </div>
                         
                         {canCancel && (
-                           <Button 
-                              variant="outline" 
-                              className="text-red-500 border-red-100 hover:bg-red-50 hover:text-red-600 hover:border-red-200 rounded-2xl transition-all px-6 py-6 h-auto text-base font-bold shadow-sm"
-                              onClick={() => setShowCancelModal(true)}
-                           >
-                              <XCircle className="mr-2" size={20} />
-                              Annuler le rendez-vous
-                           </Button>
+                           <div className="flex flex-col sm:flex-row gap-3">
+                              <Button
+                                 variant="outline"
+                                 className="text-primary border-primary/20 hover:bg-primary/5 hover:border-primary/40 rounded-2xl transition-all px-6 py-6 h-auto text-base font-bold shadow-sm"
+                                 onClick={() => setShowRescheduleModal(true)}
+                              >
+                                 <CalendarClock className="mr-2" size={20} />
+                                 Modifier le créneau
+                              </Button>
+                              <Button 
+                                 variant="outline" 
+                                 className="text-red-500 border-red-100 hover:bg-red-50 hover:text-red-600 hover:border-red-200 rounded-2xl transition-all px-6 py-6 h-auto text-base font-bold shadow-sm"
+                                 onClick={() => setShowCancelModal(true)}
+                              >
+                                 <XCircle className="mr-2" size={20} />
+                                 Annuler
+                              </Button>
+                           </div>
                         )}
                      </div>
 
@@ -436,6 +450,21 @@ export default function BookingDetailsPage() {
           cancelling={cancelling}
           formatDate={(d) => formatDateFull(new Date(d))}
           formatTime={(d) => formatTime(new Date(d))}
+        />
+      )}
+
+      {showRescheduleModal && appointment && (
+        <RescheduleModal
+          appointment={appointment}
+          onClose={() => setShowRescheduleModal(false)}
+          onSuccess={(newStart, newEnd) => {
+            setAppointment((prev: any) => ({
+              ...prev,
+              start_time: newStart,
+              end_time: newEnd,
+            }));
+            setShowRescheduleModal(false);
+          }}
         />
       )}
     </div>

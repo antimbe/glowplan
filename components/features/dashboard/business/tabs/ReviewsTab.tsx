@@ -15,6 +15,8 @@ interface Review {
   is_visible: boolean;
   is_verified: boolean;
   created_at: string;
+  provider_reply: string | null;
+  replied_at: string | null;
   appointments?: {
     services: {
       name: string;
@@ -33,6 +35,11 @@ export default function ReviewsTab({ establishmentId }: ReviewsTabProps) {
   const [averageRating, setAverageRating] = useState<number | null>(null);
   const [updating, setUpdating] = useState<string | null>(null);
   const [favoritesCount, setFavoritesCount] = useState<number>(0);
+  
+  // States for replying
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState("");
+  const [submittingReply, setSubmittingReply] = useState(false);
 
   const supabase = createClient();
 
@@ -53,6 +60,7 @@ export default function ReviewsTab({ establishmentId }: ReviewsTabProps) {
         .from("reviews")
         .select(`
           id, rating, comment, client_name, is_visible, is_verified, created_at,
+          provider_reply, replied_at,
           appointments(services(name))
         `)
         .eq("establishment_id", establishmentId)
@@ -112,6 +120,48 @@ export default function ReviewsTab({ establishmentId }: ReviewsTabProps) {
       console.error("Error updating review visibility:", error);
     } finally {
       setUpdating(null);
+    }
+  };
+
+  const handleOpenReply = (reviewId: string, currentReply: string | null) => {
+    setReplyingTo(reviewId);
+    setReplyText(currentReply || "");
+  };
+
+  const handleSubmitReply = async (reviewId: string) => {
+    if (!replyText.trim()) return;
+    
+    setSubmittingReply(true);
+    try {
+      const { error } = await supabase
+        .from("reviews")
+        .update({
+          provider_reply: replyText.trim(),
+          replied_at: new Date().toISOString()
+        })
+        .eq("id", reviewId);
+
+      if (error) throw error;
+
+      // Trigger email notification to client without blocking UI
+      fetch("/api/reviews/notify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "new_reply", reviewId })
+      }).catch(err => console.error("Could not send reply notification", err));
+
+      setReviews(prev =>
+        prev.map(r => r.id === reviewId ? {
+          ...r,
+          provider_reply: replyText.trim(),
+          replied_at: new Date().toISOString()
+        } : r)
+      );
+      setReplyingTo(null);
+    } catch (err) {
+      console.error("Error submitting reply:", err);
+    } finally {
+      setSubmittingReply(false);
     }
   };
 
@@ -280,29 +330,90 @@ export default function ReviewsTab({ establishmentId }: ReviewsTabProps) {
 
                   {/* Comment */}
                   {review.comment && (
-                    <p className="text-gray-600">{review.comment}</p>
+                    <p className="text-gray-600 mb-3">{review.comment}</p>
+                  )}
+
+                  {/* Provider Reply Display */}
+                  {review.provider_reply && replyingTo !== review.id && (
+                    <div className="bg-gray-50 border border-gray-100 rounded-xl p-4 mt-2">
+                        <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs font-bold text-primary uppercase tracking-wider">Votre réponse</span>
+                            {review.replied_at && (
+                                <span className="text-xs text-gray-400">{formatDate(review.replied_at)}</span>
+                            )}
+                        </div>
+                        <p className="text-sm text-gray-700">{review.provider_reply}</p>
+                    </div>
+                  )}
+
+                  {/* Reply Form */}
+                  {replyingTo === review.id && (
+                      <div className="mt-4 bg-gray-50 p-4 rounded-xl border border-primary/20 animate-in fade-in zoom-in-95 duration-200">
+                          <label className="text-xs font-bold text-gray-900 mb-2 block">Répondre à cet avis</label>
+                          <textarea
+                              className="w-full text-sm rounded-xl border-gray-200 shadow-inner resize-none focus:ring-primary focus:border-primary p-3 bg-white"
+                              rows={3}
+                              placeholder="Merci pour votre retour..."
+                              value={replyText}
+                              onChange={(e) => setReplyText(e.target.value)}
+                              disabled={submittingReply}
+                          />
+                          <div className="flex gap-2 justify-end mt-3">
+                              <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => setReplyingTo(null)}
+                                  disabled={submittingReply}
+                              >
+                                  Annuler
+                              </Button>
+                              <Button
+                                  variant="primary"
+                                  size="sm"
+                                  onClick={() => handleSubmitReply(review.id)}
+                                  // @ts-ignore : TS can't infer submittingReply prop well for our UI button if not typed explicitly
+                                  disabled={submittingReply || !replyText.trim()}
+                              >
+                                  {submittingReply ? <Loader2 className="animate-spin mr-2" size={16} /> : null}
+                                  Publier
+                              </Button>
+                          </div>
+                      </div>
                   )}
                 </div>
 
                 {/* Actions */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleToggleVisibility(review.id, review.is_visible)}
-                  disabled={updating === review.id}
-                  className={cn(
-                    "cursor-pointer",
-                    !review.is_visible && "text-gray-400"
-                  )}
-                >
-                  {updating === review.id ? (
-                    <Loader2 className="animate-spin" size={16} />
-                  ) : review.is_visible ? (
-                    <Eye size={16} />
-                  ) : (
-                    <EyeOff size={16} />
-                  )}
-                </Button>
+                <div className="flex flex-col gap-2">
+                    <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleToggleVisibility(review.id, review.is_visible)}
+                    disabled={updating === review.id}
+                    className={cn(
+                        "cursor-pointer w-10 sm:w-auto h-10 px-0 sm:px-3 text-gray-500",
+                        !review.is_visible && "bg-gray-100 text-gray-400 border-gray-200"
+                    )}
+                    >
+                    {updating === review.id ? (
+                        <Loader2 className="animate-spin" size={16} />
+                    ) : review.is_visible ? (
+                        <><Eye size={16} /><span className="hidden sm:inline ml-2">Visible</span></>
+                    ) : (
+                        <><EyeOff size={16} /><span className="hidden sm:inline ml-2">Masqué</span></>
+                    )}
+                    </Button>
+
+                    <Button
+                       variant="outline"
+                       size="sm"
+                       className={cn("w-10 sm:w-auto h-10 px-0 sm:px-3", replyingTo === review.id && "bg-primary/5 text-primary border-primary/20")}
+                       onClick={() => handleOpenReply(review.id, review.provider_reply)}
+                       disabled={replyingTo === review.id}
+                    >
+                        <MessageSquare size={16} />
+                        <span className="hidden sm:inline ml-2">{review.provider_reply ? "Modifier la réponse" : "Répondre"}</span>
+                    </Button>
+                </div>
               </div>
             </div>
           ))}

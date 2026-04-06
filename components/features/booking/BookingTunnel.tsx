@@ -12,6 +12,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Service, AvailableSlot, ClientInfo, BookingStep, OpeningHour, CartItem } from "./types";
 import { useEffect as useReactEffect } from "react";
+import { isValidEmail, isValidPhone } from "@/lib/utils/validation";
 
 const REASSURANCE_MESSAGES = [
     "Préparation de votre rendez-vous...",
@@ -357,6 +358,21 @@ export function BookingTunnel({
 
     if (step === "recap" && cart.length > 0) {
         const totalPrice = cart.reduce((sum, item) => sum + item.service.price, 0);
+        
+        const emailError = clientInfo.email && !isValidEmail(clientInfo.email) 
+            ? "Email invalide" 
+            : undefined;
+            
+        const phoneError = clientInfo.phone && !isValidPhone(clientInfo.phone)
+            ? "Numéro invalide"
+            : undefined;
+
+        const isFormValid = clientInfo.firstName && 
+                           clientInfo.lastName && 
+                           clientInfo.email && 
+                           isValidEmail(clientInfo.email) &&
+                           clientInfo.phone && 
+                           isValidPhone(clientInfo.phone);
 
         return (
             <div className="bg-white rounded-2xl p-6 border border-gray-100 flex flex-col h-full">
@@ -468,10 +484,14 @@ export function BookingTunnel({
                                     type="email"
                                     value={clientInfo.email}
                                     onChange={(e) => setClientInfo({ ...clientInfo, email: e.target.value })}
-                                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:border-primary outline-none transition-all"
+                                    className={cn(
+                                        "w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:border-primary outline-none transition-all",
+                                        emailError && "border-red-500 focus:ring-red-200"
+                                    )}
                                     placeholder="jean.dupont@email.com"
                                 />
                             </div>
+                            {emailError && <span className="text-[10px] font-bold text-red-500 uppercase mt-1 ml-1">{emailError}</span>}
                         </div>
 
                         <div>
@@ -482,10 +502,14 @@ export function BookingTunnel({
                                     type="tel"
                                     value={clientInfo.phone}
                                     onChange={(e) => setClientInfo({ ...clientInfo, phone: e.target.value })}
-                                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:border-primary outline-none transition-all"
+                                    className={cn(
+                                        "w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:border-primary outline-none transition-all",
+                                        phoneError && "border-red-500 focus:ring-red-200"
+                                    )}
                                     placeholder="06 12 34 56 78"
                                 />
                             </div>
+                            {phoneError && <span className="text-[10px] font-bold text-red-500 uppercase mt-1 ml-1">{phoneError}</span>}
                         </div>
                     </div>
 
@@ -496,7 +520,7 @@ export function BookingTunnel({
                             e.preventDefault();
                             handleSubmitBooking();
                         }}
-                        disabled={!clientInfo.firstName || !clientInfo.lastName || !clientInfo.email || !clientInfo.phone || submitting || blockedError}
+                        disabled={!isFormValid || submitting || blockedError}
                         className="w-full mt-8 py-4 text-base cursor-pointer"
                     >
                         {submitting ? (

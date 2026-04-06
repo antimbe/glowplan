@@ -1051,5 +1051,66 @@ export const EmailTemplates = {
       subject: "Échec d’envoi d’un email important",
       html: getBaseLayout("Erreur de notification", content),
     };
+  },
+
+  // Avis Client - Notification pour le Pro
+  newReviewPro: (data: {
+    provider_name: string;
+    client_name: string;
+    service_name?: string;
+    rating: number;
+    comment?: string;
+    dashboard_link: string;
+  }) => {
+    const content = `
+      <h2 style="color: ${MAIL_PALETTE.primary}; font-size: 22px; font-weight: 700; margin-top: 0;">Nouvel avis reçu 🌟</h2>
+      <p>Bonjour ${data.provider_name},</p>
+      <p><strong>${data.client_name}</strong> a laissé un nouvel avis sur votre profil.</p>
+      
+      ${getInfoBox("Détails de l'avis", [
+        ...(data.service_name ? [{ label: "Prestation", value: data.service_name }] : []),
+        { label: "Note", value: `${data.rating}/5` }
+      ])}
+      
+      ${data.comment ? `
+      <div style="background-color: #f8faf7; border-left: 4px solid ${MAIL_PALETTE.primary}; padding: 16px 20px; border-radius: 8px; margin: 25px 0;">
+        <p style="margin: 0; color: ${MAIL_PALETTE.text}; font-style: italic;">"${data.comment}"</p>
+      </div>
+      ` : ""}
+      
+      <p>Vous pouvez consulter cet avis et y répondre directement depuis votre tableau de bord.</p>
+      ${getButton("Gérer mes avis", data.dashboard_link)}
+      <p>L'équipe Glowplan</p>
+    `;
+    return {
+      subject: "Nouvel avis client sur votre profil !",
+      html: getBaseLayout("Vous avez reçu un nouvel avis", content),
+    };
+  },
+
+  // Avis Client - Notification de réponse pour le Client
+  reviewReplyClient: (data: {
+    client_name: string;
+    provider_name: string;
+    provider_reply: string;
+    establishment_link: string;
+  }) => {
+    const content = `
+      <h2 style="color: ${MAIL_PALETTE.primary}; font-size: 22px; font-weight: 700; margin-top: 0;">Un professionnel a répondu à votre avis</h2>
+      <p>Bonjour ${data.client_name},</p>
+      <p>L'établissement <strong>${data.provider_name}</strong> a laissé une réponse suite à votre récent avis.</p>
+      
+      <div style="background-color: #f9fafb; border-left: 4px solid ${MAIL_PALETTE.accent}; padding: 16px 20px; border-radius: 8px; margin: 25px 0;">
+        <h4 style="margin-top: 0; margin-bottom: 8px; font-size: 14px; color: ${MAIL_PALETTE.text};">Réponse de l'établissement:</h4>
+        <p style="margin: 0; color: ${MAIL_PALETTE.textLight}; line-height: 1.5;">${data.provider_reply}</p>
+      </div>
+      
+      ${getButton("Voir sur la page de l'établissement", data.establishment_link)}
+      <p>L'équipe Glowplan</p>
+    `;
+    return {
+      subject: `${data.provider_name} a répondu à votre avis`,
+      html: getBaseLayout("Nouvelle réponse à votre avis", content),
+    };
   }
 };

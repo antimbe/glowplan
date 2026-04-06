@@ -1,6 +1,7 @@
 "use client";
 
 import { LucideIcon } from "lucide-react";
+import { cn } from "@/lib/utils/cn";
 
 interface FormInputProps {
   label: string;
@@ -10,6 +11,7 @@ interface FormInputProps {
   value: string;
   onChange: (value: string) => void;
   required?: boolean;
+  error?: string;
 }
 
 const inputStyle = "w-full h-12 px-4 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all";
@@ -22,7 +24,8 @@ export default function FormInput({
   placeholder, 
   value, 
   onChange,
-  required 
+  required,
+  error
 }: FormInputProps) {
   return (
     <div className="flex flex-col gap-2">
@@ -33,10 +36,14 @@ export default function FormInput({
       <input
         type={type}
         placeholder={placeholder}
-        className={inputStyle}
+        className={cn(
+          inputStyle,
+          error && "border-red-500 bg-red-50/30 focus:ring-red-200 focus:border-red-500"
+        )}
         value={value}
         onChange={(e) => onChange(e.target.value)}
       />
+      {error && <span className="text-[10px] font-bold text-red-500 uppercase tracking-tight ml-1">{error}</span>}
     </div>
   );
 }

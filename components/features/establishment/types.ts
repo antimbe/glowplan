@@ -33,6 +33,8 @@ export interface Review {
     comment: string | null;
     client_name: string | null;
     created_at: string;
+    provider_reply: string | null;
+    replied_at: string | null;
     client_profiles?: {
         first_name: string;
         last_name: string;

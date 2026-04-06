@@ -167,7 +167,7 @@ export function useAccountData(): UseAccountDataReturn {
     if (!profile) return;
     setSubmittingReview(true);
     try {
-      const { error } = await supabase
+      const { data: insertedReview, error } = await supabase
         .from("reviews")
         .insert({
           client_profile_id: profile.id,
@@ -175,9 +175,19 @@ export function useAccountData(): UseAccountDataReturn {
           appointment_id: data.appointment_id,
           rating: data.rating,
           comment: data.comment,
-        });
+        }).select("id").single();
 
       if (error) throw error;
+      
+      if (insertedReview) {
+        // Trigger email notification to pro without blocking UI
+        fetch("/api/reviews/notify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ type: "new_review", reviewId: insertedReview.id })
+        }).catch(err => console.error("Could not send new review notification", err));
+      }
+
       await loadData();
     } catch (error) {
       console.error("Error adding review:", error);

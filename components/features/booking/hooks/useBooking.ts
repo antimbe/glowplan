@@ -175,6 +175,30 @@ export function useBooking(establishmentId: string, openingHours: OpeningHour[])
                 if (profile) profileId = profile.id;
             }
 
+            // --- DEBUT DE LA VALIDATION GUEST ---
+            if (!profileId) {
+                // Il s'agit d'un guest (invité non connecté)
+                const validationRes = await fetch("/api/booking/validate-guest", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        email: clientInfo.email,
+                        phone: clientInfo.phone
+                    }),
+                });
+
+                if (validationRes.ok) {
+                    const validationData = await validationRes.json();
+                    if (validationData.exists) {
+                        return { 
+                            success: false, 
+                            error: "Un compte existe déjà avec cet email ou ce numéro de téléphone. Veuillez vous connecter pour réserver en cliquant sur le bouton de connexion." 
+                        };
+                    }
+                }
+            }
+            // --- FIN DE LA VALIDATION GUEST ---
+
             const payload = cart.map(item => ({
                 service_id: item.service.id,
                 start_time: item.slot.date.toISOString(),

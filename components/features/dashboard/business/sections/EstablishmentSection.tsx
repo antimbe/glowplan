@@ -5,8 +5,13 @@ import SectionCard from "../SectionCard";
 import FormInput from "../FormInput";
 import FormTextarea from "../FormTextarea";
 import { TabProps } from "../types";
+import { isValidSIRET } from "@/lib/utils/validation";
 
 export default function EstablishmentSection({ formData, updateField }: TabProps) {
+  const siretError = formData.siret && !isValidSIRET(formData.siret)
+    ? "Numéro SIRET invalide (14 chiffres, algorithme de Luhn)"
+    : undefined;
+
   return (
     <SectionCard
       icon={Store}
@@ -29,6 +34,7 @@ export default function EstablishmentSection({ formData, updateField }: TabProps
             placeholder="123 456 789 00012"
             value={formData.siret}
             onChange={(value) => updateField("siret", value)}
+            error={siretError}
           />
         </div>
         <FormTextarea

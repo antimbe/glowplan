@@ -100,26 +100,28 @@ export function useClientsData() {
         }
     }, [supabase]);
 
-    const blockClient = async (clientProfileId: string, block: boolean) => {
+    const blockClient = async (client: ClientStats, block: boolean) => {
         if (!establishmentId) return;
-        setBlockingClient(clientProfileId);
+        setBlockingClient(client.client_profile_id);
 
         try {
             if (block) {
                 await supabase.from("blocked_clients").insert({
                     establishment_id: establishmentId,
-                    client_profile_id: clientProfileId,
+                    client_profile_id: client.client_profile_id,
+                    client_email: client.email || null,
+                    client_phone: client.phone || null,
                 });
             } else {
                 await supabase
                     .from("blocked_clients")
                     .delete()
                     .eq("establishment_id", establishmentId)
-                    .eq("client_profile_id", clientProfileId);
+                    .eq("client_profile_id", client.client_profile_id);
             }
 
             setClients(prev => prev.map(c =>
-                c.client_profile_id === clientProfileId
+                c.client_profile_id === client.client_profile_id
                     ? { ...c, is_blocked: block }
                     : c
             ));

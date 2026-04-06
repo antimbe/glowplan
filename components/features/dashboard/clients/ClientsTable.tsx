@@ -13,7 +13,7 @@ const MONTHS_SHORT = MONTHS_LOWER.map(m => m.substring(0, 4) + ".");
 
 interface ClientsTableProps {
     clients: ClientStats[];
-    onBlock: (clientProfileId: string, block: boolean) => Promise<void>;
+    onBlock: (client: ClientStats, block: boolean) => Promise<void>;
     blockingClient: string | null;
     onClientClick: (client: ClientStats) => void;
 }
@@ -174,7 +174,7 @@ export function ClientsTable({ clients, onBlock, blockingClient, onClientClick }
                                                         variant="ghost"
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            onBlock(client.client_profile_id, !client.is_blocked);
+                                                            onBlock(client, !client.is_blocked);
                                                             setActionMenuOpen(null);
                                                         }}
                                                         disabled={blockingClient === client.client_profile_id}

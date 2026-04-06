@@ -110,7 +110,7 @@ export default function EstablishmentPage() {
       const { data: revs } = await supabase
         .from("reviews")
         .select(`
-          id, rating, comment, created_at, client_name,
+          id, rating, comment, created_at, client_name, provider_reply, replied_at,
           client_profiles(first_name, last_name)
         `)
         .eq("establishment_id", establishmentId)
@@ -123,6 +123,8 @@ export default function EstablishmentPage() {
           rating: r.rating,
           comment: r.comment,
           created_at: r.created_at,
+          provider_reply: r.provider_reply,
+          replied_at: r.replied_at,
           client_name: profile
             ? `${profile.first_name} ${profile.last_name?.charAt(0) || ""}.`
             : (r.client_name || "Utilisateur"),
@@ -173,13 +175,19 @@ export default function EstablishmentPage() {
             .limit(1);
           setHasAlreadyReviewed((existingReview?.length || 0) > 0);
 
-          const { data: block } = await supabase
+          const blockQuery = supabase
             .from("blocked_clients")
             .select("id")
-            .eq("establishment_id", establishmentId)
-            .eq("client_profile_id", profile.id)
-            .single();
-          if (block) setBlockedError(true);
+            .eq("establishment_id", establishmentId);
+
+          if (user.email) {
+            blockQuery.or(`client_profile_id.eq.${profile.id},client_email.eq.${user.email}`);
+          } else {
+            blockQuery.eq("client_profile_id", profile.id);
+          }
+
+          const { data: blocks } = await blockQuery;
+          if (blocks && blocks.length > 0) setBlockedError(true);
         }
       }
 
@@ -233,14 +241,23 @@ export default function EstablishmentPage() {
 
       if (!profile) return;
 
-      const { error } = await supabase.from("reviews").insert({
+      const { data: insertedReview, error } = await supabase.from("reviews").insert({
         client_profile_id: profile.id,
         establishment_id: establishmentId,
         rating: reviewRating,
         comment: reviewComment || null,
-      });
+      }).select("id").single();
 
       if (error) throw error;
+
+      if (insertedReview) {
+        // Trigger email notification to pro without blocking UI
+        fetch("/api/reviews/notify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ type: "new_review", reviewId: insertedReview.id })
+        }).catch(err => console.error("Could not send new review notification", err));
+      }
 
       setShowReviewModal(false);
       loadEstablishment();

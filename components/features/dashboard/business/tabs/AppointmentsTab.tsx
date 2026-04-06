@@ -37,6 +37,7 @@ interface AppointmentsTabProps {
 
 export default function AppointmentsTab({ establishmentId }: AppointmentsTabProps) {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [guestNoShows, setGuestNoShows] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"upcoming" | "past" | "all">("upcoming");
   const [updating, setUpdating] = useState<string | null>(null);
@@ -57,13 +58,36 @@ export default function AppointmentsTab({ establishmentId }: AppointmentsTabProp
         .select(`
           id, start_time, end_time, status, client_name, client_first_name, client_last_name, client_email, client_phone, client_instagram, client_profile_id, notes,
           cancelled_at, cancelled_by_client, cancellation_reason,
-          services(name, price, duration)
+          services(name, price, duration),
+          client_profiles(no_show_count)
         `)
         .eq("establishment_id", establishmentId)
         .order("start_time", { ascending: false });
 
       if (error) throw error;
-      setAppointments((data || []) as unknown as Appointment[]);
+      
+      const apts = (data || []) as any[];
+      setAppointments(apts as Appointment[]);
+
+      // Extract unique guest emails
+      const guestEmails = Array.from(new Set(
+        apts
+          .filter(apt => !apt.client_profile_id && apt.client_email)
+          .map(apt => apt.client_email)
+      ));
+
+      if (guestEmails.length > 0) {
+        const { data: noShowData, error: rpcError } = await supabase.rpc('get_no_shows_by_emails', { emails: guestEmails });
+        if (!rpcError && noShowData) {
+          const map: Record<string, number> = {};
+          noShowData.forEach((item: any) => {
+            map[item.email] = Number(item.no_show_count);
+          });
+          setGuestNoShows(map);
+        } else if (rpcError) {
+          console.error("RPC Error fetching guest lapins:", rpcError);
+        }
+      }
     } catch (error) {
       console.error("Error loading appointments:", error);
     } finally {
@@ -267,15 +291,40 @@ export default function AppointmentsTab({ establishmentId }: AppointmentsTabProp
                       <div className="flex flex-wrap items-center gap-2">
                         <h3 className="font-semibold text-gray-900 truncate">{getClientName(apt)}</h3>
                         {apt.client_profile_id ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-primary/10 text-primary whitespace-nowrap">
-                            <UserCheck size={10} />
-                            Client
-                          </span>
+                          <>
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-primary/10 text-primary whitespace-nowrap">
+                              <UserCheck size={10} />
+                              Client
+                            </span>
+                            {/* Registered User no_show display */}
+                            {(() => {
+                               const noShow = (apt as any).client_profiles?.no_show_count || 0;
+                               if (noShow > 0) return (
+                                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-red-100 text-red-600 border border-red-200" title="Nombre total de lapins sur la plateforme">
+                                   🐰 {noShow} Lapin{noShow > 1 ? 's' : ''}
+                                 </span>
+                               );
+                               return null;
+                            })()}
+                          </>
                         ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-500 whitespace-nowrap">
-                            <UserX size={10} />
-                            Guest
-                          </span>
+                          <>
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-500 whitespace-nowrap">
+                              <UserX size={10} />
+                              Guest
+                            </span>
+                            {/* Guest no_show display */}
+                            {(() => {
+                               const email = apt.client_email;
+                               const noShow = email ? guestNoShows[email] : 0;
+                               if (noShow && noShow > 0) return (
+                                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-red-100 text-red-600 border border-red-200" title="Nombre total de lapins sur la plateforme">
+                                   🐰 {noShow} Lapin{noShow > 1 ? 's' : ''}
+                                 </span>
+                               );
+                               return null;
+                            })()}
+                          </>
                         )}
                       </div>
                       <p className="text-sm text-gray-500 truncate">{apt.services?.name || "Prestation non spécifiée"}</p>

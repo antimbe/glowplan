@@ -8,6 +8,7 @@ import { ArrowLeft, User, Loader2 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useModal } from "@/contexts/ModalContext";
+import { isValidEmail, isValidPhone } from "@/lib/utils/validation";
 
 function ClientAuthForm() {
   const router = useRouter();
@@ -35,6 +36,19 @@ function ClientAuthForm() {
     setError(null);
 
     try {
+      if (!isValidEmail(email)) {
+        throw new Error("Veuillez entrer une adresse email valide");
+      }
+
+      if (!isLogin) {
+        if (password.length < 6) {
+          throw new Error("Le mot de passe doit contenir au moins 6 caractères");
+        }
+        if (phone && !isValidPhone(phone)) {
+          throw new Error("Numéro de téléphone invalide");
+        }
+      }
+
       if (isLogin) {
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
