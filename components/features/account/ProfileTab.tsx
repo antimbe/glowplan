@@ -1,6 +1,6 @@
 "use client";
 
-import { Mail, Phone, Instagram, Loader2, LogOut } from "lucide-react";
+import { Mail, Phone, Instagram, Loader2 } from "lucide-react";
 import { Button, Input } from "@/components/ui";
 
 interface ProfileTabProps {
@@ -14,7 +14,6 @@ interface ProfileTabProps {
     instagram: string;
     setInstagram: (val: string) => void;
     onSave: () => void;
-    onSignOut: () => void;
     saving: boolean;
 }
 
@@ -29,7 +28,6 @@ export function ProfileTab({
     instagram,
     setInstagram,
     onSave,
-    onSignOut,
     saving
 }: ProfileTabProps) {
     return (
@@ -109,16 +107,6 @@ export function ProfileTab({
                     )}
                 </Button>
 
-                <div className="pt-6 border-t border-gray-200">
-                    <Button
-                        variant="white"
-                        onClick={onSignOut}
-                        className="w-full text-red-600 border border-red-100 hover:bg-red-600 hover:text-white hover:border-red-600 transition-all shadow-sm active:scale-95 cursor-pointer flex items-center justify-center gap-2"
-                    >
-                        <LogOut size={18} />
-                        Se déconnecter
-                    </Button>
-                </div>
             </div>
         </div>
     );

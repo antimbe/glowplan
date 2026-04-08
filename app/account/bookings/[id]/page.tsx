@@ -89,19 +89,7 @@ export default function BookingDetailsPage() {
     
     setCancelling(true);
     try {
-      const { error } = await supabase
-        .from("appointments")
-        .update({
-          status: "cancelled",
-          cancelled_by_client: true,
-          cancelled_at: new Date().toISOString(),
-          cancellation_reason: cancelReason || null,
-        })
-        .eq("id", appointment.id);
-
-      if (error) throw error;
-
-      await fetch("/api/booking/cancel-by-client", {
+      const response = await fetch("/api/booking/cancel-by-client", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -109,6 +97,11 @@ export default function BookingDetailsPage() {
           reason: cancelReason || null,
         }),
       });
+
+      const result = await response.json();
+      if (!response.ok || result.error) {
+        throw new Error(result.error || "Failed to cancel appointment");
+      }
 
       setAppointment((prev: any) => ({ ...prev, status: "cancelled" }));
       setShowCancelModal(false);

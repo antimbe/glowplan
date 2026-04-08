@@ -27,11 +27,11 @@ export default function BusinessPage() {
   } = useEstablishment();
 
   const handleTabClick = (tabId: string) => {
-    if (tabId !== "general" && !isProfileComplete) return;
+    if (tabId !== "general" && tabId !== "offres" && !isProfileComplete) return;
     setActiveTab(tabId);
   };
 
-  const canAccessTab = (tabId: string) => tabId === "general" || isProfileComplete;
+  const canAccessTab = (tabId: string) => tabId === "general" || tabId === "offres" || isProfileComplete;
 
   if (loading) {
     return (

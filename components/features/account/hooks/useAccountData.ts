@@ -16,7 +16,7 @@ export interface UseAccountDataReturn {
   activeTab: AccountTab;
   setActiveTab: (tab: AccountTab) => void;
   loadData: () => Promise<void>;
-  cancelAppointment: (appointmentId: string) => Promise<void>;
+  cancelAppointment: (appointmentId: string, reason?: string | null) => Promise<void>;
   removeFavorite: (favoriteId: string) => Promise<void>;
   deleteReview: (reviewId: string) => Promise<void>;
   addReview: (data: { appointment_id: string; establishment_id: string; rating: number; comment: string | null }) => Promise<void>;
@@ -111,21 +111,22 @@ export function useAccountData(): UseAccountDataReturn {
     }
   }, [supabase]);
 
-  const cancelAppointment = async (appointmentId: string) => {
+  const cancelAppointment = async (appointmentId: string, reason?: string | null) => {
     setCancelling(appointmentId);
     try {
-      const { error } = await supabase
-        .from("appointments")
-        .update({ 
-          status: "cancelled",
-          cancelled_by_client: true,
-          cancelled_at: new Date().toISOString()
-        })
-        .eq("id", appointmentId);
+      const response = await fetch("/api/booking/cancel-by-client", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ appointmentId, reason: reason || null }),
+      });
 
-      if (error) throw error;
+      const result = await response.json();
+      if (!response.ok || result.error) {
+        throw new Error(result.error || "Failed to cancel appointment");
+      }
+
       await loadData();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error cancelling appointment:", error);
     } finally {
       setCancelling(null);

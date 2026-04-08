@@ -1,7 +1,7 @@
 "use client";
 
 import { Container, Logo, Link, Input, Button, Heading, Text, Box, Flex, List, ListItem, Stack } from "@/components/ui";
-import { Facebook, Instagram, Twitter, Linkedin, ArrowRight, Globe, LifeBuoy } from "lucide-react";
+import { Instagram, ArrowRight, Globe, LifeBuoy } from "lucide-react";
 
 const footerSections = [
   {
@@ -50,15 +50,14 @@ export default function Footer() {
                 La plateforme tout-en-un qui sublime la gestion de votre activité beauté et bien-être avec élégance et simplicité.
               </Text>
               <Flex gap={4}>
-                {[Instagram, Facebook, Twitter, Linkedin].map((Icon, i) => (
-                  <Link 
-                    key={i} 
-                    href="#" 
-                    className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center hover:bg-white/10 hover:scale-110 transition-all border border-white/10 group"
-                  >
-                    <Icon size={22} className="text-white/60 group-hover:text-white transition-colors" />
-                  </Link>
-                ))}
+                <Link
+                  href="https://www.instagram.com/glowplan.fr/"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center hover:bg-white/10 hover:scale-110 transition-all border border-white/10 group"
+                >
+                  <Instagram size={22} className="text-white/60 group-hover:text-white transition-colors" />
+                </Link>
               </Flex>
             </Stack>
           </Box>

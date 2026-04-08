@@ -85,7 +85,7 @@ export default function AccountPage() {
 
   const handleCancelAppointment = async () => {
     if (cancelModal) {
-      await cancelAppointment(cancelModal.id);
+      await cancelAppointment(cancelModal.id, cancelReason || null);
       setCancelModal(null);
       setCancelReason("");
     }
@@ -133,6 +133,7 @@ export default function AccountPage() {
             firstName={profile?.first_name || ""}
             lastName={profile?.last_name || ""}
             email={user?.email}
+            onSignOut={signOut}
           />
 
           <div className="bg-white rounded-2xl border border-gray-100 mb-6 shadow-sm overflow-hidden">
@@ -202,7 +203,6 @@ export default function AccountPage() {
                   instagram={instagram}
                   setInstagram={setInstagram}
                   onSave={handleUpdateProfile}
-                  onSignOut={signOut}
                   saving={saving}
                 />
               )}
