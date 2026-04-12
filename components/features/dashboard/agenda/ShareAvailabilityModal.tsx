@@ -46,13 +46,28 @@ const COLOR_PROPS: (keyof CSSStyleDeclaration)[] = [
 const normalizeColor = (value: string) => {
   if (!value) return value;
   const lower = value.toLowerCase();
-  if (!COLOR_FUNCTIONS.some((fn) => lower.includes(fn))) return value;
-  const temp = document.createElement("div");
-  temp.style.color = value;
-  document.body.appendChild(temp);
-  const computed = window.getComputedStyle(temp).color;
-  document.body.removeChild(temp);
-  return computed || value;
+
+  // If it contains unsupported color functions, return a safe fallback
+  if (COLOR_FUNCTIONS.some((fn) => lower.includes(fn))) {
+    // Return a safe fallback color based on the context
+    if (lower.includes("primary") || lower.includes("#4a5d4a")) return "#4a5d4a";
+    if (lower.includes("gray") || lower.includes("#6b7280")) return "#6b7280";
+    if (lower.includes("white")) return "#ffffff";
+    if (lower.includes("black")) return "#000000";
+    return "#4a5d4a"; // Default fallback
+  }
+
+  try {
+    const temp = document.createElement("div");
+    temp.style.color = value;
+    document.body.appendChild(temp);
+    const computed = window.getComputedStyle(temp).color;
+    document.body.removeChild(temp);
+    return computed || value;
+  } catch (error) {
+    console.warn("normalizeColor failed for value:", value, error);
+    return "#4a5d4a"; // Safe fallback
+  }
 };
 
 const applyComputedStyles = (source: HTMLElement, target: HTMLElement) => {
@@ -73,8 +88,8 @@ const applyComputedStyles = (source: HTMLElement, target: HTMLElement) => {
 
   COLOR_PROPS.forEach((prop) => {
     const value = computed[prop] as string;
-    if (value) {
-      (target.style as any)[prop] = normalizeColor(value);
+    if (value && !COLOR_FUNCTIONS.some((fn) => value.toLowerCase().includes(fn))) {
+      (target.style as any)[prop] = value;
     }
   });
 
@@ -343,11 +358,21 @@ export default function ShareAvailabilityModal({ isOpen, onClose, establishmentI
       bodyStyle.setProperty("-webkit-font-smoothing", "antialiased");
 
       const clone = storyRef.current.cloneNode(true) as HTMLElement;
+      const stripClasses = (element: HTMLElement) => {
+        element.removeAttribute("class");
+        Array.from(element.children).forEach((child) => {
+          if (child instanceof HTMLElement) stripClasses(child);
+        });
+      };
+
+      stripClasses(clone);
       clone.style.fontFamily = storyComputed.fontFamily;
       clone.style.fontSize = storyComputed.fontSize;
       clone.style.lineHeight = storyComputed.lineHeight;
       clone.style.letterSpacing = storyComputed.letterSpacing;
-      clone.style.color = normalizedColor;
+      // Avoid problematic colors - use safe fallbacks
+      clone.style.color = "#1f2937"; // Safe dark gray
+      clone.style.backgroundColor = "#f5f5f0"; // Safe background
       iframeDoc.body.appendChild(clone);
 
       applyComputedStyles(storyRef.current, clone);
@@ -459,7 +484,7 @@ export default function ShareAvailabilityModal({ isOpen, onClose, establishmentI
                 style={{
                   background: "linear-gradient(to bottom, #f5f5f0, #eae8e0)",
                   borderRadius: "24px",
-                  padding: "20px 16px",
+                  padding: "10px 10px",
                   width: "280px",
                   height: "560px",
                   display: "flex",
@@ -467,6 +492,7 @@ export default function ShareAvailabilityModal({ isOpen, onClose, establishmentI
                   alignItems: "center",
                   position: "relative",
                   overflow: "hidden",
+                  justifyContent: "space-between"
                 }}
               >
                 {loading ? (
@@ -474,126 +500,151 @@ export default function ShareAvailabilityModal({ isOpen, onClose, establishmentI
                     <div style={{ width: "32px", height: "32px", border: "3px solid #4a5d4a", borderTopColor: "transparent", borderRadius: "50%" }} />
                   </div>
                 ) : (
-                  <>
+                  <div style={{ display: "flex", flexDirection: "column", width: "100%", height: "100%", alignItems: "center" }}>
                     {/* Logo */}
                     <div style={{
-                      backgroundColor: "#4a5d4a",
-                      color: "white",
-                      fontSize: "10px",
-                      fontWeight: "700",
-                      padding: "5px 14px",
-                      borderRadius: "9999px",
-                      marginBottom: "12px",
-                      letterSpacing: "1px"
+                      display: "flex",
+                      justifyContent: "center",
+                      marginBottom: "6px"
                     }}>
-                      GLOWPLAN
+                      <div style={{
+                        backgroundColor: "#32422c",
+                        color: "white",
+                        fontSize: "8px",
+                        fontWeight: "800",
+                        padding: "5px 12px",
+                        borderRadius: "9999px",
+                        letterSpacing: "0.15em"
+                      }}>
+                        GLOWPLAN
+                      </div>
                     </div>
 
                     {/* Establishment Name */}
-                    <h3 style={{
-                      fontSize: "18px",
-                      fontWeight: "700",
-                      color: "#1f2937",
-                      marginBottom: "4px",
-                      textAlign: "center"
-                    }}>
-                      {establishment?.name || "Mon établissement"}
-                    </h3>
-                    <div style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "3px",
-                      color: "#6b7280",
-                      fontSize: "11px",
-                      marginBottom: "10px"
-                    }}>
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
-                        <circle cx="12" cy="10" r="3" />
-                      </svg>
-                      {establishment?.city || "Ma ville"}
+                    <div style={{ textAlign: "center", marginBottom: "6px" }}>
+                      <h3 style={{
+                        fontSize: "18px",
+                        fontWeight: "800",
+                        color: "#0f172a",
+                        margin: "0 0 4px"
+                      }}>
+                        {establishment?.name || "Mon établissement"}
+                      </h3>
+                      <div style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "3px",
+                        color: "#475569",
+                        fontSize: "10px",
+                        backgroundColor: "#f3f4f6",
+                        padding: "4px 8px",
+                        borderRadius: "9999px",
+                        justifyContent: "center"
+                      }}>
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+                          <circle cx="12" cy="10" r="3" />
+                        </svg>
+                        {establishment?.city || "Ma ville"}
+                      </div>
                     </div>
 
                     {/* Month Badge */}
                     <div style={{
-                      backgroundColor: "#4a5d4a",
-                      color: "white",
-                      fontSize: "11px",
-                      fontWeight: "600",
-                      padding: "6px 14px",
-                      borderRadius: "9999px",
                       display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                      marginBottom: "10px"
+                      justifyContent: "center",
+                      marginBottom: "8px"
                     }}>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
-                        <line x1="16" x2="16" y1="2" y2="6" />
-                        <line x1="8" x2="8" y1="2" y2="6" />
-                        <line x1="3" x2="21" y1="10" y2="10" />
-                      </svg>
-                      {currentMonth}
+                      <div style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "5px",
+                        backgroundColor: "#4a5d4a",
+                        color: "white",
+                        fontSize: "10px",
+                        fontWeight: "700",
+                        padding: "6px 11px",
+                        borderRadius: "9999px"
+                      }}>
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="4" y="4" width="16" height="16" rx="4" />
+                          <path d="M8 2v4" />
+                          <path d="M16 2v4" />
+                          <path d="M4 10h16" />
+                        </svg>
+                        {currentMonth}
+                      </div>
                     </div>
 
                     {/* Availability List */}
                     <div style={{
-                      backgroundColor: "rgba(255,255,255,0.9)",
-                      borderRadius: "12px",
-                      padding: "10px",
+                      backgroundColor: "white",
+                      borderRadius: "20px",
+                      padding: "8px",
                       width: "100%",
                       flex: 1,
-                      border: "1px solid rgba(74, 93, 74, 0.15)"
+                      border: "1px solid rgba(74, 93, 74, 0.15)",
+                      boxShadow: "0 8px 20px rgba(74, 93, 74, 0.06)",
+                      display: "flex",
+                      flexDirection: "column",
+                      overflow: "hidden",
+                      marginBottom: "6px"
                     }}>
                       {stories[currentStoryIndex]?.length > 0 ? (
-                        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
                           {stories[currentStoryIndex].map((slot, idx) => (
                             <div key={idx} style={{
                               display: "flex",
-                              alignItems: "flex-start",
-                              gap: "10px",
+                              alignItems: "center",
+                              gap: "7px",
                               padding: "4px 6px",
-                              borderRadius: "6px",
-                              backgroundColor: idx % 2 === 0 ? "rgba(74, 93, 74, 0.06)" : "transparent"
+                              borderRadius: "10px",
+                              backgroundColor: idx % 2 === 0 ? "#f7f7f4" : "#ffffff",
+                              minHeight: "26px"
                             }}>
                               <div style={{
                                 width: "24px",
                                 height: "24px",
-                                borderRadius: "6px",
+                                borderRadius: "8px",
                                 backgroundColor: "#4a5d4a",
                                 color: "white",
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
-                                fontSize: "11px",
-                                fontWeight: "700",
+                                fontSize: "9px",
+                                fontWeight: "800",
                                 flexShrink: 0
                               }}>
                                 {slot.date.getDate()}
                               </div>
-                              <span style={{ fontSize: "11px", color: "#374151", fontWeight: "500", lineHeight: "1.3" }}>
-                                {slot.slots.join(" / ")}
-                              </span>
+                              <div style={{ display: "flex", flexDirection: "column", gap: "0px", flex: 1 }}>
+                                <span style={{ fontSize: "8px", fontWeight: "700", color: "#111827", lineHeight: "1.1" }}>
+                                  {DAYS[slot.date.getDay()]}
+                                </span>
+                                <span style={{ fontSize: "8px", color: "#475569", lineHeight: "1.1" }}>
+                                  {slot.slots.join(" / ")}
+                                </span>
+                              </div>
                             </div>
                           ))}
                         </div>
                       ) : (
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "#9ca3af", fontSize: "11px" }}>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "#9ca3af", fontSize: "10px" }}>
                           Aucune disponibilité
                         </div>
                       )}
                     </div>
 
                     {/* Footer */}
-                    <div style={{ marginTop: "12px", textAlign: "center" }}>
-                      <p style={{ fontSize: "10px", color: "#4b5563" }}>
-                        Réservez sur <span style={{ fontWeight: "700", color: "#4a5d4a" }}>GlowPlan.fr</span>
+                    <div style={{ textAlign: "center", width: "100%" }}>
+                      <p style={{ fontSize: "8px", color: "#4b5563", margin: "0" }}>
+                        Réservez sur <span style={{ fontWeight: "800", color: "#32422c" }}>GlowPlan.fr</span>
                       </p>
-                      <p style={{ fontSize: "9px", color: "#9ca3af", marginTop: "3px" }}>
-                        {currentStoryIndex + 1} / {totalStories}
+                      <p style={{ fontSize: "8px", color: "#9ca3af", margin: "2px 0 0" }}>
+                        Story {currentStoryIndex + 1} / {totalStories}
                       </p>
                     </div>
-                  </>
+                  </div>
                 )}
               </div>
             </div>

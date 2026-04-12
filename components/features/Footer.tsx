@@ -5,29 +5,11 @@ import { Instagram, ArrowRight, Globe, LifeBuoy } from "lucide-react";
 
 const footerSections = [
   {
-    title: "Produit",
-    links: [
-      { label: "Fonctionnalités", href: "#" },
-      { label: "Tarifs", href: "#" },
-      { label: "Pour les salons", href: "#" },
-      { label: "Pour les indépendants", href: "#" },
-    ],
-  },
-  {
-    title: "Société",
-    links: [
-      { label: "À propos", href: "/about" },
-      { label: "Blog", href: "#" },
-      { label: "Carrières", href: "#" },
-      { label: "Contact", href: "/contact" },
-    ],
-  },
-  {
     title: "Légal",
     links: [
-      { label: "Confidentialité", href: "#rgpd" },
-      { label: "Conditions d'utilisation", href: "#cgu" },
-      { label: "Mentions légales", href: "#" },
+      { label: "Confidentialité", href: "/privacy" },
+      { label: "Conditions d'utilisation", href: "/terms" },
+      { label: "Mentions légales", href: "/legal" },
     ],
   },
 ];

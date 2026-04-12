@@ -1,9 +1,68 @@
 "use client";
 
 import { Container, Section, Heading, Text, Box, Stack, Flex, MotionBox, Input, Textarea, Button, Card } from "@/components/ui";
-import { Phone, Mail, Twitter, Instagram, Globe, ArrowRight } from "lucide-react";
+import { Phone, Mail, Twitter, Instagram, Globe, ArrowRight, Loader2, Check } from "lucide-react";
+import { useState } from "react";
+import { useModal } from "@/contexts/ModalContext";
 
 export default function ContactFormSection() {
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    subject: "Booker un appel pour une démo",
+    message: "",
+  });
+  const [loading, setLoading] = useState(false);
+  const { showSuccess, showError } = useModal();
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubjectChange = () => {
+    setFormData((prev) => ({
+      ...prev,
+      subject: "Booker un appel pour une démo",
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const response = await fetch("/api/contact/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Erreur lors de l'envoi");
+      }
+
+      showSuccess("Message envoyé", result.message || "Votre message a été envoyé avec succès !");
+      setFormData({
+        firstName: "",
+        lastName: "",
+        email: "",
+        phone: "",
+        subject: "Booker un appel pour une démo",
+        message: "",
+      });
+    } catch (error: any) {
+      showError("Erreur", error.message || "Une erreur est survenue lors de l'envoi");
+      console.error("Erreur d'envoi:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Section className="bg-[#fcfbf9] py-40 -mt-24 relative z-20">
       <Container>
@@ -51,7 +110,7 @@ export default function ContactFormSection() {
                     </Box>
                     <Stack space={1}>
                       <Text variant="small" className="text-white/40 font-bold uppercase tracking-[0.2em] text-[10px]">Email</Text>
-                      <Text className="text-white font-bold text-lg tracking-tight">glowplan000@gmail.com</Text>
+                      <Text className="text-white font-bold text-lg tracking-tight">contact@glowplan.fr</Text>
                     </Stack>
                   </Flex>
                 </Stack>
@@ -82,60 +141,111 @@ export default function ContactFormSection() {
               className="bg-white border-none shadow-[0_32px_64px_-12px_rgba(0,0,0,0.05)] w-full" 
               padding="xl"
             >
-              <form onSubmit={(e) => e.preventDefault()} className="h-full">
-          <Stack space={12} className="h-full" align="stretch">
-            <Stack space={10} align="stretch">
-              <Box className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                <Box className="space-y-3">
-                  <Text className="text-[10px] font-bold text-primary/40 uppercase tracking-[0.3em] ml-1">Prénom</Text>
-                  <Input placeholder="Joé" fullWidth className="bg-gray-50/30 border-gray-100 border-b-2 border-x-0 border-t-0 rounded-none px-0 h-14 focus:bg-transparent focus:border-primary transition-all text-xl font-medium" />
-                </Box>
-                <Box className="space-y-3">
-                  <Text className="text-[10px] font-bold text-primary/40 uppercase tracking-[0.3em] ml-1">Nom</Text>
-                  <Input placeholder="Joé" fullWidth className="bg-gray-50/30 border-gray-100 border-b-2 border-x-0 border-t-0 rounded-none px-0 h-14 focus:bg-transparent focus:border-primary transition-all text-xl font-medium" />
-                </Box>
-              </Box>
-              
-              <Box className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                <Box className="space-y-3">
-                  <Text className="text-[10px] font-bold text-primary/40 uppercase tracking-[0.3em] ml-1">Email</Text>
-                  <Input type="email" placeholder="" fullWidth className="bg-gray-50/30 border-gray-100 border-b-2 border-x-0 border-t-0 rounded-none px-0 h-14 focus:bg-transparent focus:border-primary transition-all text-xl font-medium" />
-                </Box>
-                <Box className="space-y-3">
-                  <Text className="text-[10px] font-bold text-primary/40 uppercase tracking-[0.3em] ml-1">Numéro de téléphone</Text>
-                  <Input placeholder="+33 6 12 56 34 12" fullWidth className="bg-gray-50/30 border-gray-100 border-b-2 border-x-0 border-t-0 rounded-none px-0 h-14 focus:bg-transparent focus:border-primary transition-all text-xl font-medium" />
-                </Box>
-              </Box>
+              <form onSubmit={handleSubmit} className="h-full">
+                <Stack space={12} className="h-full" align="stretch">
+                  <Stack space={10} align="stretch">
+                    <Box className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                      <Box className="space-y-3">
+                        <Text className="text-[10px] font-bold text-primary/40 uppercase tracking-[0.3em] ml-1">Prénom</Text>
+                        <Input 
+                          name="firstName"
+                          placeholder="Jean" 
+                          value={formData.firstName}
+                          onChange={handleChange}
+                          required
+                          fullWidth 
+                          className="bg-gray-50/30 border-gray-100 border-b-2 border-x-0 border-t-0 rounded-none px-0 h-14 focus:bg-transparent focus:border-primary transition-all text-xl font-medium" 
+                        />
+                      </Box>
+                      <Box className="space-y-3">
+                        <Text className="text-[10px] font-bold text-primary/40 uppercase tracking-[0.3em] ml-1">Nom</Text>
+                        <Input 
+                          name="lastName"
+                          placeholder="Dupont" 
+                          value={formData.lastName}
+                          onChange={handleChange}
+                          required
+                          fullWidth 
+                          className="bg-gray-50/30 border-gray-100 border-b-2 border-x-0 border-t-0 rounded-none px-0 h-14 focus:bg-transparent focus:border-primary transition-all text-xl font-medium" 
+                        />
+                      </Box>
+                    </Box>
+                    
+                    <Box className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                      <Box className="space-y-3">
+                        <Text className="text-[10px] font-bold text-primary/40 uppercase tracking-[0.3em] ml-1">Email</Text>
+                        <Input 
+                          name="email"
+                          type="email" 
+                          placeholder="jean@example.com" 
+                          value={formData.email}
+                          onChange={handleChange}
+                          required
+                          fullWidth 
+                          className="bg-gray-50/30 border-gray-100 border-b-2 border-x-0 border-t-0 rounded-none px-0 h-14 focus:bg-transparent focus:border-primary transition-all text-xl font-medium" 
+                        />
+                      </Box>
+                      <Box className="space-y-3">
+                        <Text className="text-[10px] font-bold text-primary/40 uppercase tracking-[0.3em] ml-1">Numéro de téléphone</Text>
+                        <Input 
+                          name="phone"
+                          placeholder="+33 6 12 56 34 12" 
+                          value={formData.phone}
+                          onChange={handleChange}
+                          required
+                          fullWidth 
+                          className="bg-gray-50/30 border-gray-100 border-b-2 border-x-0 border-t-0 rounded-none px-0 h-14 focus:bg-transparent focus:border-primary transition-all text-xl font-medium" 
+                        />
+                      </Box>
+                    </Box>
 
-              <Stack space={6} align="stretch">
-                <Text className="text-[10px] font-bold text-primary/40 uppercase tracking-[0.3em] ml-1">Sélectionner un sujet</Text>
-                <Box className="group cursor-pointer flex items-center gap-6 py-6 px-10 rounded-[2rem] bg-primary/5 border-2 border-transparent hover:border-primary hover:bg-white transition-all duration-500 shadow-sm hover:shadow-xl w-full">
-                  <Box className="w-4 h-4 rounded-full border-2 border-primary flex items-center justify-center p-0.5">
-                    <Box className="w-full h-full rounded-full bg-primary" />
-                  </Box>
-                  <Text className="text-lg font-bold text-primary">Booker un appel pour une démo</Text>
-                </Box>
-              </Stack>
+                    <Stack space={6} align="stretch">
+                      <Text className="text-[10px] font-bold text-primary/40 uppercase tracking-[0.3em] ml-1">Sélectionner un sujet</Text>
+                      <Box 
+                        onClick={handleSubjectChange}
+                        className="group cursor-pointer flex items-center gap-6 py-6 px-10 rounded-[2rem] bg-primary/5 border-2 border-primary hover:border-primary hover:bg-white transition-all duration-500 shadow-sm hover:shadow-xl w-full"
+                      >
+                        <Box className="w-4 h-4 rounded-full border-2 border-primary flex items-center justify-center p-0.5">
+                          <Box className="w-full h-full rounded-full bg-primary" />
+                        </Box>
+                        <Text className="text-lg font-bold text-primary">Booker un appel pour une démo</Text>
+                      </Box>
+                    </Stack>
 
-              <Box className="w-full">
-                <Textarea 
-                  label="Message" 
-                  placeholder="Écrivez votre message..." 
-                  fullWidth 
-                  className="bg-gray-50/50 border-gray-100 rounded-[2rem] min-h-[200px] p-8 focus:bg-white transition-all text-lg font-medium resize-none w-full" 
-                />
-              </Box>
-            </Stack>
+                    <Box className="w-full">
+                      <Textarea 
+                        name="message"
+                        label="Message" 
+                        placeholder="Écrivez votre message..." 
+                        value={formData.message}
+                        onChange={handleChange}
+                        required
+                        fullWidth 
+                        className="bg-gray-50/50 border-gray-100 rounded-[2rem] min-h-[200px] p-8 focus:bg-white transition-all text-lg font-medium resize-none w-full" 
+                      />
+                    </Box>
+                  </Stack>
 
                   <Flex justify="end">
                     <Button 
+                      type="submit"
+                      disabled={loading}
                       variant="primary" 
                       size="xl" 
-                      className="bg-primary hover:bg-primary-dark px-20 rounded-2xl font-bold h-16 text-lg shadow-2xl shadow-primary/20 transition-all duration-500 hover:scale-[1.02] active:scale-[0.98] group"
+                      className="bg-primary hover:bg-primary-dark disabled:opacity-50 px-20 rounded-2xl font-bold h-16 text-lg shadow-2xl shadow-primary/20 transition-all duration-500 hover:scale-[1.02] active:scale-[0.98] group"
                     >
                       <Flex align="center" gap={3}>
-                        <span>Envoyez</span>
-                        <ArrowRight size={24} className="transition-transform duration-500 group-hover:translate-x-2" />
+                        {loading ? (
+                          <>
+                            <Loader2 size={24} className="animate-spin" />
+                            <span>Envoi en cours...</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>Envoyez</span>
+                            <ArrowRight size={24} className="transition-transform duration-500 group-hover:translate-x-2" />
+                          </>
+                        )}
                       </Flex>
                     </Button>
                   </Flex>
@@ -148,3 +258,4 @@ export default function ContactFormSection() {
     </Section>
   );
 }
+

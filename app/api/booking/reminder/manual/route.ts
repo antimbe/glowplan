@@ -12,6 +12,15 @@ export async function POST(request: NextRequest) {
     const supabase = await createClient();
     const supabaseAdmin = createAdminClient();
 
+    // Get current user
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      return NextResponse.json({ 
+        error: "Unauthorized", 
+        details: "User not authenticated"
+      }, { status: 401 });
+    }
+
     // Get appointment details - must be visible to the current user (respects RLS)
     const { data: appointment, error: aptError } = await supabase
       .from("appointments")
@@ -25,6 +34,25 @@ export async function POST(request: NextRequest) {
         error: "Appointment not found", 
         details: aptError?.message || "Record not found in database or not accessible"
       }, { status: 404 });
+    }
+
+    // Record the reminder in appointment_reminders (using authenticated client to respect RLS)
+    const { error: reminderError } = await supabase
+      .from("appointment_reminders")
+      .insert({
+        appointment_id: appointmentId,
+        establishment_id: appointment.establishment_id,
+        type: "manual",
+        status: "sent",
+        sent_by: user.id
+      });
+
+    if (reminderError) {
+      console.error("Erreur INSERT reminder:", reminderError);
+      return NextResponse.json({ 
+        error: "Failed to record reminder", 
+        details: reminderError.message
+      }, { status: 500 });
     }
 
     // Get service details (using admin client to ensure we have metadata)

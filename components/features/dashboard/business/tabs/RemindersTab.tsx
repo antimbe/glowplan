@@ -103,21 +103,7 @@ export default function RemindersTab({ establishmentId }: RemindersTabProps) {
   const handleSendManualReminder = async (appointmentId: string) => {
     setSendingId(appointmentId);
     try {
-      // 1. Enregistrer le rappel dans Supabase
-      const { data, error } = await supabase
-        .from("appointment_reminders")
-        .insert({
-          appointment_id: appointmentId,
-          establishment_id: establishmentId,
-          type: "manual",
-          status: "sent"
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      // 2. Appeler l'API pour envoyer l'email
+      // Appeler l'API qui gère l'enregistrement du rappel et l'envoi de l'email côté serveur
       const response = await fetch("/api/booking/reminder/manual", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -130,16 +116,8 @@ export default function RemindersTab({ establishmentId }: RemindersTabProps) {
         throw new Error(result.error || result.message || "Échec de l'envoi de l'email");
       }
 
-      // 3. Mettre à jour l'affichage
-      setAppointments(prev => prev.map(apt => {
-        if (apt.id === appointmentId) {
-          return {
-            ...apt,
-            appointment_reminders: [...(apt.appointment_reminders || []), data as Reminder]
-          };
-        }
-        return apt;
-      }));
+      // Recharger les rendez-vous pour mettre à jour l'état et afficher le nouveau rappel
+      await loadAppointments();
       
       showSuccess("Succès", "Le rappel a été envoyé avec succès !");
     } catch (error: any) {
