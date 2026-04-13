@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
       appointment_date: formatDateFull(startDate),
       appointment_time: `${formatTime(startDate)} - ${formatTime(endDate)}`,
       address_or_24h_message: appointment.establishments?.hide_exact_address
-        ? `L'adresse exacte (${appointment.establishments.city}) vous sera communiquée 24h avant votre rendez-vous.`
+        ? "L'adresse exacte vous sera communiquée 24h avant votre rendez-vous."
         : (appointment.establishments?.address ? `${appointment.establishments.address}, ${appointment.establishments.city}` : "L'adresse vous sera communiquée prochainement."),
       booking_link: `${baseUrl}/account/bookings/${appointment.id}`,
       conditions_block: appointment.establishments?.general_conditions || undefined

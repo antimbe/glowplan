@@ -99,11 +99,11 @@ export const EmailTemplates = {
         { label: "Date", value: data.appointment_date },
         { label: "Heure", value: data.appointment_time },
         { label: "Prix", value: data.price },
-        { label: "Référence", value: data.booking_reference }
+        { label: "Référence de réservation", value: data.booking_reference }
       ])}
       
       <h3 style="color: ${MAIL_PALETTE.primary}; font-size: 16px; margin-bottom: 5px;">Adresse</h3>
-      <p style="margin-top: 0; margin-bottom: 20px;">${data.address_or_24h_message}</p>
+      <p style="margin-top: 0; margin-bottom: 20px; color: ${MAIL_PALETTE.text};">${data.address_or_24h_message}</p>
       
       ${data.conditions_block ? `
         <h3 style="color: ${MAIL_PALETTE.primary}; font-size: 16px; margin-bottom: 5px;">Conditions</h3>

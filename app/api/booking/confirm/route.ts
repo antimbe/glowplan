@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
       price: `${appointment.services?.price || "—"}€`,
       booking_reference: appointment.id.slice(0, 8).toUpperCase(),
       address_or_24h_message: appointment.establishments?.hide_exact_address
-        ? `L'adresse exacte (${appointment.establishments.city}) vous sera communiquée 24h avant votre rendez-vous.`
+        ? "L'adresse exacte vous sera communiquée 24h avant votre rendez-vous."
         : (appointment.establishments?.address ? `${appointment.establishments.address}, ${appointment.establishments.city}` : "L'adresse vous sera communiquée prochainement."),
       conditions_block: appointment.establishments?.show_conditions_online ? appointment.establishments.general_conditions : undefined,
       booking_link: `${baseUrl}/account/bookings/${appointment.id}`

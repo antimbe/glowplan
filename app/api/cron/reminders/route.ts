@@ -7,6 +7,19 @@ import { sendEmail, getBaseUrl } from "@/lib/mail";
 
 export async function GET(request: NextRequest) {
   try {
+    // Security: Verify the request is from Vercel Cron or has the correct auth token
+    const authHeader = request.headers.get("authorization");
+    const cronSecret = process.env.CRON_SECRET;
+
+    // Check if it's from Vercel (X-Vercel-Cron header) OR has correct secret token
+    const isFromVercel = request.headers.get("x-vercel-cron") !== null;
+    const hasValidSecret = cronSecret && authHeader === `Bearer ${cronSecret}`;
+    const isDevelopment = process.env.NODE_ENV === "development";
+
+    if (!isFromVercel && !hasValidSecret && !isDevelopment) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const supabase = await createClient();
     const supabaseAdmin = createAdminClient();
     const baseUrl = getBaseUrl();
@@ -17,6 +30,7 @@ export async function GET(request: NextRequest) {
     const tomorrowStart = new Date(now);
     tomorrowStart.setDate(tomorrowStart.getDate() + 1);
     tomorrowStart.setHours(tomorrowStart.getHours() - 1);
+    
     
     const tomorrowEnd = new Date(now);
     tomorrowEnd.setDate(tomorrowEnd.getDate() + 1);
@@ -208,4 +222,21 @@ export async function GET(request: NextRequest) {
     console.error("Error in reminder cron:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
+}
+
+// POST endpoint for manual triggering (development only)
+export async function POST(request: NextRequest) {
+  // Security: Only allow in development or with valid secret
+  const cronSecret = process.env.CRON_SECRET;
+  const authHeader = request.headers.get("authorization");
+  const hasValidSecret = cronSecret && authHeader === `Bearer ${cronSecret}`;
+  const isDevelopment = process.env.NODE_ENV === "development";
+
+  if (!hasValidSecret && !isDevelopment) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Call the GET handler logic
+  const response = await GET(request);
+  return response;
 }

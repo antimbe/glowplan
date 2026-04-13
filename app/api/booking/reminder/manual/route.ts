@@ -84,15 +84,9 @@ export async function POST(request: NextRequest) {
     // Calculer le nom du client (fallback si first_name est nul)
     const clientFirstName = appointment.client_first_name || (appointment.client_name ? appointment.client_name.split(' ')[0] : "Client");
 
-    // Logic Address Privacy (24h rule)
-    const now = new Date();
-    const diffInHours = (startDate.getTime() - now.getTime()) / (1000 * 60 * 60);
-    const isWithin24h = diffInHours <= 24;
-    const hideAddress = establishment.hide_exact_address && !isWithin24h;
-
-    const addressMessage = hideAddress 
-      ? `L'adresse exacte (${establishment.city}) vous sera communiquée 24h avant votre rendez-vous.`
-      : `${establishment.address}, ${establishment.postal_code || ""} ${establishment.city}`;
+    // Pour un rappel MANUEL, toujours afficher l'adresse complète
+    const fullAddress = `${establishment.address}, ${establishment.postal_code || ""} ${establishment.city}`;
+    const accessInfo = establishment.address_complement || undefined;
 
     // Notification Client : Rappel manuel
     const clientEmailData = EmailTemplates.reminderManualUser({
@@ -101,8 +95,8 @@ export async function POST(request: NextRequest) {
       service_name: service?.name || "Non spécifiée",
       appointment_date: formatDateFull(startDate),
       appointment_time: `${formatTime(startDate)} - ${formatTime(endDate)}`,
-      full_address: addressMessage,
-      access_info: hideAddress ? undefined : establishment.address_complement || undefined
+      full_address: fullAddress,
+      access_info: accessInfo
     });
 
     const result = await sendEmail({

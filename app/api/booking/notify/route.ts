@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
         price: `${appointment.services?.price || "—"}€`,
         booking_reference: appointment.id.slice(0, 8).toUpperCase(),
         address_or_24h_message: (establishment.hide_exact_address) 
-          ? `L'adresse exacte (${establishment.city}) vous sera communiquée 24h avant votre rendez-vous.`
+          ? "L'adresse exacte vous sera communiquée 24h avant votre rendez-vous."
           : (establishment.address ? `${establishment.address}, ${establishment.city}` : "L'adresse vous sera communiquée prochainement."),
         conditions_block: establishment.show_conditions_online ? establishment.general_conditions : undefined,
         booking_link: `${baseUrl}/account/bookings/${appointmentId}`
@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
         appointment_time: `${formatTime(startDate)} - ${formatTime(endDate)}`,
         price: `${appointment.services?.price || "—"}€`,
         address_or_24h_message: establishment.hide_exact_address
-          ? `L'adresse exacte (${establishment.city}) vous sera communiquée 24h avant votre rendez-vous.`
+          ? "L'adresse exacte vous sera communiquée 24h avant votre rendez-vous."
           : (establishment.address ? `${establishment.address}, ${establishment.city}` : "L'adresse vous sera communiquée prochainement."),
         booking_link: `${baseUrl}/account/bookings/${appointmentId}`
       });

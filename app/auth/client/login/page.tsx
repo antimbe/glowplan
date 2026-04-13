@@ -246,7 +246,7 @@ function ClientAuthForm() {
 
             {isLogin && (
               <Flex justify="center" className="w-full">
-                <Link href="/coming-soon" className="text-primary/60 hover:text-primary text-xs font-bold underline underline-offset-4 transition-colors cursor-pointer">
+                <Link href="/auth/client/forgot-password" className="text-primary/60 hover:text-primary text-xs font-bold underline underline-offset-4 transition-colors cursor-pointer">
                   Mot de passe oublié ?
                 </Link>
               </Flex>

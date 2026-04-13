@@ -101,6 +101,19 @@ export default function AppointmentForm({
     if (data) setServices(data);
   };
 
+  const getServiceById = (serviceId: string | null | undefined) => {
+    if (!serviceId || serviceId === "none" || serviceId === "other") return null;
+    return services.find(s => s.id === serviceId) || null;
+  };
+
+  const calculateEndTime = (start: string, duration: number) => {
+    const [hours, minutes] = start.split(":").map(Number);
+    const startDate = new Date(date);
+    startDate.setHours(hours, minutes, 0, 0);
+    const endDate = new Date(startDate.getTime() + duration * 60000);
+    return `${endDate.getHours().toString().padStart(2, "0")}:${endDate.getMinutes().toString().padStart(2, "0")}`;
+  };
+
   const handleServiceChange = (serviceId: string) => {
     if (serviceId === "none") {
       setFormData(prev => ({ ...prev, service_id: null }));
@@ -111,18 +124,22 @@ export default function AppointmentForm({
       setFormData(prev => ({ ...prev, service_id: "other" as any }));
       return;
     }
+
     const service = services.find(s => s.id === serviceId);
     setFormData(prev => ({ ...prev, service_id: serviceId || null }));
 
     if (service) {
-      const [hours, minutes] = startTime.split(":").map(Number);
-      const startDate = new Date(date);
-      startDate.setHours(hours, minutes, 0, 0);
-
-      const endDate = new Date(startDate.getTime() + service.duration * 60000);
-      setEndTime(`${endDate.getHours().toString().padStart(2, "0")}:${endDate.getMinutes().toString().padStart(2, "0")}`);
+      setEndTime(calculateEndTime(startTime, service.duration));
     }
     setCustomServiceName("");
+  };
+
+  const handleStartTimeChange = (newStartTime: string) => {
+    setStartTime(newStartTime);
+    const service = getServiceById(formData.service_id as string | null | undefined);
+    if (service) {
+      setEndTime(calculateEndTime(newStartTime, service.duration));
+    }
   };
 
   const handleSubmit = async (skipConflictCheck = false) => {
@@ -337,21 +354,8 @@ export default function AppointmentForm({
 
     setCancelling(true);
     try {
-      // Mettre à jour le statut du RDV
-      const { error } = await supabase
-        .from("appointments")
-        .update({
-          status: "cancelled",
-          cancelled_by_client: false,
-          cancelled_at: new Date().toISOString(),
-          cancellation_reason: cancelReason || null,
-        })
-        .eq("id", appointment.id);
-
-      if (error) throw error;
-
-      // Envoyer l'email d'annulation
-      await fetch("/api/booking/cancel-by-pro", {
+      // Call API to cancel appointment (which updates DB and sends email)
+      const response = await fetch("/api/booking/cancel-by-pro", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -360,11 +364,18 @@ export default function AppointmentForm({
         }),
       });
 
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to cancel appointment");
+      }
+
       setCancelModal(false);
       setCancelReason("");
       onSave(appointment as AppointmentData); // Rafraîchir le calendrier et fermer
     } catch (error) {
       console.error("Error cancelling appointment:", error);
+      alert("Erreur lors de l'annulation du rendez-vous");
     } finally {
       setCancelling(false);
     }
@@ -581,7 +592,7 @@ export default function AppointmentForm({
                   <span className="text-[10px] text-gray-400 mb-1">Début</span>
                   <Select
                     value={startTime}
-                    onChange={(e) => setStartTime(e.target.value)}
+                    onChange={(e) => handleStartTimeChange(e.target.value)}
                     options={timeOptions}
                     fullWidth
                     size="md"

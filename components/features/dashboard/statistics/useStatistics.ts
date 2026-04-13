@@ -86,16 +86,19 @@ export function useStatistics(establishmentId: string) {
       }
 
       const validApts = (apts || []) as unknown as RawApt[];
-      const totalBookings = validApts.length;
       
-      const confirmedApts = validApts.filter(a => ["confirmed", "completed", "pending", "pending_deposit"].includes(a.status));
-      // Revenu et réservations officiellement validées (donc confirmées ou déjà effectuées)
-      const strictlyConfirmedApts = validApts.filter(a => ["confirmed", "completed"].includes(a.status));
-      const confirmedBookingsCount = strictlyConfirmedApts.length;
+      // Réservations non refusées/annulées (pending, confirmed, completed, pending_deposit)
+      const activeBookings = validApts.filter(a => !["cancelled", "refused", "no_show", "pending_external_action"].includes(a.status));
+      const totalBookings = activeBookings.length;
+      
+      // Confirmées : confirmed + completed
+      const confirmedApts = activeBookings.filter(a => ["confirmed", "completed"].includes(a.status));
+      const confirmedBookingsCount = confirmedApts.length;
 
-      // Revenus
+      // Revenu : uniquement les rendez-vous honorés (completed) et passés
+      const completedApts = activeBookings.filter(a => a.status === "completed");
       let totalRevenue = 0;
-      strictlyConfirmedApts.forEach(a => {
+      completedApts.forEach(a => {
         const s = Array.isArray(a.services) ? a.services[0] : a.services;
         if (s && typeof s.price === 'number') {
           totalRevenue += s.price;
@@ -106,11 +109,11 @@ export function useStatistics(establishmentId: string) {
       // Group by day for <= 30 days periods, group by month for all_time
       const chartMap = new Map<string, { reservations: number, revenus: number }>();
       
-      validApts.forEach(a => {
+      activeBookings.forEach(a => {
         const d = new Date(a.start_time);
-        const isOfficial = ["confirmed", "completed"].includes(a.status);
+        const isCompleted = a.status === "completed";
         const s = Array.isArray(a.services) ? a.services[0] : a.services;
-        const price = (isOfficial && s?.price) ? s.price : 0;
+        const price = (isCompleted && s?.price) ? s.price : 0;
         
         let key = "";
         if (filter === "all_time") {
@@ -135,12 +138,12 @@ export function useStatistics(establishmentId: string) {
 
       // Top Services
       const serviceMap = new Map<string, { count: number, revenue: number, name: string }>();
-      validApts.forEach(a => {
+      activeBookings.forEach(a => {
         const s = Array.isArray(a.services) ? a.services[0] : a.services;
         if (!s) return;
         const sName = s.name;
-        const isOfficial = ["confirmed", "completed"].includes(a.status);
-        const price = (isOfficial && s.price) ? s.price : 0;
+        const isCompleted = a.status === "completed";
+        const price = (isCompleted && s.price) ? s.price : 0;
 
         const existing = serviceMap.get(sName) || { count: 0, revenue: 0, name: sName };
         existing.count += 1;
@@ -158,13 +161,13 @@ export function useStatistics(establishmentId: string) {
         }))
         .sort((a, b) => b.count - a.count);
 
-      // Fix average price strictly: it's better to just use revenue / confirmed bookings for that service.
+      // Fix average price: use revenue / completed bookings for that service
       topServices.forEach(stat => {
-        const confirmedForService = strictlyConfirmedApts.filter(ap => {
+        const completedForService = completedApts.filter(ap => {
           const aps = Array.isArray(ap.services) ? ap.services[0] : ap.services;
           return aps?.name === stat.serviceName;
         }).length;
-        stat.averagePrice = confirmedForService > 0 ? stat.revenue / confirmedForService : 0;
+        stat.averagePrice = completedForService > 0 ? stat.revenue / completedForService : 0;
       });
 
       setData({

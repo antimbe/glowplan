@@ -178,7 +178,7 @@ function ProAuthForm() {
 
             {isLogin && (
               <Flex justify="center" className="w-full">
-                <Link href="/coming-soon" className="text-primary/60 hover:text-primary text-xs font-bold underline underline-offset-4 transition-colors">
+                <Link href="/auth/pro/forgot-password" className="text-primary/60 hover:text-primary text-xs font-bold underline underline-offset-4 transition-colors">
                   Mot de passe oublié ?
                 </Link>
               </Flex>

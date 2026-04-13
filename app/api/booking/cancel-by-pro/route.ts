@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { NextRequest, NextResponse } from "next/server";
 import { formatDateFull, formatTime } from "@/lib/utils/formatters";
 import { EmailTemplates } from "@/lib/mail/templates";
@@ -8,10 +9,32 @@ export async function POST(request: NextRequest) {
   try {
     const { appointmentId, reason } = await request.json();
 
+    if (!appointmentId) {
+      return NextResponse.json({ error: "Appointment ID is required" }, { status: 400 });
+    }
+
     const supabase = await createClient();
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Verify the user is the establishment owner
+    const { data: establishment, error: estError } = await supabase
+      .from("establishments")
+      .select("id")
+      .eq("user_id", user.id)
+      .single();
+
+    if (estError || !establishment) {
+      return NextResponse.json({ error: "Establishment not found for this user" }, { status: 404 });
+    }
+
+    const admin = createAdminClient();
 
     // Get appointment details with establishment and service info
-    const { data: appointment, error: aptError } = await supabase
+    const { data: appointment, error: aptError } = await admin
       .from("appointments")
       .select(`
         *,
@@ -19,10 +42,27 @@ export async function POST(request: NextRequest) {
         establishments(id, name, email)
       `)
       .eq("id", appointmentId)
+      .eq("establishment_id", establishment.id)
       .single();
 
     if (aptError || !appointment) {
       return NextResponse.json({ error: "Appointment not found" }, { status: 404 });
+    }
+
+    // Update appointment status using admin client
+    const { error: updateError } = await admin
+      .from("appointments")
+      .update({
+        status: "cancelled",
+        cancelled_by_client: false,
+        cancelled_at: new Date().toISOString(),
+        cancellation_reason: reason || null,
+      })
+      .eq("id", appointmentId);
+
+    if (updateError) {
+      console.error("Failed to update appointment status:", updateError);
+      return NextResponse.json({ error: updateError.message || "Failed to cancel appointment" }, { status: 500 });
     }
 
     const startDate = new Date(appointment.start_time);
@@ -67,11 +107,11 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json({ 
-      success: result.success, 
-      message: result.success ? "Cancellation email sent to client" : "Failed to send email"
+      success: true, 
+      message: "Appointment cancelled successfully"
     });
   } catch (error) {
-    console.error("Error sending cancellation email:", error);
-    return NextResponse.json({ error: "Failed to send cancellation email" }, { status: 500 });
+    console.error("Error cancelling appointment:", error);
+    return NextResponse.json({ error: "Failed to cancel appointment" }, { status: 500 });
   }
 }

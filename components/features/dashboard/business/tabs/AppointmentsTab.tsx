@@ -144,38 +144,34 @@ export default function AppointmentsTab({ establishmentId }: AppointmentsTabProp
     
     setUpdating(cancelModal.id);
     try {
-      // Update appointment status
-      const { error } = await supabase
-        .from("appointments")
-        .update({ 
-          status: "cancelled",
-          cancelled_by_client: false,
-          cancelled_at: new Date().toISOString(),
-          cancellation_reason: cancelReason || null,
-        })
-        .eq("id", cancelModal.id);
-
-      if (error) throw error;
-
-      // Send cancellation email to client with reason
-      await fetch("/api/booking/cancel-by-pro", {
+      // Call API to cancel appointment (which updates DB and sends email)
+      const response = await fetch("/api/booking/cancel-by-pro", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           appointmentId: cancelModal.id,
           reason: cancelReason || null,
         }),
       });
 
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to cancel appointment");
+      }
+
+      // Update local state
       setAppointments(prev =>
         prev.map(apt => apt.id === cancelModal.id 
           ? { ...apt, status: "cancelled", cancellation_reason: cancelReason || null, cancelled_at: new Date().toISOString(), cancelled_by_client: false }
           : apt)
       );
+      
       setCancelModal(null);
       setCancelReason("");
     } catch (error) {
       console.error("Error cancelling appointment:", error);
+      alert("Erreur lors de l'annulation du rendez-vous");
     } finally {
       setUpdating(null);
     }
