@@ -106,12 +106,12 @@ const applyComputedStyles = (source: HTMLElement, target: HTMLElement) => {
 
 const PERIOD_OPTIONS = [
   { value: "7", label: "7 prochains jours" },
-  { value: "14", label: "14 prochains jours" },
-  { value: "30", label: "30 prochains jours" },
+  { value: "this_month", label: "Ce mois-ci" },
+  { value: "next_month", label: "Mois prochain" },
 ];
 
 export default function ShareAvailabilityModal({ isOpen, onClose, establishmentId }: ShareAvailabilityModalProps) {
-  const [period, setPeriod] = useState("30");
+  const [period, setPeriod] = useState("7");
   const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
   const [establishment, setEstablishment] = useState<{ name: string; city: string } | null>(null);
   const [openingHours, setOpeningHours] = useState<OpeningHour[]>([]);
@@ -162,9 +162,23 @@ export default function ShareAvailabilityModal({ isOpen, onClose, establishmentI
       }
 
       // Charger les indisponibilités
-      const startDate = new Date();
-      const endDate = new Date();
-      endDate.setDate(endDate.getDate() + parseInt(period));
+      const today = new Date();
+      const startDate = new Date(today);
+      startDate.setHours(0, 0, 0, 0);
+      const endDate = new Date(startDate);
+
+      if (period === "7") {
+        endDate.setDate(endDate.getDate() + 6);
+      } else if (period === "this_month") {
+        endDate.setMonth(endDate.getMonth() + 1);
+        endDate.setDate(0); // dernier jour du mois en cours
+      } else if (period === "next_month") {
+        endDate.setMonth(endDate.getMonth() + 2);
+        endDate.setDate(0); // dernier jour du mois prochain
+        startDate.setMonth(startDate.getMonth() + 1);
+        startDate.setDate(1);
+      }
+      endDate.setHours(23, 59, 59, 999);
 
       const { data: unavailabilities } = await supabase
         .from("unavailabilities")
@@ -188,7 +202,8 @@ export default function ShareAvailabilityModal({ isOpen, onClose, establishmentI
           normalizedHours,
           unavailabilities || [],
           appointments || [],
-          parseInt(period)
+          startDate,
+          endDate
         );
         setAvailabilities(slots);
       } else {
@@ -205,19 +220,23 @@ export default function ShareAvailabilityModal({ isOpen, onClose, establishmentI
     hours: OpeningHour[],
     unavailabilities: { start_time: string; end_time: string }[],
     appointments: { start_time: string; end_time: string }[],
-    days: number
+    startDate: Date,
+    endDate: Date
   ): AvailabilitySlot[] => {
     const result: AvailabilitySlot[] = [];
+    const date = new Date(startDate);
 
-    for (let i = 0; i < days; i++) {
-      const date = new Date();
-      date.setDate(date.getDate() + i);
-      date.setHours(0, 0, 0, 0);
+    while (date <= endDate) {
+      const currentDate = new Date(date);
+      currentDate.setHours(0, 0, 0, 0);
 
       const dbDayOfWeek = jsDayToDbDay(date.getDay());
       const dayHours = hours.find(h => h.day_of_week === dbDayOfWeek);
 
-      if (!dayHours || !dayHours.is_open || !dayHours.open_time || !dayHours.close_time) continue;
+      if (!dayHours || !dayHours.is_open || !dayHours.open_time || !dayHours.close_time) {
+        date.setDate(date.getDate() + 1);
+        continue;
+      }
 
       const openTime = parseInt(dayHours.open_time.split(":")[0]);
       const closeTime = parseInt(dayHours.close_time.split(":")[0]);
@@ -234,7 +253,10 @@ export default function ShareAvailabilityModal({ isOpen, onClose, establishmentI
         return uStart <= dayStart && uEnd >= dayEnd;
       });
 
-      if (isFullDayUnavailable) continue;
+      if (isFullDayUnavailable) {
+        date.setDate(date.getDate() + 1);
+        continue;
+      }
 
       // Calculer les heures de pause
       const breakStart = dayHours.break_start ? parseInt(dayHours.break_start.split(":")[0]) : null;
@@ -282,8 +304,10 @@ export default function ShareAvailabilityModal({ isOpen, onClose, establishmentI
       }
 
       if (slots.length > 0) {
-        result.push({ date, slots });
+        result.push({ date: currentDate, slots });
       }
+
+      date.setDate(date.getDate() + 1);
     }
 
     return result;
@@ -394,7 +418,10 @@ export default function ShareAvailabilityModal({ isOpen, onClose, establishmentI
       const link = document.createElement("a");
       link.download = `disponibilites-story-${storyIndex + 1}.png`;
       link.href = canvas.toDataURL("image/png");
+      link.style.display = "none";
+      document.body.appendChild(link);
       link.click();
+      document.body.removeChild(link);
     } catch (error) {
       console.error("Erreur téléchargement:", error);
     }
