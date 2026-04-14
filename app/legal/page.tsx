@@ -1,6 +1,6 @@
 import Header from "@/components/features/Header";
 import Footer from "@/components/features/Footer";
-import { Box, Container, Heading, Text, Link, Stack } from "@/components/ui";
+import { Box, Container, Heading, Text, Link, Flex } from "@/components/ui";
 
 const sections = [
   {
@@ -41,7 +41,7 @@ export default function LegalPage() {
 
         <Box className="rounded-[28px] border border-[#e7ebdf] bg-white p-6 shadow-sm">
           <Text className="text-sm uppercase tracking-[0.24em] text-slate-400 font-bold mb-4">Sommaire</Text>
-          <Stack as="nav" direction="row" wrap="wrap" gap={3}>
+          <Flex as="nav" direction="row" wrap="wrap" gap={3}>
             {sections.map((section) => (
               <Link
                 key={section.id}
@@ -51,7 +51,7 @@ export default function LegalPage() {
                 {section.title}
               </Link>
             ))}
-          </Stack>
+          </Flex>
         </Box>
 
         <Box className="grid gap-6">
