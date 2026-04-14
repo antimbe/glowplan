@@ -45,8 +45,8 @@ export function useClientHistory(clientProfileId: string | null, establishmentId
                 start_time: apt.start_time,
                 status: apt.status,
                 cancelled_by_client: apt.cancelled_by_client,
-                service_name: apt.services?.name || "Service inconnu",
-                price: apt.services?.price || 0,
+                service_name: Array.isArray(apt.services) ? apt.services[0]?.name : apt.services?.name || "Service inconnu",
+                price: Array.isArray(apt.services) ? apt.services[0]?.price : apt.services?.price || 0,
             }));
 
             setAppointments(formatted);

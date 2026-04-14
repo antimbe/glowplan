@@ -36,7 +36,7 @@ export async function POST(req: Request) {
                 client_name: review.client_profiles 
                     ? `${review.client_profiles.first_name} ${review.client_profiles.last_name?.charAt(0)}.` 
                     : review.client_name || "Un client",
-                service_name: review.appointments?.services?.name,
+                service_name: Array.isArray(review.appointments?.services) ? review.appointments.services[0]?.name : review.appointments?.services?.name,
                 rating: review.rating,
                 comment: review.comment || undefined,
                 dashboard_link: `${baseUrl}/dashboard/business?tab=avis`

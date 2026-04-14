@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     const clientTemplate = EmailTemplates.bookingRefusedUser({
       first_name: appointment.client_first_name,
       provider_name: appointment.establishments?.name || "Votre prestataire",
-      service_name: appointment.services?.name || "Non spécifiée",
+      service_name: Array.isArray(appointment.services) ? appointment.services[0]?.name : appointment.services?.name || "Non spécifiée",
       appointment_date: formatDateFull(startDate),
       appointment_time: `${formatTime(startDate)} - ${formatTime(endDate)}`,
       reason: reason || undefined,

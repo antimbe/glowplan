@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     const emailData = EmailTemplates.bookingConfirmedUser({
       first_name: appointment.client_first_name || (appointment.client_name ? appointment.client_name.split(' ')[0] : "Client"),
       provider_name: appointment.establishments?.name || "Votre prestataire",
-      service_name: appointment.services?.name || "Non spécifiée",
+      service_name: Array.isArray(appointment.services) ? appointment.services[0]?.name : appointment.services?.name || "Non spécifiée",
       appointment_date: formatDateFull(startDate),
       appointment_time: `${formatTime(startDate)} - ${formatTime(endDate)}`,
       price: `${appointment.services?.price || "—"}€`,

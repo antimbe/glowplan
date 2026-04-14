@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
       const proTemplate = EmailTemplates.bookingCancelledPro({
         provider_name: appointment.establishments?.name || "Prestataire",
         client_name: `${appointment.client_first_name || ""} ${appointment.client_last_name || ""}`.trim() || appointment.client_name || "Client",
-        service_name: appointment.services?.name || "Non spécifiée",
+        service_name: Array.isArray(appointment.services) ? appointment.services[0]?.name : appointment.services?.name || "Non spécifiée",
         appointment_date: formatDateFull(startDate),
         appointment_time: `${formatTime(startDate)} - ${formatTime(endDate)}`,
         dashboard_link: `${baseUrl}/dashboard/agenda`,

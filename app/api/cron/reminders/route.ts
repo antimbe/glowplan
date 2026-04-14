@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
         const emailData = EmailTemplates.reminder24hUser({
           first_name: apt.client_first_name || (apt.client_name ? apt.client_name.split(' ')[0] : "Client"),
           provider_name: apt.establishments?.name || "Votre prestataire",
-          service_name: apt.services?.name || "Non spécifiée",
+          service_name: Array.isArray(apt.services) ? apt.services[0]?.name : apt.services?.name || "Non spécifiée",
           appointment_date: formatDateFull(startDate),
           appointment_time: formatTime(startDate),
           full_address: fullAddress || "L'adresse vous sera communiquée sur place.",
@@ -185,7 +185,7 @@ export async function GET(request: NextRequest) {
               client_name: (apt.client_first_name && apt.client_last_name) 
                 ? `${apt.client_first_name} ${apt.client_last_name}` 
                 : (apt.client_name || "Client"),
-              service_name: apt.services?.name || "Prestation",
+              service_name: Array.isArray(apt.services) ? apt.services[0]?.name : apt.services?.name || "Prestation",
               appointment_date: formatDateFull(startDate),
               appointment_time: formatTime(startDate),
               dashboard_link: `${baseUrl}/dashboard/agenda?date=${apt.start_time.split('T')[0]}`
