@@ -164,12 +164,12 @@ export default function StatisticsPage() {
           </div>
           <div className="relative z-10">
             <p className="text-[10px] sm:text-xs font-bold text-primary-light uppercase tracking-widest mb-1">Chiffre d'affaires</p>
-            <h3 className="text-3xl sm:text-4xl font-black text-white mb-2">{data.totalRevenue} €</h3>
+            <h3 className="text-3xl sm:text-4xl font-black text-white mb-2">{data.totalRevenue.toFixed(2)} €</h3>
             {data.expectedRevenue > 0 && (
               <div className="flex items-center gap-1.5 mt-2">
                 <Clock size={12} className="text-white/50" />
                 <p className="text-[10px] text-white/60 font-medium">
-                  + {data.expectedRevenue} € attendus (RDV confirmés)
+                  + {data.expectedRevenue.toFixed(2)} € attendus (RDV confirmés)
                 </p>
               </div>
             )}
