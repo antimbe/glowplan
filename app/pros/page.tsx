@@ -4,7 +4,8 @@ import { useState } from "react";
 import Header from "@/components/features/Header";
 import Footer from "@/components/features/Footer";
 import { Box, Container, Heading, Text, Flex, Button } from "@/components/ui";
-import { Heart, Calendar, Users, BarChart2, Sparkles, Check, ArrowRight } from "lucide-react";
+import { Heart, Calendar, Users, BarChart2, Sparkles, Check } from "lucide-react";
+import ContactQuickLinks from "@/components/features/contact/ContactQuickLinks";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -129,10 +130,12 @@ export default function ProsPage() {
             <Text className={`text-sm font-semibold ${!isYearly ? "text-white" : "text-white/50"}`}>Mois</Text>
             <button
               onClick={() => setIsYearly(!isYearly)}
-              className={`relative w-12 h-6 rounded-full transition-colors duration-300 overflow-hidden cursor-pointer ${isYearly ? "bg-accent" : "bg-white/30"}`}
+              className="relative w-12 h-6 rounded-full transition-colors duration-300 cursor-pointer"
+              style={{ backgroundColor: isYearly ? "#c0a062" : "rgba(255,255,255,0.3)" }}
             >
               <span
-                className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-md transition-transform duration-300 ${isYearly ? "translate-x-[28px]" : "translate-x-1"}`}
+                className="absolute top-1 w-4 h-4 bg-white rounded-full shadow-md transition-all duration-300"
+                style={{ left: isYearly ? "28px" : "4px" }}
               />
             </button>
             <Text className={`text-sm font-semibold ${isYearly ? "text-white" : "text-white/50"}`}>Année</Text>
@@ -249,30 +252,7 @@ export default function ProsPage() {
       </Box>
 
       {/* ── 5. Navigation links ───────────────────────────────────────────── */}
-      <Box className="bg-[#f0f2ec]">
-        <Box className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-px">
-          <Link href="/" className="block bg-primary p-10 group cursor-pointer">
-            <Flex align="center" justify="between">
-              <Text className="text-white text-xl font-bold">Accueil</Text>
-              <ArrowRight size={20} className="text-white/60 group-hover:translate-x-1 transition-transform" />
-            </Flex>
-          </Link>
-          <Link href="/contact" className="block bg-[#c0a062]/20 p-10 group cursor-pointer">
-            <Flex align="center" justify="between">
-              <Text className="text-slate-700 text-xl font-bold">Nous contacter</Text>
-              <ArrowRight size={20} className="text-slate-400 group-hover:translate-x-1 transition-transform" />
-            </Flex>
-          </Link>
-        </Box>
-        <Box className="max-w-5xl mx-auto">
-          <Link href="/about" className="block bg-white p-10 border-t border-slate-100 group cursor-pointer">
-            <Flex align="center" justify="between">
-              <Text className="text-slate-700 text-xl font-bold">Qui sommes-nous</Text>
-              <ArrowRight size={20} className="text-slate-400 group-hover:translate-x-1 transition-transform" />
-            </Flex>
-          </Link>
-        </Box>
-      </Box>
+      <ContactQuickLinks />
 
       <Footer />
     </Box>
