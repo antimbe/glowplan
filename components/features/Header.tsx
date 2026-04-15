@@ -9,7 +9,7 @@ import { createClient } from "@/lib/supabase/client";
 const navigationLinks = [
   { label: "Accueil", href: "/" },
   { label: "Qui sommes-nous", href: "/about" },
-  { label: "Pour les pros", href: "/coming-soon" },
+  { label: "Pour les pros", href: "/pros" },
   { label: "Contact", href: "/contact" },
 ];
 
