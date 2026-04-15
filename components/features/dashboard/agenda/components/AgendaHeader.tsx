@@ -26,6 +26,7 @@ export default function AgendaHeader({
     onFiltersChange
 }: AgendaHeaderProps) {
     return (
+        <>
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between p-3 lg:p-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white gap-2 lg:gap-0">
             <div className="flex items-center justify-between lg:justify-start gap-2 lg:gap-3">
                 <div className="flex items-center gap-0.5 bg-white rounded-lg border border-gray-200 p-0.5 shadow-sm">
@@ -131,5 +132,6 @@ export default function AgendaHeader({
                 Annulé
             </span>
         </div>
+        </>
     );
 }
