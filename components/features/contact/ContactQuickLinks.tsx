@@ -18,7 +18,7 @@ const links = [
   { 
     title: "Nos Offres", 
     subtitle: "Des solutions pour chaque expert",
-    href: "#", 
+    href: "/pros",
     icon: Layout,
     color: "bg-[#f4f1ea]", 
     textColor: "text-primary",
