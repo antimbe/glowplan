@@ -1,6 +1,6 @@
 export interface ClientStats {
     id: string;
-    client_profile_id: string;
+    client_profile_id: string | null;
     first_name: string;
     last_name: string;
     email: string;
@@ -12,6 +12,7 @@ export interface ClientStats {
     last_visit: string | null;
     is_blocked: boolean;
     no_show_count: number;
+    is_guest: boolean;
 }
 
 export type SortField = "name" | "visits" | "spent" | "last_visit";

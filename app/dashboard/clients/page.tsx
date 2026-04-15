@@ -80,7 +80,7 @@ export default function ClientsPage() {
           <p className="text-gray-500">
             {searchQuery
               ? "Essayez avec d'autres termes de recherche"
-              : "Les clients qui réservent avec un compte apparaîtront ici"
+              : "Les clients (avec compte ou invités) qui ont réservé apparaîtront ici"
             }
           </p>
         </div>
@@ -92,6 +92,8 @@ export default function ClientsPage() {
           onClose={() => setIsHistoryModalOpen(false)}
           clientName={`${selectedClient.first_name} ${selectedClient.last_name}`}
           clientProfileId={selectedClient.client_profile_id}
+          clientEmail={selectedClient.email}
+          isGuest={selectedClient.is_guest}
           establishmentId={establishmentId}
         />
       )}

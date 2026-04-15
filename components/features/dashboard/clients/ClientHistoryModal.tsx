@@ -12,8 +12,10 @@ interface ClientHistoryModalProps {
     isOpen: boolean;
     onClose: () => void;
     clientName: string;
-    clientProfileId: string;
+    clientProfileId: string | null;
     establishmentId: string;
+    clientEmail?: string | null;
+    isGuest?: boolean;
 }
 
 export function ClientHistoryModal({
@@ -21,9 +23,11 @@ export function ClientHistoryModal({
     onClose,
     clientName,
     clientProfileId,
-    establishmentId
+    establishmentId,
+    clientEmail,
+    isGuest,
 }: ClientHistoryModalProps) {
-    const { appointments, loading } = useClientHistory(clientProfileId, establishmentId);
+    const { appointments, loading } = useClientHistory(clientProfileId, establishmentId, clientEmail);
 
     const getStatusInfo = (status: string, cancelledByClient: boolean | null) => {
         const now = new Date();
@@ -48,11 +52,29 @@ export function ClientHistoryModal({
                     icon: () => AlertCircle,
                     color: () => "bg-yellow-100 text-yellow-700"
                 };
+            case "completed":
+                return {
+                    label: () => "Effectué",
+                    icon: () => CheckCircle2,
+                    color: () => "bg-green-100 text-green-700"
+                };
             case "no_show":
                 return {
                     label: () => "Lapin (Non-honoré)",
                     icon: () => AlertCircle,
                     color: () => "bg-orange-100 text-orange-700"
+                };
+            case "refused":
+                return {
+                    label: () => "Refusé",
+                    icon: () => XCircle,
+                    color: () => "bg-red-100 text-red-700"
+                };
+            case "pending_deposit":
+                return {
+                    label: () => "Acompte en attente",
+                    icon: () => AlertCircle,
+                    color: () => "bg-yellow-100 text-yellow-700"
                 };
             default:
                 return {
@@ -67,8 +89,8 @@ export function ClientHistoryModal({
         <FormModal
             isOpen={isOpen}
             onClose={onClose}
-            title={`Historique de ${clientName}`}
-            subtitle="Historique complet des réservations"
+            title={`Historique de ${clientName}${isGuest ? " (Invité)" : ""}`}
+            subtitle={isGuest ? "Client sans compte — réservation en tant qu'invité" : "Historique complet des réservations"}
             icon={<History className="text-white" size={20} />}
             maxWidth="lg"
         >

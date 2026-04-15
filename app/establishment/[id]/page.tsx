@@ -175,18 +175,15 @@ export default function EstablishmentPage() {
             .limit(1);
           setHasAlreadyReviewed((existingReview?.length || 0) > 0);
 
-          const blockQuery = supabase
+          // Client connecté : blocage uniquement par profile_id (stable)
+          // On n'utilise PAS l'email pour éviter les faux positifs si l'email
+          // d'un client légitime correspond à celui d'un guest bloqué
+          const { data: blocks } = await supabase
             .from("blocked_clients")
             .select("id")
-            .eq("establishment_id", establishmentId);
+            .eq("establishment_id", establishmentId)
+            .eq("client_profile_id", profile.id);
 
-          if (user.email) {
-            blockQuery.or(`client_profile_id.eq.${profile.id},client_email.eq.${user.email}`);
-          } else {
-            blockQuery.eq("client_profile_id", profile.id);
-          }
-
-          const { data: blocks } = await blockQuery;
           if (blocks && blocks.length > 0) setBlockedError(true);
         }
       }

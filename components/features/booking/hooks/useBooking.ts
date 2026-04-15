@@ -190,14 +190,42 @@ export function useBooking(establishmentId: string, openingHours: OpeningHour[])
                 if (validationRes.ok) {
                     const validationData = await validationRes.json();
                     if (validationData.exists) {
-                        return { 
-                            success: false, 
-                            error: "Un compte existe déjà avec cet email ou ce numéro de téléphone. Veuillez vous connecter pour réserver en cliquant sur le bouton de connexion." 
+                        return {
+                            success: false,
+                            error: "Un compte existe déjà avec cet email ou ce numéro de téléphone. Veuillez vous connecter pour réserver en cliquant sur le bouton de connexion."
                         };
                     }
                 }
             }
             // --- FIN DE LA VALIDATION GUEST ---
+
+            // --- VERIFICATION BLOCAGE ---
+            // Connecté : uniquement par client_profile_id (identifiant stable)
+            // Guest    : par email + téléphone (pas d'identifiant stable)
+            {
+                const blockQuery = supabase
+                    .from("blocked_clients")
+                    .select("id")
+                    .eq("establishment_id", establishmentId);
+
+                if (profileId) {
+                    // Client connecté : on ne vérifie QUE le profile_id
+                    blockQuery.eq("client_profile_id", profileId);
+                } else {
+                    // Guest : on vérifie email et/ou téléphone
+                    const orParts: string[] = [];
+                    if (clientInfo.email) orParts.push(`client_email.eq.${clientInfo.email}`);
+                    if (clientInfo.phone) orParts.push(`client_phone.eq.${clientInfo.phone}`);
+                    if (orParts.length === 0) return { success: false, error: "Informations de contact manquantes" };
+                    blockQuery.or(orParts.join(","));
+                }
+
+                const { data: blocks } = await blockQuery;
+                if (blocks && blocks.length > 0) {
+                    return { success: false, error: "BLOCKED" };
+                }
+            }
+            // --- FIN VERIFICATION BLOCAGE ---
 
             const payload = cart.map(item => ({
                 service_id: item.service.id,

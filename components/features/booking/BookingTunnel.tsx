@@ -5,7 +5,7 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
-import { Check, Clock, Calendar, ArrowRight, ChevronLeft, User, Mail, Phone, Instagram, FileText, LogIn, UserPlus, Trash2, ShoppingCart, CreditCard, Link as LinkIcon, Info, Loader2, ShieldCheck, Sparkles, MapPin } from "lucide-react";
+import { Check, Clock, Calendar, ArrowRight, ChevronLeft, User, Mail, Phone, Instagram, FileText, LogIn, UserPlus, Trash2, ShoppingCart, CreditCard, Link as LinkIcon, Info, Loader2, ShieldCheck, Sparkles, MapPin, Ban } from "lucide-react";
 import { Button } from "@/components/ui";
 import { cn } from "@/lib/utils/cn";
 import Link from "next/link";
@@ -161,6 +161,25 @@ export function BookingTunnel({
 
     if (submitting) {
         return <BookingLoadingOverlay />;
+    }
+
+    if (blockedError) {
+        return (
+            <div className="p-6">
+                <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center space-y-4">
+                    <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto">
+                        <Ban size={28} className="text-red-500" />
+                    </div>
+                    <div>
+                        <h3 className="text-lg font-black text-red-700 mb-1">Réservation impossible</h3>
+                        <p className="text-sm text-red-600 leading-relaxed">
+                            Vous ne pouvez plus effectuer de réservation auprès de cet établissement.<br />
+                            Pour toute question, contactez directement le prestataire.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        );
     }
 
     if (step === "info") {

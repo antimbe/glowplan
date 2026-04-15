@@ -17,43 +17,57 @@ export function useClientsData() {
         const requestId = ++lastRequestId.current;
 
         try {
-            // Parallel fetch: appointments and blocked clients
             const [appointmentsResponse, blockedResponse] = await Promise.all([
                 supabase
                     .from("appointments")
                     .select(`
-            client_profile_id,
-            client_first_name,
-            client_last_name,
-            client_email,
-            client_phone,
-            client_instagram,
-            status,
-            cancelled_by_client,
-            start_time,
-            end_time,
-            services(price),
-            client_profiles(no_show_count)
-          `)
-                    .eq("establishment_id", estId)
-                    .not("client_profile_id", "is", null),
+                        client_profile_id,
+                        client_first_name,
+                        client_last_name,
+                        client_email,
+                        client_phone,
+                        client_instagram,
+                        status,
+                        cancelled_by_client,
+                        start_time,
+                        end_time,
+                        services(price),
+                        client_profiles(no_show_count)
+                    `)
+                    .eq("establishment_id", estId),
                 supabase
                     .from("blocked_clients")
-                    .select("client_profile_id")
+                    .select("client_profile_id, client_email, client_phone")
                     .eq("establishment_id", estId)
             ]);
 
             if (requestId !== lastRequestId.current) return;
 
-            const appointments = appointmentsResponse.data;
-            const blockedIds = new Set(blockedResponse.data?.map(b => b.client_profile_id) || []);
+            const appointments = appointmentsResponse.data || [];
+
+            // Build blocked sets for profile IDs and emails
+            const blockedProfileIds = new Set<string>();
+            const blockedEmails = new Set<string>();
+            for (const b of blockedResponse.data || []) {
+                if (b.client_profile_id) blockedProfileIds.add(b.client_profile_id);
+                if (b.client_email) blockedEmails.add(b.client_email.toLowerCase());
+            }
+
+            const isBlocked = (profileId: string | null, email: string) =>
+                (profileId ? blockedProfileIds.has(profileId) : false) ||
+                blockedEmails.has(email.toLowerCase());
 
             const clientMap = new Map<string, ClientStats>();
 
-            appointments?.forEach(apt => {
-                if (!apt.client_profile_id) return;
+            appointments.forEach(apt => {
+                const profileId = apt.client_profile_id ?? null;
+                const email = apt.client_email || "";
+                if (!email && !profileId) return; // pas de clé identifiable
 
-                const existing = clientMap.get(apt.client_profile_id);
+                // Clé unique : profileId en priorité, sinon email
+                const key = profileId || `guest_${email}`;
+
+                const existing = clientMap.get(key);
                 const isCompleted = apt.status === "completed" || (apt.status === "confirmed" && new Date(apt.end_time) < new Date());
                 const isCancelledByClient = apt.status === "cancelled" && apt.cancelled_by_client === true;
                 const price = (apt.services as any)?.price || 0;
@@ -66,26 +80,27 @@ export function useClientsData() {
                             existing.last_visit = apt.start_time;
                         }
                     }
-                    if (isCancelledByClient) {
-                        existing.total_cancellations++;
-                    }
+                    if (isCancelledByClient) existing.total_cancellations++;
                 } else {
-                    clientMap.set(apt.client_profile_id, {
-                        id: apt.client_profile_id,
-                        client_profile_id: apt.client_profile_id,
+                    clientMap.set(key, {
+                        id: key,
+                        client_profile_id: profileId,
                         first_name: apt.client_first_name || "",
                         last_name: apt.client_last_name || "",
-                        email: apt.client_email || "",
-                        phone: apt.client_phone,
-                        instagram: apt.client_instagram,
+                        email,
+                        phone: apt.client_phone || null,
+                        instagram: apt.client_instagram || null,
                         total_visits: isCompleted ? 1 : 0,
                         total_spent: isCompleted ? price : 0,
                         total_cancellations: isCancelledByClient ? 1 : 0,
                         last_visit: isCompleted ? apt.start_time : null,
-                        is_blocked: blockedIds.has(apt.client_profile_id),
-                        no_show_count: Array.isArray(apt.client_profiles) 
-                          ? (apt.client_profiles[0] as any)?.no_show_count || 0 
-                          : (apt.client_profiles as any)?.no_show_count || 0,
+                        is_blocked: isBlocked(profileId, email),
+                        no_show_count: profileId
+                            ? (Array.isArray(apt.client_profiles)
+                                ? (apt.client_profiles[0] as any)?.no_show_count || 0
+                                : (apt.client_profiles as any)?.no_show_count || 0)
+                            : 0,
+                        is_guest: !profileId,
                     });
                 }
             });
@@ -102,28 +117,35 @@ export function useClientsData() {
 
     const blockClient = async (client: ClientStats, block: boolean) => {
         if (!establishmentId) return;
-        setBlockingClient(client.client_profile_id);
+        setBlockingClient(client.id);
 
         try {
             if (block) {
                 await supabase.from("blocked_clients").insert({
                     establishment_id: establishmentId,
-                    client_profile_id: client.client_profile_id,
+                    client_profile_id: client.client_profile_id || null,
                     client_email: client.email || null,
                     client_phone: client.phone || null,
                 });
             } else {
-                await supabase
-                    .from("blocked_clients")
-                    .delete()
-                    .eq("establishment_id", establishmentId)
-                    .eq("client_profile_id", client.client_profile_id);
+                // Pour les guests : supprimer par email
+                if (!client.client_profile_id && client.email) {
+                    await supabase
+                        .from("blocked_clients")
+                        .delete()
+                        .eq("establishment_id", establishmentId)
+                        .eq("client_email", client.email);
+                } else {
+                    await supabase
+                        .from("blocked_clients")
+                        .delete()
+                        .eq("establishment_id", establishmentId)
+                        .eq("client_profile_id", client.client_profile_id!);
+                }
             }
 
             setClients(prev => prev.map(c =>
-                c.client_profile_id === client.client_profile_id
-                    ? { ...c, is_blocked: block }
-                    : c
+                c.id === client.id ? { ...c, is_blocked: block } : c
             ));
         } catch (error) {
             console.error("Error blocking/unblocking client:", error);

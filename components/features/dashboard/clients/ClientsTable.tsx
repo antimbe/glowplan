@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import {
-    Phone, Mail, Ban, Euro, Clock, XCircle, MoreVertical, UserCheck, Loader2
+    Phone, Mail, Ban, Euro, Clock, XCircle, MoreVertical, UserCheck, Loader2, UserX
 } from "lucide-react";
 import { Button } from "@/components/ui";
 import { cn } from "@/lib/utils/cn";
@@ -64,10 +64,16 @@ export function ClientsTable({ clients, onBlock, blockingClient, onClientClick }
                                             {client.first_name.charAt(0).toUpperCase()}
                                         </div>
                                         <div>
-                                            <div className="flex items-center gap-2">
+                                            <div className="flex items-center gap-2 flex-wrap">
                                                 <span className="font-semibold text-gray-900">
                                                     {client.first_name} {client.last_name}
                                                 </span>
+                                                {client.is_guest && (
+                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-500">
+                                                        <UserX size={10} />
+                                                        Invité
+                                                    </span>
+                                                )}
                                                 {client.is_blocked && (
                                                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-red-100 text-red-600">
                                                         <Ban size={10} />
@@ -177,13 +183,13 @@ export function ClientsTable({ clients, onBlock, blockingClient, onClientClick }
                                                             onBlock(client, !client.is_blocked);
                                                             setActionMenuOpen(null);
                                                         }}
-                                                        disabled={blockingClient === client.client_profile_id}
+                                                        disabled={blockingClient === client.id}
                                                         className={cn(
                                                             "w-full px-4 py-2 text-left text-sm flex items-center gap-2 hover:bg-gray-50 justify-start rounded-none",
                                                             client.is_blocked ? "text-green-600" : "text-red-600"
                                                         )}
                                                     >
-                                                        {blockingClient === client.client_profile_id ? (
+                                                        {blockingClient === client.id ? (
                                                             <Loader2 size={14} className="animate-spin" />
                                                         ) : (
                                                             <Ban size={14} />

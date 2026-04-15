@@ -31,6 +31,7 @@ export function EstablishmentSidebar({
     initialClientInfo = {}
 }: EstablishmentSidebarProps) {
     const [step, setStep] = useState<BookingStep>("info");
+    const [isBlocked, setIsBlocked] = useState(blockedError || false);
 
     const {
         selectedService,
@@ -105,6 +106,8 @@ export function EstablishmentSidebar({
         if (result.success) {
             setStep("confirmation");
             onBookingComplete();
+        } else if (result.error === "BLOCKED") {
+            setIsBlocked(true);
         } else {
             alert(`Erreur lors de la réservation : ${result.error}`);
         }
@@ -182,7 +185,7 @@ export function EstablishmentSidebar({
                 clientProfileId={clientProfileId}
                 submitting={isConfirming}
                 handleSubmitBooking={handleSubmitBooking}
-                blockedError={blockedError || false}
+                blockedError={isBlocked}
                 establishment={establishment}
                 openingHours={openingHours}
                 cart={cart}
