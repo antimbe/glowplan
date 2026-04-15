@@ -1,6 +1,6 @@
 import Header from "@/components/features/Header";
 import Footer from "@/components/features/Footer";
-import { Box, Container, Heading, Text, Link, Stack } from "@/components/ui";
+import { Box, Container, Heading, Text, Link, Flex } from "@/components/ui";
 
 const sections = [
   {
