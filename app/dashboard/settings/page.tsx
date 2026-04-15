@@ -1,23 +1,27 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { 
-  User, 
-  Lock, 
-  Bell, 
-  Shield, 
-  Eye, 
-  EyeOff, 
-  Loader2, 
+import {
+  User,
+  Lock,
+  Bell,
+  Shield,
+  Eye,
+  EyeOff,
+  Loader2,
   CheckCircle2,
   Mail,
   Smartphone,
-  Info
+  Info,
+  Palette,
+  ImageIcon,
+  RotateCcw
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button, Input, Card, Badge, Stack, Heading, Text, Switch, Separator } from "@/components/ui";
+import Image from "next/image";
 
-type SettingsTab = "account" | "notifications" | "security";
+type SettingsTab = "account" | "notifications" | "security" | "appearance";
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingsTab>("account");
@@ -44,6 +48,13 @@ export default function SettingsPage() {
   const [loadingNotif, setLoadingNotif] = useState(false);
   const [successNotif, setSuccessNotif] = useState(false);
 
+  // Appearance State
+  const [dashboardColor, setDashboardColor] = useState("#32422c");
+  const [dashboardLogoUrl, setDashboardLogoUrl] = useState("");
+  const [loadingAppearance, setLoadingAppearance] = useState(false);
+  const [successAppearance, setSuccessAppearance] = useState(false);
+  const [establishmentId, setEstablishmentId] = useState<string | null>(null);
+
   // Delete account modal state
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
@@ -69,13 +80,13 @@ export default function SettingsPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setUserEmail(user.email || null);
-        
+
         const { data: prefs } = await supabase
           .from("notification_preferences")
           .select("*")
           .eq("user_id", user.id)
           .single();
-          
+
         if (prefs) {
           setNotifPreferences({
             email_new_booking: prefs.email_new_booking,
@@ -86,6 +97,19 @@ export default function SettingsPage() {
             email_ask_review_pro: prefs.email_ask_review_pro ?? true,
             app_ask_review_pro: prefs.app_ask_review_pro ?? true
           });
+        }
+
+        // Fetch appearance settings
+        const { data: est } = await supabase
+          .from("establishments")
+          .select("id, dashboard_color, dashboard_logo_url")
+          .eq("user_id", user.id)
+          .single();
+
+        if (est) {
+          setEstablishmentId(est.id);
+          if (est.dashboard_color) setDashboardColor(est.dashboard_color);
+          if (est.dashboard_logo_url) setDashboardLogoUrl(est.dashboard_logo_url);
         }
       }
     };
@@ -152,6 +176,35 @@ export default function SettingsPage() {
     setLoadingNotif(false);
   };
 
+  const handleSaveAppearance = async () => {
+    if (!establishmentId) return;
+    setLoadingAppearance(true);
+    const { error } = await supabase
+      .from("establishments")
+      .update({
+        dashboard_color: dashboardColor,
+        dashboard_logo_url: dashboardLogoUrl || null,
+      })
+      .eq("id", establishmentId);
+
+    if (!error) {
+      setSuccessAppearance(true);
+      setTimeout(() => setSuccessAppearance(false), 3000);
+    }
+    setLoadingAppearance(false);
+  };
+
+  const PRESET_COLORS = [
+    { label: "Vert forêt (défaut)", value: "#32422c" },
+    { label: "Noir élégant", value: "#1a1a1a" },
+    { label: "Bleu nuit", value: "#1e2d4a" },
+    { label: "Bordeaux", value: "#5c1a2e" },
+    { label: "Violet profond", value: "#2d1b4e" },
+    { label: "Brun chaud", value: "#3d2b1a" },
+    { label: "Ardoise bleue", value: "#2c3e50" },
+    { label: "Rose poudré foncé", value: "#4a2030" },
+  ];
+
   return (
     <div className="w-full max-w-6xl py-4 lg:py-8">
       <div className="mb-8 lg:mb-10">
@@ -171,6 +224,7 @@ export default function SettingsPage() {
               { id: "account", label: "Mon Compte", icon: User },
               { id: "notifications", label: "Notifications", icon: Bell },
               { id: "security", label: "Sécurité", icon: Shield },
+              { id: "appearance", label: "Apparence", icon: Palette },
             ].map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -417,6 +471,142 @@ export default function SettingsPage() {
                   </Button>
                 </div>
               </section>
+            </div>
+          )}
+
+          {activeTab === "appearance" && (
+            <div className="space-y-10 animate-in fade-in slide-in-from-right-4 duration-500">
+
+              {/* Color picker */}
+              <section>
+                <div className="mb-4">
+                  <h2 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">Couleur du tableau de bord</h2>
+                </div>
+
+                <Card className="p-6 border border-gray-200 shadow-sm rounded-2xl space-y-5">
+                  {/* Preview */}
+                  <div className="flex items-center gap-4">
+                    <div
+                      className="w-16 h-16 rounded-2xl shadow-md border border-white/20 flex-shrink-0"
+                      style={{ backgroundColor: dashboardColor }}
+                    />
+                    <div>
+                      <p className="font-medium text-gray-900">Aperçu de la couleur</p>
+                      <p className="text-sm text-gray-500 font-mono mt-0.5">{dashboardColor}</p>
+                    </div>
+                    <input
+                      type="color"
+                      value={dashboardColor}
+                      onChange={(e) => setDashboardColor(e.target.value)}
+                      className="ml-auto w-10 h-10 rounded-xl cursor-pointer border border-gray-200 p-0.5"
+                      title="Choisir une couleur"
+                    />
+                  </div>
+
+                  {/* Presets */}
+                  <div>
+                    <p className="text-sm font-semibold text-gray-700 mb-3">Couleurs suggérées</p>
+                    <div className="flex flex-wrap gap-2.5">
+                      {PRESET_COLORS.map((c) => (
+                        <button
+                          key={c.value}
+                          title={c.label}
+                          onClick={() => setDashboardColor(c.value)}
+                          className={`w-9 h-9 rounded-xl border-2 transition-all cursor-pointer hover:scale-110 ${
+                            dashboardColor === c.value ? "border-gray-900 scale-110" : "border-transparent"
+                          }`}
+                          style={{ backgroundColor: c.value }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => setDashboardColor("#32422c")}
+                    className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
+                  >
+                    <RotateCcw size={12} />
+                    Remettre la couleur par défaut
+                  </button>
+                </Card>
+              </section>
+
+              {/* Logo */}
+              <section>
+                <div className="mb-4">
+                  <h2 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">Logo du tableau de bord</h2>
+                </div>
+
+                <Card className="p-6 border border-gray-200 shadow-sm rounded-2xl space-y-5">
+                  <div className="flex items-start gap-4">
+                    <div
+                      className="w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0 overflow-hidden border border-gray-200"
+                      style={{ backgroundColor: dashboardColor }}
+                    >
+                      {dashboardLogoUrl ? (
+                        <img
+                          src={dashboardLogoUrl}
+                          alt="Logo aperçu"
+                          className="w-full h-full object-contain p-1.5"
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                        />
+                      ) : (
+                        <ImageIcon size={24} className="text-white/40" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-gray-900 mb-1">URL de l'image</p>
+                      <p className="text-xs text-gray-500 mb-3">Copiez le lien direct vers votre logo (PNG ou SVG recommandé, fond transparent).</p>
+                      <Input
+                        type="url"
+                        placeholder="https://example.com/mon-logo.png"
+                        value={dashboardLogoUrl}
+                        onChange={(e) => setDashboardLogoUrl(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  {dashboardLogoUrl && (
+                    <button
+                      onClick={() => setDashboardLogoUrl("")}
+                      className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
+                    >
+                      <RotateCcw size={12} />
+                      Supprimer le logo (revenir au logo GlowPlan)
+                    </button>
+                  )}
+
+                  <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-start gap-3">
+                    <Info size={15} className="text-blue-500 mt-0.5 shrink-0" />
+                    <p className="text-xs text-blue-700 leading-relaxed">
+                      Le logo s'affiche en haut à gauche du tableau de bord. Pour héberger une image, vous pouvez utiliser un service comme <span className="font-semibold">imgur.com</span> ou <span className="font-semibold">postimages.org</span> et copier le lien direct.
+                    </p>
+                  </div>
+                </Card>
+              </section>
+
+              {/* Save */}
+              <div className="flex items-center justify-end gap-4">
+                {successAppearance && (
+                  <span className="text-sm font-semibold text-green-600 flex items-center gap-1.5 animate-in fade-in slide-in-from-right-4">
+                    <CheckCircle2 size={18} /> Modifications enregistrées
+                  </span>
+                )}
+                <Button
+                  variant="primary"
+                  onClick={handleSaveAppearance}
+                  disabled={loadingAppearance}
+                  className="rounded-xl px-6 h-11 text-sm font-semibold shadow-lg shadow-primary/20 transition-transform active:scale-95"
+                >
+                  {loadingAppearance ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="animate-spin" size={16} /> Patientez...
+                    </span>
+                  ) : (
+                    "Enregistrer l'apparence"
+                  )}
+                </Button>
+              </div>
             </div>
           )}
 

@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { DashboardSidebar, DashboardHeader } from "@/components/features/dashboard";
 import { Loader2 } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
+import { DashboardThemeContext, DEFAULT_THEME, type DashboardTheme } from "@/contexts/DashboardThemeContext";
 
 export default function DashboardLayout({
   children,
@@ -17,6 +18,7 @@ export default function DashboardLayout({
   const [establishmentId, setEstablishmentId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [theme, setTheme] = useState<DashboardTheme>(DEFAULT_THEME);
   const supabase = createClient();
 
   useEffect(() => {
@@ -37,11 +39,18 @@ export default function DashboardLayout({
         // Fetch establishment ID for notifications
         const { data: est } = await supabase
           .from("establishments")
-          .select("id")
+          .select("id, name, dashboard_color, dashboard_logo_url")
           .eq("user_id", user.id)
           .single();
-        
-        if (est) setEstablishmentId(est.id);
+
+        if (est) {
+          setEstablishmentId(est.id);
+          setTheme({
+            color: est.dashboard_color || DEFAULT_THEME.color,
+            logoUrl: est.dashboard_logo_url || null,
+            establishmentName: est.name || null,
+          });
+        }
         
         setLoading(false);
         return;
@@ -57,7 +66,7 @@ export default function DashboardLayout({
       // Vérifier si l'utilisateur a un établissement (donc c'est un pro)
       const { data: establishment } = await supabase
         .from("establishments")
-        .select("id")
+        .select("id, name, dashboard_color, dashboard_logo_url")
         .eq("user_id", user.id)
         .limit(1);
 
@@ -65,6 +74,11 @@ export default function DashboardLayout({
         // A un établissement = pro
         setUser(user);
         setEstablishmentId(establishment[0].id);
+        setTheme({
+          color: establishment[0].dashboard_color || DEFAULT_THEME.color,
+          logoUrl: establishment[0].dashboard_logo_url || null,
+          establishmentName: establishment[0].name || null,
+        });
         setLoading(false);
         return;
       }
@@ -105,22 +119,24 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <DashboardSidebar 
-        onLogout={handleLogout} 
-        isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-      />
-      <div className="lg:ml-64 flex flex-col min-h-screen">
-        <DashboardHeader 
-          userEmail={user?.email} 
-          onMenuClick={() => setSidebarOpen(true)}
-          establishmentId={establishmentId}
+    <DashboardThemeContext.Provider value={theme}>
+      <div className="min-h-screen bg-gray-50">
+        <DashboardSidebar
+          onLogout={handleLogout}
+          isOpen={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
         />
-        <div className="flex-1 p-4 lg:p-6 w-full">
-          {children}
+        <div className="lg:ml-64 flex flex-col min-h-screen">
+          <DashboardHeader
+            userEmail={user?.email}
+            onMenuClick={() => setSidebarOpen(true)}
+            establishmentId={establishmentId}
+          />
+          <div className="flex-1 p-4 lg:p-6 w-full">
+            {children}
+          </div>
         </div>
       </div>
-    </div>
+    </DashboardThemeContext.Provider>
   );
 }

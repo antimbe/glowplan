@@ -2,7 +2,9 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { Logo } from "@/components/ui";
+import { useDashboardTheme } from "@/contexts/DashboardThemeContext";
 import { 
   Building2, 
   Calendar, 
@@ -57,6 +59,7 @@ interface DashboardSidebarProps {
 
 export default function DashboardSidebar({ onLogout, isOpen, onClose }: DashboardSidebarProps) {
   const pathname = usePathname();
+  const theme = useDashboardTheme();
 
   return (
     <>
@@ -69,15 +72,30 @@ export default function DashboardSidebar({ onLogout, isOpen, onClose }: Dashboar
       )}
       
       {/* Sidebar */}
-      <div className={`
-        w-64 bg-primary h-screen flex flex-col fixed left-0 top-0 z-50
-        transform transition-transform duration-300 ease-in-out
-        ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-        lg:translate-x-0
-      `}>
+      <div
+        className={`
+          w-64 h-screen flex flex-col fixed left-0 top-0 z-50
+          transform transition-transform duration-300 ease-in-out
+          ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+          lg:translate-x-0
+        `}
+        style={{ backgroundColor: theme.color }}
+      >
         {/* Logo + Close button mobile */}
         <div className="p-6 border-b border-white/10 flex items-center justify-between">
-          <Logo variant="light" size="md" />
+          {theme.logoUrl ? (
+            <div className="relative h-9 w-36 flex-shrink-0">
+              <Image
+                src={theme.logoUrl}
+                alt={theme.establishmentName || "Logo"}
+                fill
+                className="object-contain object-left"
+                unoptimized
+              />
+            </div>
+          ) : (
+            <Logo variant="light" size="md" />
+          )}
           <button 
             onClick={onClose}
             className="lg:hidden w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-white/70 hover:bg-white/20 transition-colors"
