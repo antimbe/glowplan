@@ -106,5 +106,30 @@ export default function AgendaHeader({
                 ))}
             </div>
         </div>
+
+        {/* Légende des couleurs */}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-3 lg:px-4 py-2 border-t border-gray-100 bg-gray-50/60 text-[10px] text-gray-500">
+            <span className="font-semibold text-gray-400 uppercase tracking-wider mr-1 hidden lg:inline">Légende :</span>
+            <span className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded-sm bg-gradient-to-r from-primary to-primary/80 inline-block flex-shrink-0" />
+                RDV confirmé / en attente
+            </span>
+            <span className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded-sm bg-gradient-to-r from-gray-500 to-gray-400 inline-block flex-shrink-0" />
+                Honoré (passé)
+            </span>
+            <span className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded-sm bg-gradient-to-r from-orange-500 to-orange-400 inline-block flex-shrink-0" />
+                No-show (lapin)
+            </span>
+            <span className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded-sm bg-gradient-to-r from-red-500 to-red-400 inline-block flex-shrink-0" />
+                Indisponibilité
+            </span>
+            <span className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded-sm bg-gray-200 border border-gray-300 inline-block flex-shrink-0 opacity-60" />
+                Annulé
+            </span>
+        </div>
     );
 }
