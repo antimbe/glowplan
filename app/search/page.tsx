@@ -2,30 +2,37 @@
 
 import { useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Heart, LogIn, UserPlus } from "lucide-react";
+import { Heart, LogIn, UserPlus, X } from "lucide-react";
 import { Button } from "@/components/ui";
 import Header from "@/components/features/Header";
 import NextLink from "next/link";
 import { useSearch } from "@/components/features/search/hooks/useSearch";
 import { SearchBar } from "@/components/features/search/SearchBar";
 import { ResultsGrid } from "@/components/features/search/ResultsGrid";
+import { ACTIVITY_SECTORS } from "@/lib/constants/sectors";
 
 function SearchContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const query = searchParams.get("q") || "";
   const location = searchParams.get("location") || "";
+  const sector = searchParams.get("sector") || "";
 
   const [searchQuery, setSearchQuery] = useState(query);
   const [locationQuery, setLocationQuery] = useState(location);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
-  const { results, loading, favorites, toggleFavorite, clientProfileId } = useSearch(query, location);
+  const activeSectorLabel = sector
+    ? ACTIVITY_SECTORS.find(s => s.id === sector)?.label ?? sector
+    : null;
+
+  const { results, loading, favorites, toggleFavorite, clientProfileId } = useSearch(query, location, sector);
 
   const handleSearch = () => {
     const params = new URLSearchParams();
     if (searchQuery) params.set("q", searchQuery);
     if (locationQuery) params.set("location", locationQuery);
+    if (sector) params.set("sector", sector);
     router.push(`/search?${params.toString()}`);
   };
 
@@ -33,6 +40,13 @@ function SearchContent() {
     setSearchQuery("");
     setLocationQuery("");
     router.push("/search");
+  };
+
+  const handleRemoveSector = () => {
+    const params = new URLSearchParams();
+    if (query) params.set("q", query);
+    if (location) params.set("location", location);
+    router.push(`/search?${params.toString()}`);
   };
 
   return (
@@ -48,15 +62,29 @@ function SearchContent() {
       />
 
       <div className="max-w-6xl mx-auto px-4 py-8">
-        <div className="mb-2">
+        <div className="mb-4">
           <h1 className="text-3xl font-black text-gray-900 tracking-tight">
-            {query ? `Résultats pour "${query}"` : "Nos établissements"}
+            {query ? `Résultats pour "${query}"` : activeSectorLabel ? activeSectorLabel : "Nos établissements"}
             {location && <span className="text-primary"> à {location}</span>}
           </h1>
           {!loading && (
             <p className="text-gray-500 font-medium mt-1">
               {results.length} établissement{results.length > 1 ? "s" : ""} trouvé{results.length > 1 ? "s" : ""}
             </p>
+          )}
+          {activeSectorLabel && (
+            <div className="flex items-center gap-2 mt-3">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary text-white text-sm font-semibold rounded-full">
+                {activeSectorLabel}
+                <button
+                  onClick={handleRemoveSector}
+                  className="ml-1 hover:opacity-70 transition-opacity cursor-pointer"
+                  aria-label="Supprimer le filtre secteur"
+                >
+                  <X size={14} />
+                </button>
+              </span>
+            </div>
           )}
         </div>
 

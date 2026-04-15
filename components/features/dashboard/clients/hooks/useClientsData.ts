@@ -22,6 +22,7 @@ export function useClientsData() {
                     .from("appointments")
                     .select(`
                         client_profile_id,
+                        client_name,
                         client_first_name,
                         client_last_name,
                         client_email,
@@ -31,8 +32,7 @@ export function useClientsData() {
                         cancelled_by_client,
                         start_time,
                         end_time,
-                        services(price),
-                        client_profiles(no_show_count)
+                        services(price)
                     `)
                     .eq("establishment_id", estId),
                 supabase
@@ -70,6 +70,7 @@ export function useClientsData() {
                 const existing = clientMap.get(key);
                 const isCompleted = apt.status === "completed" || (apt.status === "confirmed" && new Date(apt.end_time) < new Date());
                 const isCancelledByClient = apt.status === "cancelled" && apt.cancelled_by_client === true;
+                const isNoShow = apt.status === "no_show";
                 const price = (apt.services as any)?.price || 0;
 
                 if (existing) {
@@ -81,12 +82,13 @@ export function useClientsData() {
                         }
                     }
                     if (isCancelledByClient) existing.total_cancellations++;
+                    if (isNoShow) existing.no_show_count++;
                 } else {
                     clientMap.set(key, {
                         id: key,
                         client_profile_id: profileId,
-                        first_name: apt.client_first_name || "",
-                        last_name: apt.client_last_name || "",
+                        first_name: apt.client_first_name || (apt.client_name ? apt.client_name.split(" ")[0] : ""),
+                        last_name: apt.client_last_name || (apt.client_name ? apt.client_name.split(" ").slice(1).join(" ") : ""),
                         email,
                         phone: apt.client_phone || null,
                         instagram: apt.client_instagram || null,
@@ -95,11 +97,7 @@ export function useClientsData() {
                         total_cancellations: isCancelledByClient ? 1 : 0,
                         last_visit: isCompleted ? apt.start_time : null,
                         is_blocked: isBlocked(profileId, email),
-                        no_show_count: profileId
-                            ? (Array.isArray(apt.client_profiles)
-                                ? (apt.client_profiles[0] as any)?.no_show_count || 0
-                                : (apt.client_profiles as any)?.no_show_count || 0)
-                            : 0,
+                        no_show_count: isNoShow ? 1 : 0,
                         is_guest: !profileId,
                     });
                 }

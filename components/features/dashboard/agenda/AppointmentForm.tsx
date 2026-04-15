@@ -193,10 +193,16 @@ export default function AppointmentForm({
           ? `[Prestation: ${customServiceName.trim()}]${formData.notes ? `\n${formData.notes}` : ""}`
           : formData.notes ?? null;
 
+      const nameParts = (formData.client_name || "").trim().split(/\s+/);
+      const resolvedFirstName = nameParts[0] || "";
+      const resolvedLastName = nameParts.slice(1).join(" ") || "";
+
       const appointmentData = {
         establishment_id: establishmentId,
         service_id: resolvedServiceId,
         client_name: formData.client_name,
+        client_first_name: resolvedFirstName,
+        client_last_name: resolvedLastName,
         client_email: formData.client_email || null,
         client_phone: formData.client_phone || null,
         start_time: startDateTime.toISOString(),

@@ -2,7 +2,8 @@
 
 import { Scissors, Check } from "lucide-react";
 import SectionCard from "../SectionCard";
-import { TabProps, ACTIVITY_SECTORS } from "../types";
+import { TabProps } from "../types";
+import { ACTIVITY_SECTORS } from "@/lib/constants/sectors";
 
 export default function ActivitySection({ formData, updateField }: TabProps) {
   const toggleSecteur = (id: string) => {

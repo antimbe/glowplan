@@ -3,8 +3,9 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { EstablishmentSearchResult } from "../types";
+import { ACTIVITY_SECTORS } from "@/lib/constants/sectors";
 
-export function useSearch(query: string, location: string) {
+export function useSearch(query: string, location: string, sector: string = "") {
     const [results, setResults] = useState<EstablishmentSearchResult[]>([]);
     const [loading, setLoading] = useState(true);
     const [favorites, setFavorites] = useState<Set<string>>(new Set());
@@ -45,22 +46,41 @@ export function useSearch(query: string, location: string) {
             let queryBuilder = supabase
                 .from("establishments")
                 .select(`
-          id, 
-          name, 
-          city, 
-          activity_sectors, 
-          main_photo_url, 
+          id,
+          name,
+          city,
+          activity_sectors,
+          main_photo_url,
           description,
           services(price),
           reviews(rating)
         `)
                 .eq("is_profile_complete", true);
 
+            // Filtre exact par secteur (depuis le param URL ?sector=)
+            if (sector) {
+                queryBuilder = queryBuilder.contains("activity_sectors", [sector]);
+            }
+
             const allConditions: string[] = [];
+
             if (query) {
                 allConditions.push(`name.ilike.%${query}%`);
                 allConditions.push(`description.ilike.%${query}%`);
+
+                // Cherche les secteurs dont l'ID ou le label correspond à la requête
+                const matchingSectorIds = ACTIVITY_SECTORS
+                    .filter(s =>
+                        s.id.toLowerCase().includes(query.toLowerCase()) ||
+                        s.label.toLowerCase().includes(query.toLowerCase())
+                    )
+                    .map(s => s.id);
+
+                matchingSectorIds.forEach(id => {
+                    allConditions.push(`activity_sectors.cs.{${id}}`);
+                });
             }
+
             if (location) {
                 allConditions.push(`city.ilike.%${location}%`);
                 allConditions.push(`postal_code.ilike.%${location}%`);
@@ -107,7 +127,7 @@ export function useSearch(query: string, location: string) {
                 setLoading(false);
             }
         }
-    }, [query, location, supabase]);
+    }, [query, location, sector, supabase]);
 
     const toggleFavorite = async (establishmentId: string) => {
         if (!clientProfileId) return false;
