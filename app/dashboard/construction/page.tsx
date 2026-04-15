@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Construction, ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -11,7 +12,7 @@ const PAGE_TITLES: Record<string, string> = {
   abonnements: "Mes abonnements",
 };
 
-export default function ConstructionPage() {
+function ConstructionContent() {
   const searchParams = useSearchParams();
   const page = searchParams.get("page") || "";
   const title = PAGE_TITLES[page] || "Cette page";
@@ -25,7 +26,7 @@ export default function ConstructionPage() {
         {title} - En construction
       </h1>
       <p className="text-gray-500 max-w-md mb-8">
-        Cette fonctionnalité est en cours de développement et sera bientôt disponible. 
+        Cette fonctionnalité est en cours de développement et sera bientôt disponible.
         Merci de votre patience !
       </p>
       <Link href="/dashboard/business">
@@ -35,5 +36,13 @@ export default function ConstructionPage() {
         </Button>
       </Link>
     </div>
+  );
+}
+
+export default function ConstructionPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-[60vh]" />}>
+      <ConstructionContent />
+    </Suspense>
   );
 }

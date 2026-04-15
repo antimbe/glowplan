@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Container, Section, Heading, Text, Box, Stack, Flex, MotionBox, Button, Card, Input } from "@/components/ui";
 import { Heart, Loader2 } from "lucide-react";
@@ -11,7 +11,6 @@ import { useModal } from "@/contexts/ModalContext";
 
 function ResetPasswordForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
