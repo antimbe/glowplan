@@ -1,57 +1,99 @@
 "use client";
 
 import { Container, Section, Heading, Box, Flex, MotionBox, Card, Text, Stack } from "@/components/ui";
-import { ChevronRight, Home, Layout, Users, Sparkles } from "lucide-react";
+import { ChevronRight, Home, Layout, Users, Sparkles, Mail } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils/cn";
 
-const links = [
-  { 
-    title: "Accueil", 
+type QuickLink = {
+  title: string;
+  subtitle: string;
+  href: string;
+  icon: React.ElementType;
+  color: string;
+  textColor: string;
+  iconColor: string;
+};
+
+const defaultLinks: QuickLink[] = [
+  {
+    title: "Accueil",
     subtitle: "L'expérience GlowPlan complète",
-    href: "/", 
+    href: "/",
     icon: Home,
-    color: "bg-primary", 
+    color: "bg-primary",
     textColor: "text-white",
     iconColor: "bg-white/10 text-white group-hover:bg-white group-hover:text-primary"
   },
-  { 
-    title: "Nos Offres", 
+  {
+    title: "Nos Offres",
     subtitle: "Des solutions pour chaque expert",
     href: "/pros",
     icon: Layout,
-    color: "bg-[#f4f1ea]", 
+    color: "bg-[#f4f1ea]",
     textColor: "text-primary",
     iconColor: "bg-primary/5 text-primary group-hover:bg-primary group-hover:text-white"
   },
-  { 
-    title: "Qui sommes-nous", 
+  {
+    title: "Qui sommes-nous",
     subtitle: "Découvrez notre vision unique",
-    href: "/about", 
+    href: "/about",
     icon: Users,
-    color: "bg-[#6a845c]", 
+    color: "bg-[#6a845c]",
     textColor: "text-white",
     iconColor: "bg-white/10 text-white group-hover:bg-white group-hover:text-primary-light"
   },
 ];
 
-export default function ContactQuickLinks() {
+export const prosLinks: QuickLink[] = [
+  {
+    title: "Accueil",
+    subtitle: "L'expérience GlowPlan complète",
+    href: "/",
+    icon: Home,
+    color: "bg-primary",
+    textColor: "text-white",
+    iconColor: "bg-white/10 text-white group-hover:bg-white group-hover:text-primary"
+  },
+  {
+    title: "Nous contacter",
+    subtitle: "Une question ? On est là",
+    href: "/contact",
+    icon: Mail,
+    color: "bg-[#f4f1ea]",
+    textColor: "text-primary",
+    iconColor: "bg-primary/5 text-primary group-hover:bg-primary group-hover:text-white"
+  },
+  {
+    title: "Qui sommes-nous",
+    subtitle: "Découvrez notre vision unique",
+    href: "/about",
+    icon: Users,
+    color: "bg-[#6a845c]",
+    textColor: "text-white",
+    iconColor: "bg-white/10 text-white group-hover:bg-white group-hover:text-primary-light"
+  },
+];
+
+export default function ContactQuickLinks({ links = defaultLinks, showHeader = true }: { links?: QuickLink[]; showHeader?: boolean }) {
   return (
     <Section spacing="none" className="bg-[#fcfbf9] pb-64 relative">
       <Container>
         <Stack space={16}>
-          <Flex align="end" justify="between" wrap="wrap" gap={8}>
-            <Stack space={4} className="max-w-xl">
-              <Flex align="center" gap={3} className="text-primary/40">
-                <Sparkles size={16} />
-                <Text variant="small" className="font-bold uppercase tracking-[0.4em] text-[10px]">Continuer la visite</Text>
-              </Flex>
-              <Heading level={2} className="text-primary text-5xl md:text-6xl font-bold tracking-tighter">
-                Explorer <Box as="span" className="text-primary italic font-serif">plus loin</Box>.
-              </Heading>
-            </Stack>
-            <Box className="h-px flex-1 bg-gray-100 hidden lg:block mb-6 mx-12" />
-          </Flex>
+          {showHeader && (
+            <Flex align="end" justify="between" wrap="wrap" gap={8}>
+              <Stack space={4} className="max-w-xl">
+                <Flex align="center" gap={3} className="text-primary/40">
+                  <Sparkles size={16} />
+                  <Text variant="small" className="font-bold uppercase tracking-[0.4em] text-[10px]">Continuer la visite</Text>
+                </Flex>
+                <Heading level={2} className="text-primary text-5xl md:text-6xl font-bold tracking-tighter">
+                  Explorer <Box as="span" className="text-primary italic font-serif">plus loin</Box>.
+                </Heading>
+              </Stack>
+              <Box className="h-px flex-1 bg-gray-100 hidden lg:block mb-6 mx-12" />
+            </Flex>
+          )}
 
           <Box className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
             {links.map((link, i) => (

@@ -5,7 +5,7 @@ import Header from "@/components/features/Header";
 import Footer from "@/components/features/Footer";
 import { Box, Container, Heading, Text, Flex, Button } from "@/components/ui";
 import { Heart, Calendar, Users, BarChart2, Sparkles, Check } from "lucide-react";
-import ContactQuickLinks from "@/components/features/contact/ContactQuickLinks";
+import ContactQuickLinks, { prosLinks } from "@/components/features/contact/ContactQuickLinks";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -252,7 +252,7 @@ export default function ProsPage() {
       </Box>
 
       {/* ── 5. Navigation links ───────────────────────────────────────────── */}
-      <ContactQuickLinks />
+      <ContactQuickLinks links={prosLinks} showHeader={false} />
 
       <Footer />
     </Box>
