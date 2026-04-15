@@ -2,28 +2,33 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { startOfMonth, endOfMonth, subMonths, subDays, startOfDay, endOfDay, isWithinInterval, isSameMonth } from "date-fns";
+import { startOfMonth, endOfMonth, subMonths, subDays, endOfDay } from "date-fns";
 
 export type TimeFilter = "this_month" | "last_month" | "last_30_days" | "all_time";
 
 export interface ServiceStat {
   serviceName: string;
-  count: number;
-  revenue: number;
+  count: number;          // all active bookings
+  completedCount: number; // honored only
+  revenue: number;        // from completed only
   averagePrice: number;
-  bookingRate: number; // percentage of total bookings
+  bookingRate: number;
 }
 
 export interface ChartDataPoint {
-  name: string; // Date or month name
-  reservations: number;
+  name: string;
+  reservations: number;  // all active
+  honores: number;       // completed only
   revenus: number;
 }
 
 export interface StatisticsData {
-  totalBookings: number;
-  confirmedBookings: number;
-  totalRevenue: number;
+  totalBookings: number;     // pending + confirmed + pending_deposit + completed
+  completedBookings: number; // honored (completed)
+  pendingBookings: number;   // pending + pending_deposit
+  confirmedBookings: number; // confirmed (upcoming)
+  totalRevenue: number;      // from completed only
+  expectedRevenue: number;   // from confirmed (not yet completed)
   chartData: ChartDataPoint[];
   topServices: ServiceStat[];
 }
@@ -59,25 +64,20 @@ export function useStatistics(establishmentId: string) {
           break;
         case "all_time":
         default:
-          startDate = new Date(2000, 0, 1); // Way back
+          startDate = new Date(2000, 0, 1);
           endDate = endOfDay(now);
           break;
       }
 
-      // Fetch appointments with their service details
       const { data: apts, error } = await supabase
         .from("appointments")
-        .select(`
-          id, start_time, status,
-          services(name, price)
-        `)
+        .select(`id, start_time, status, services(name, price)`)
         .eq("establishment_id", establishmentId)
         .gte("start_time", startDate.toISOString())
         .lte("start_time", endDate.toISOString());
 
       if (error) throw error;
 
-      // Define expected type since Supabase can infer plural name as array
       interface RawApt {
         id: string;
         start_time: string;
@@ -85,97 +85,96 @@ export function useStatistics(establishmentId: string) {
         services: { name: string; price: number } | null | any;
       }
 
-      const validApts = (apts || []) as unknown as RawApt[];
-      
-      // Réservations non refusées/annulées (pending, confirmed, completed, pending_deposit)
-      const activeBookings = validApts.filter(a => !["cancelled", "refused", "no_show", "pending_external_action"].includes(a.status));
-      const totalBookings = activeBookings.length;
-      
-      // Confirmées : confirmed + completed
-      const confirmedApts = activeBookings.filter(a => ["confirmed", "completed"].includes(a.status));
-      const confirmedBookingsCount = confirmedApts.length;
+      const all = (apts || []) as unknown as RawApt[];
 
-      // Revenu : uniquement les rendez-vous honorés (completed) et passés
-      const completedApts = activeBookings.filter(a => a.status === "completed");
+      // Active = tout sauf cancelled / refused
+      const activeApts = all.filter(a =>
+        !["cancelled", "refused", "pending_external_action"].includes(a.status)
+      );
+
+      const completedApts   = activeApts.filter(a => a.status === "completed");
+      const confirmedApts   = activeApts.filter(a => a.status === "confirmed");
+      const pendingApts     = activeApts.filter(a => ["pending", "pending_deposit", "no_show"].includes(a.status));
+
+      const totalBookings     = activeApts.length;
+      const completedBookings = completedApts.length;
+      const confirmedBookings = confirmedApts.length;
+      const pendingBookings   = pendingApts.length;
+
+      // Revenu réel = honorés uniquement
       let totalRevenue = 0;
       completedApts.forEach(a => {
         const s = Array.isArray(a.services) ? a.services[0] : a.services;
-        if (s && typeof s.price === 'number') {
-          totalRevenue += s.price;
-        }
+        if (s?.price) totalRevenue += s.price;
       });
 
-      // Chart Data
-      // Group by day for <= 30 days periods, group by month for all_time
-      const chartMap = new Map<string, { reservations: number, revenus: number }>();
-      
-      activeBookings.forEach(a => {
+      // Revenu attendu = confirmés (pas encore passés)
+      let expectedRevenue = 0;
+      confirmedApts.forEach(a => {
+        const s = Array.isArray(a.services) ? a.services[0] : a.services;
+        if (s?.price) expectedRevenue += s.price;
+      });
+
+      // Chart
+      const chartMap = new Map<string, { reservations: number; honores: number; revenus: number }>();
+
+      activeApts.forEach(a => {
         const d = new Date(a.start_time);
         const isCompleted = a.status === "completed";
         const s = Array.isArray(a.services) ? a.services[0] : a.services;
-        const price = (isCompleted && s?.price) ? s.price : 0;
-        
-        let key = "";
-        if (filter === "all_time") {
-          key = `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2, '0')}`;
-        } else {
-          key = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth()+1).toString().padStart(2, '0')}`;
-        }
+        const price = isCompleted && s?.price ? s.price : 0;
 
-        const existing = chartMap.get(key) || { reservations: 0, revenus: 0 };
+        const key = filter === "all_time"
+          ? `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, "0")}`
+          : `${d.getDate().toString().padStart(2, "0")}/${(d.getMonth() + 1).toString().padStart(2, "0")}`;
+
+        const existing = chartMap.get(key) || { reservations: 0, honores: 0, revenus: 0 };
         existing.reservations += 1;
+        if (isCompleted) existing.honores += 1;
         existing.revenus += price;
         chartMap.set(key, existing);
       });
 
-      // Sort map keys to create ordered chart data
-      const sortedKeys = Array.from(chartMap.keys()).sort();
-      const chartData: ChartDataPoint[] = sortedKeys.map(k => ({
-        name: k,
-        reservations: chartMap.get(k)!.reservations,
-        revenus: chartMap.get(k)!.revenus,
-      }));
+      const chartData: ChartDataPoint[] = Array.from(chartMap.keys())
+        .sort()
+        .map(k => ({ name: k, ...chartMap.get(k)! }));
 
-      // Top Services
-      const serviceMap = new Map<string, { count: number, revenue: number, name: string }>();
-      activeBookings.forEach(a => {
+      // Top services
+      const serviceMap = new Map<string, { count: number; completedCount: number; revenue: number; name: string }>();
+
+      activeApts.forEach(a => {
         const s = Array.isArray(a.services) ? a.services[0] : a.services;
         if (!s) return;
-        const sName = s.name;
         const isCompleted = a.status === "completed";
-        const price = (isCompleted && s.price) ? s.price : 0;
+        const price = isCompleted && s.price ? s.price : 0;
 
-        const existing = serviceMap.get(sName) || { count: 0, revenue: 0, name: sName };
+        const existing = serviceMap.get(s.name) || { count: 0, completedCount: 0, revenue: 0, name: s.name };
         existing.count += 1;
+        if (isCompleted) existing.completedCount += 1;
         existing.revenue += price;
-        serviceMap.set(sName, existing);
+        serviceMap.set(s.name, existing);
       });
 
       const topServices: ServiceStat[] = Array.from(serviceMap.values())
         .map(stat => ({
           serviceName: stat.name,
           count: stat.count,
+          completedCount: stat.completedCount,
           revenue: stat.revenue,
-          averagePrice: 0, // Calculated below
-          bookingRate: totalBookings > 0 ? (stat.count / totalBookings) * 100 : 0
+          averagePrice: stat.completedCount > 0 ? stat.revenue / stat.completedCount : 0,
+          bookingRate: totalBookings > 0 ? (stat.count / totalBookings) * 100 : 0,
         }))
         .sort((a, b) => b.count - a.count);
 
-      // Fix average price: use revenue / completed bookings for that service
-      topServices.forEach(stat => {
-        const completedForService = completedApts.filter(ap => {
-          const aps = Array.isArray(ap.services) ? ap.services[0] : ap.services;
-          return aps?.name === stat.serviceName;
-        }).length;
-        stat.averagePrice = completedForService > 0 ? stat.revenue / completedForService : 0;
-      });
-
       setData({
         totalBookings,
-        confirmedBookings: confirmedBookingsCount,
+        completedBookings,
+        confirmedBookings,
+        pendingBookings,
         totalRevenue,
+        expectedRevenue,
         chartData,
-        topServices
+        topServices,
       });
 
     } catch (error) {
