@@ -77,7 +77,7 @@ export const prosLinks: QuickLink[] = [
 
 export default function ContactQuickLinks({ links = defaultLinks, showHeader = true }: { links?: QuickLink[]; showHeader?: boolean }) {
   return (
-    <Section spacing="none" className="bg-[#fcfbf9] pb-64 relative">
+    <Section spacing="none" className="bg-[#fcfbf9] pt-16 pb-32 relative overflow-hidden">
       <Container>
         <Stack space={16}>
           {showHeader && (
@@ -95,7 +95,7 @@ export default function ContactQuickLinks({ links = defaultLinks, showHeader = t
             </Flex>
           )}
 
-          <Box className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+          <Box className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 justify-items-center">
             {links.map((link, i) => (
               <Link key={link.title} href={link.href} className="block group h-full">
                 <MotionBox
@@ -107,7 +107,7 @@ export default function ContactQuickLinks({ links = defaultLinks, showHeader = t
                 >
                   <Card 
                     className={cn(
-                      "rounded-[3.5rem] p-12 h-[400px] flex flex-col justify-between transition-all duration-1000 border-none shadow-[0_40px_80px_-20px_rgba(0,0,0,0.06)] group-hover:shadow-[0_60px_100px_-20px_rgba(0,0,0,0.12)] group-hover:-translate-y-6 relative overflow-hidden",
+                      "rounded-[3.5rem] p-12 h-[400px] flex flex-col justify-between transition-all duration-700 border-none shadow-[0_40px_80px_-20px_rgba(0,0,0,0.06)] group-hover:shadow-[0_30px_60px_-10px_rgba(0,0,0,0.12)] group-hover:-translate-y-3 relative overflow-hidden",
                       link.color
                     )}
                   >

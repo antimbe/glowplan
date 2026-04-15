@@ -1,9 +1,19 @@
 "use client";
 
 import { Container, Section, Heading, Text, Box, Stack, Flex, MotionBox, Input, Textarea, Button, Card } from "@/components/ui";
-import { Phone, Mail, Twitter, Instagram, Globe, ArrowRight, Loader2, Check } from "lucide-react";
+import { Phone, Mail, Instagram, ArrowRight, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useModal } from "@/contexts/ModalContext";
+
+const SUBJECTS = [
+  "Booker un appel pour une démo",
+  "Question sur GlowPlan",
+  "Problème technique",
+  "Signaler un bug",
+  "Demande de partenariat",
+  "Facturation / abonnement",
+  "Autre",
+];
 
 export default function ContactFormSection() {
   const [formData, setFormData] = useState({
@@ -11,7 +21,7 @@ export default function ContactFormSection() {
     lastName: "",
     email: "",
     phone: "",
-    subject: "Booker un appel pour une démo",
+    subject: SUBJECTS[0],
     message: "",
   });
   const [loading, setLoading] = useState(false);
@@ -20,13 +30,6 @@ export default function ContactFormSection() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubjectChange = () => {
-    setFormData((prev) => ({
-      ...prev,
-      subject: "Booker un appel pour une démo",
-    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -52,7 +55,7 @@ export default function ContactFormSection() {
         lastName: "",
         email: "",
         phone: "",
-        subject: "Booker un appel pour une démo",
+        subject: SUBJECTS[0],
         message: "",
       });
     } catch (error: any) {
@@ -75,11 +78,10 @@ export default function ContactFormSection() {
             transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
             className="lg:col-span-5 flex"
           >
-            <Card 
-              className="bg-primary border-none shadow-[0_40px_80px_-15px_rgba(42,54,38,0.25)] w-full relative overflow-hidden flex flex-col justify-between" 
+            <Card
+              className="bg-primary border-none shadow-[0_40px_80px_-15px_rgba(42,54,38,0.25)] w-full relative overflow-hidden flex flex-col justify-between"
               padding="lg"
             >
-              {/* Refined decorative elements */}
               <Box className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary-light/10 rounded-full -mr-64 -mt-64 blur-3xl pointer-events-none" />
               <Box className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-black/20 rounded-full -ml-32 -mb-32 blur-3xl pointer-events-none" />
 
@@ -89,7 +91,7 @@ export default function ContactFormSection() {
                     Coordonnées
                   </Heading>
                   <Text className="text-white/60 text-base md:text-lg font-medium leading-relaxed">
-                    N'hésite pas, écris-nous ! <br className="hidden sm:block" /> On est là pour toi.
+                    N'hésite pas, écris-nous !<br className="hidden sm:block" /> On est là pour toi.
                   </Text>
                 </Stack>
 
@@ -116,14 +118,14 @@ export default function ContactFormSection() {
                 </Stack>
 
                 <Flex gap={4} className="pt-12">
-                  {[Twitter, Instagram, Globe].map((Icon, i) => (
-                    <Box 
-                      key={i}
-                      className="w-12 h-12 rounded-2xl border border-white/10 bg-white/5 flex items-center justify-center hover:bg-white/10 hover:border-white/30 cursor-pointer transition-all duration-500 hover:-translate-y-1 shadow-lg"
-                    >
-                      <Icon size={20} className="text-white" />
-                    </Box>
-                  ))}
+                  <a
+                    href="https://www.instagram.com/glowplan.fr/"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="w-12 h-12 rounded-2xl border border-white/10 bg-white/5 flex items-center justify-center hover:bg-white/10 hover:border-white/30 cursor-pointer transition-all duration-500 hover:-translate-y-1 shadow-lg"
+                  >
+                    <Instagram size={20} className="text-white" />
+                  </a>
                 </Flex>
               </Stack>
             </Card>
@@ -137,101 +139,108 @@ export default function ContactFormSection() {
             transition={{ duration: 1, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
             className="lg:col-span-7 flex"
           >
-            <Card 
-              className="bg-white border-none shadow-[0_32px_64px_-12px_rgba(0,0,0,0.05)] w-full" 
+            <Card
+              className="bg-white border-none shadow-[0_32px_64px_-12px_rgba(0,0,0,0.05)] w-full"
               padding="xl"
             >
               <form onSubmit={handleSubmit} className="h-full">
-                <Stack space={12} className="h-full" align="stretch">
-                  <Stack space={10} align="stretch">
-                    <Box className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                      <Box className="space-y-3">
-                        <Text className="text-[10px] font-bold text-primary/40 uppercase tracking-[0.3em] ml-1">Prénom</Text>
-                        <Input 
-                          name="firstName"
-                          placeholder="Jean" 
-                          value={formData.firstName}
-                          onChange={handleChange}
-                          required
-                          fullWidth 
-                          className="bg-gray-50/30 border-gray-100 border-b-2 border-x-0 border-t-0 rounded-none px-0 h-14 focus:bg-transparent focus:border-primary transition-all text-xl font-medium" 
-                        />
-                      </Box>
-                      <Box className="space-y-3">
-                        <Text className="text-[10px] font-bold text-primary/40 uppercase tracking-[0.3em] ml-1">Nom</Text>
-                        <Input 
-                          name="lastName"
-                          placeholder="Dupont" 
-                          value={formData.lastName}
-                          onChange={handleChange}
-                          required
-                          fullWidth 
-                          className="bg-gray-50/30 border-gray-100 border-b-2 border-x-0 border-t-0 rounded-none px-0 h-14 focus:bg-transparent focus:border-primary transition-all text-xl font-medium" 
-                        />
-                      </Box>
-                    </Box>
-                    
-                    <Box className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                      <Box className="space-y-3">
-                        <Text className="text-[10px] font-bold text-primary/40 uppercase tracking-[0.3em] ml-1">Email</Text>
-                        <Input 
-                          name="email"
-                          type="email" 
-                          placeholder="jean@example.com" 
-                          value={formData.email}
-                          onChange={handleChange}
-                          required
-                          fullWidth 
-                          className="bg-gray-50/30 border-gray-100 border-b-2 border-x-0 border-t-0 rounded-none px-0 h-14 focus:bg-transparent focus:border-primary transition-all text-xl font-medium" 
-                        />
-                      </Box>
-                      <Box className="space-y-3">
-                        <Text className="text-[10px] font-bold text-primary/40 uppercase tracking-[0.3em] ml-1">Numéro de téléphone</Text>
-                        <Input 
-                          name="phone"
-                          placeholder="+33 6 12 56 34 12" 
-                          value={formData.phone}
-                          onChange={handleChange}
-                          required
-                          fullWidth 
-                          className="bg-gray-50/30 border-gray-100 border-b-2 border-x-0 border-t-0 rounded-none px-0 h-14 focus:bg-transparent focus:border-primary transition-all text-xl font-medium" 
-                        />
-                      </Box>
-                    </Box>
+                <Stack space={10} className="h-full" align="stretch">
 
-                    <Stack space={6} align="stretch">
-                      <Text className="text-[10px] font-bold text-primary/40 uppercase tracking-[0.3em] ml-1">Sélectionner un sujet</Text>
-                      <Box 
-                        onClick={handleSubjectChange}
-                        className="group cursor-pointer flex items-center gap-6 py-6 px-10 rounded-[2rem] bg-primary/5 border-2 border-primary hover:border-primary hover:bg-white transition-all duration-500 shadow-sm hover:shadow-xl w-full"
-                      >
-                        <Box className="w-4 h-4 rounded-full border-2 border-primary flex items-center justify-center p-0.5">
-                          <Box className="w-full h-full rounded-full bg-primary" />
-                        </Box>
-                        <Text className="text-lg font-bold text-primary">Booker un appel pour une démo</Text>
-                      </Box>
-                    </Stack>
-
-                    <Box className="w-full">
-                      <Textarea 
-                        name="message"
-                        label="Message" 
-                        placeholder="Écrivez votre message..." 
-                        value={formData.message}
+                  <Box className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                    <Box className="space-y-3">
+                      <Text className="text-[10px] font-bold text-primary/40 uppercase tracking-[0.3em] ml-1">Prénom</Text>
+                      <Input
+                        name="firstName"
+                        placeholder="Jean"
+                        value={formData.firstName}
                         onChange={handleChange}
                         required
-                        fullWidth 
-                        className="bg-gray-50/50 border-gray-100 rounded-[2rem] min-h-[200px] p-8 focus:bg-white transition-all text-lg font-medium resize-none w-full" 
+                        fullWidth
+                        className="bg-gray-50/30 border-gray-100 border-b-2 border-x-0 border-t-0 rounded-none px-0 h-14 focus:bg-transparent focus:border-primary transition-all text-xl font-medium"
                       />
                     </Box>
-                  </Stack>
+                    <Box className="space-y-3">
+                      <Text className="text-[10px] font-bold text-primary/40 uppercase tracking-[0.3em] ml-1">Nom</Text>
+                      <Input
+                        name="lastName"
+                        placeholder="Dupont"
+                        value={formData.lastName}
+                        onChange={handleChange}
+                        required
+                        fullWidth
+                        className="bg-gray-50/30 border-gray-100 border-b-2 border-x-0 border-t-0 rounded-none px-0 h-14 focus:bg-transparent focus:border-primary transition-all text-xl font-medium"
+                      />
+                    </Box>
+                  </Box>
+
+                  <Box className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                    <Box className="space-y-3">
+                      <Text className="text-[10px] font-bold text-primary/40 uppercase tracking-[0.3em] ml-1">Email</Text>
+                      <Input
+                        name="email"
+                        type="email"
+                        placeholder="jean@example.com"
+                        value={formData.email}
+                        onChange={handleChange}
+                        required
+                        fullWidth
+                        className="bg-gray-50/30 border-gray-100 border-b-2 border-x-0 border-t-0 rounded-none px-0 h-14 focus:bg-transparent focus:border-primary transition-all text-xl font-medium"
+                      />
+                    </Box>
+                    <Box className="space-y-3">
+                      <Text className="text-[10px] font-bold text-primary/40 uppercase tracking-[0.3em] ml-1">Téléphone</Text>
+                      <Input
+                        name="phone"
+                        placeholder="+33 6 12 56 34 12"
+                        value={formData.phone}
+                        onChange={handleChange}
+                        required
+                        fullWidth
+                        className="bg-gray-50/30 border-gray-100 border-b-2 border-x-0 border-t-0 rounded-none px-0 h-14 focus:bg-transparent focus:border-primary transition-all text-xl font-medium"
+                      />
+                    </Box>
+                  </Box>
+
+                  {/* Sujets */}
+                  <Box className="space-y-4">
+                    <Text className="text-[10px] font-bold text-primary/40 uppercase tracking-[0.3em] ml-1">Sujet</Text>
+                    <Box className="flex flex-wrap gap-2">
+                      {SUBJECTS.map((s) => (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => setFormData((prev) => ({ ...prev, subject: s }))}
+                          className={`px-4 py-2 rounded-full text-sm font-semibold border transition-all duration-200 cursor-pointer ${
+                            formData.subject === s
+                              ? "bg-primary text-white border-primary shadow-md"
+                              : "bg-white text-primary/60 border-primary/20 hover:border-primary/50 hover:text-primary"
+                          }`}
+                        >
+                          {s}
+                        </button>
+                      ))}
+                    </Box>
+                  </Box>
+
+                  <Box>
+                    <Textarea
+                      name="message"
+                      label="Message"
+                      placeholder="Écrivez votre message..."
+                      value={formData.message}
+                      onChange={handleChange}
+                      required
+                      fullWidth
+                      className="bg-gray-50/50 border-gray-100 rounded-[2rem] min-h-[180px] p-8 focus:bg-white transition-all text-lg font-medium resize-none w-full"
+                    />
+                  </Box>
 
                   <Flex justify="end">
-                    <Button 
+                    <Button
                       type="submit"
                       disabled={loading}
-                      variant="primary" 
-                      size="xl" 
+                      variant="primary"
+                      size="xl"
                       className="bg-primary hover:bg-primary-dark disabled:opacity-50 px-20 rounded-2xl font-bold h-16 text-lg shadow-2xl shadow-primary/20 transition-all duration-500 hover:scale-[1.02] active:scale-[0.98] group"
                     >
                       <Flex align="center" gap={3}>
@@ -242,7 +251,7 @@ export default function ContactFormSection() {
                           </>
                         ) : (
                           <>
-                            <span>Envoyez</span>
+                            <span>Envoyer</span>
                             <ArrowRight size={24} className="transition-transform duration-500 group-hover:translate-x-2" />
                           </>
                         )}
@@ -258,4 +267,3 @@ export default function ContactFormSection() {
     </Section>
   );
 }
-
