@@ -4,7 +4,7 @@ import { useState } from "react";
 import Header from "@/components/features/Header";
 import Footer from "@/components/features/Footer";
 import { Box, Container, Heading, Text, Flex, Button } from "@/components/ui";
-import { Heart, Calendar, Users, BarChart2, Sparkles, Check, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { Heart, Calendar, Users, BarChart2, Sparkles, Check, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -86,21 +86,10 @@ const PLANS = [
   },
 ];
 
-// ─── Nav links section ────────────────────────────────────────────────────────
-
-const NAV_LINKS = [
-  { label: "Accueil", href: "/", dark: true },
-  { label: "Nous contacter", href: "/contact", dark: false },
-  { label: "Qui sommes-nous", href: "/about", dark: false, light: true },
-];
-
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ProsPage() {
   const [isYearly, setIsYearly] = useState(false);
-  const [featurePage, setFeaturePage] = useState(0);
-
-  const totalFeaturePages = Math.ceil(FEATURE_CATEGORIES.length / 4);
 
   return (
     <Box as="main" className="bg-white">
@@ -140,10 +129,10 @@ export default function ProsPage() {
             <Text className={`text-sm font-semibold ${!isYearly ? "text-white" : "text-white/50"}`}>Mois</Text>
             <button
               onClick={() => setIsYearly(!isYearly)}
-              className={`relative w-12 h-6 rounded-full transition-colors duration-300 ${isYearly ? "bg-accent" : "bg-white/30"}`}
+              className={`relative w-12 h-6 rounded-full transition-colors duration-300 overflow-hidden cursor-pointer ${isYearly ? "bg-accent" : "bg-white/30"}`}
             >
               <span
-                className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform duration-300 ${isYearly ? "translate-x-7" : "translate-x-1"}`}
+                className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-md transition-transform duration-300 ${isYearly ? "translate-x-[28px]" : "translate-x-1"}`}
               />
             </button>
             <Text className={`text-sm font-semibold ${isYearly ? "text-white" : "text-white/50"}`}>Année</Text>
@@ -209,7 +198,7 @@ export default function ProsPage() {
             </Text>
           </Box>
 
-          <Box className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-10">
+          <Box className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {FEATURE_CATEGORIES.map(({ icon: Icon, title, items }) => (
               <Box key={title} className="bg-[#f8faf6] rounded-2xl p-5">
                 <Box className="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center mb-3 shadow-sm">
@@ -227,22 +216,6 @@ export default function ProsPage() {
               </Box>
             ))}
           </Box>
-
-          {/* Carousel arrows */}
-          <Flex justify="center" gap={2}>
-            <button
-              onClick={() => setFeaturePage((p) => Math.max(0, p - 1))}
-              className="w-9 h-9 rounded-full border border-slate-200 flex items-center justify-center hover:bg-slate-50 transition-colors"
-            >
-              <ChevronLeft size={16} className="text-slate-500" />
-            </button>
-            <button
-              onClick={() => setFeaturePage((p) => Math.min(totalFeaturePages - 1, p + 1))}
-              className="w-9 h-9 rounded-full border border-slate-200 flex items-center justify-center hover:bg-slate-50 transition-colors"
-            >
-              <ChevronRight size={16} className="text-slate-500" />
-            </button>
-          </Flex>
         </Box>
       </Box>
 
@@ -278,13 +251,13 @@ export default function ProsPage() {
       {/* ── 5. Navigation links ───────────────────────────────────────────── */}
       <Box className="bg-[#f0f2ec]">
         <Box className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-px">
-          <Link href="/" className="block bg-primary p-10 group">
+          <Link href="/" className="block bg-primary p-10 group cursor-pointer">
             <Flex align="center" justify="between">
               <Text className="text-white text-xl font-bold">Accueil</Text>
               <ArrowRight size={20} className="text-white/60 group-hover:translate-x-1 transition-transform" />
             </Flex>
           </Link>
-          <Link href="/contact" className="block bg-[#c0a062]/20 p-10 group">
+          <Link href="/contact" className="block bg-[#c0a062]/20 p-10 group cursor-pointer">
             <Flex align="center" justify="between">
               <Text className="text-slate-700 text-xl font-bold">Nous contacter</Text>
               <ArrowRight size={20} className="text-slate-400 group-hover:translate-x-1 transition-transform" />
@@ -292,7 +265,7 @@ export default function ProsPage() {
           </Link>
         </Box>
         <Box className="max-w-5xl mx-auto">
-          <Link href="/about" className="block bg-white p-10 border-t border-slate-100 group">
+          <Link href="/about" className="block bg-white p-10 border-t border-slate-100 group cursor-pointer">
             <Flex align="center" justify="between">
               <Text className="text-slate-700 text-xl font-bold">Qui sommes-nous</Text>
               <ArrowRight size={20} className="text-slate-400 group-hover:translate-x-1 transition-transform" />
