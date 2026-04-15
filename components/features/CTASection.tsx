@@ -2,6 +2,7 @@
 
 import { Container, Section, Button, Heading, Text, Box, Flex, Stack } from "@/components/ui";
 import { ArrowRight, Sparkles } from "lucide-react";
+import Link from "next/link";
 
 export default function CTASection() {
   return (
@@ -30,13 +31,17 @@ export default function CTASection() {
               </Stack>
 
               <Flex direction="col" align="center" gap={6} className="sm:flex-row pt-4">
-                <Button variant="white" size="xl" className="font-bold min-w-[260px] group">
-                  Essayer gratuitement
-                  <ArrowRight className="ml-2 w-5 h-5 transition-transform group-hover:translate-x-1" />
-                </Button>
-                <Button variant="outline" size="xl" className="border-white/30 text-white hover:bg-white hover:text-[#32422c] font-bold min-w-[260px]">
-                  Prendre rendez-vous
-                </Button>
+                <Link href="/auth/pro/login">
+                  <Button variant="white" size="xl" className="font-bold min-w-[260px] group">
+                    Essayer gratuitement
+                    <ArrowRight className="ml-2 w-5 h-5 transition-transform group-hover:translate-x-1" />
+                  </Button>
+                </Link>
+                <Link href="/contact">
+                  <Button variant="outline" size="xl" className="border-white/30 text-white hover:bg-white hover:text-[#32422c] font-bold min-w-[260px]">
+                    Prendre rendez-vous
+                  </Button>
+                </Link>
               </Flex>
             </Flex>
           </Box>

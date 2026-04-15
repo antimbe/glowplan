@@ -1,9 +1,18 @@
 "use client";
 
 import { Container, Logo, Link, Input, Button, Heading, Text, Box, Flex, List, ListItem, Stack } from "@/components/ui";
-import { Instagram, ArrowRight, Globe, LifeBuoy } from "lucide-react";
+import { Instagram, ArrowRight, Globe } from "lucide-react";
 
 const footerSections = [
+  {
+    title: "Accès rapide",
+    links: [
+      { label: "Accueil", href: "/" },
+      { label: "Rechercher un pro", href: "/search" },
+      { label: "Pour les pros", href: "/pros" },
+      { label: "Nous contacter", href: "/contact" },
+    ],
+  },
   {
     title: "Légal",
     links: [
@@ -112,10 +121,6 @@ export default function Footer() {
             <Link href="#" className="flex items-center gap-2 group">
               <Globe size={14} className="text-white/20 group-hover:text-accent transition-colors" />
               <Text variant="small" as="span" className="text-[10px] font-bold uppercase tracking-widest text-white/30 group-hover:text-white transition-colors">Français (FR)</Text>
-            </Link>
-            <Link href="#" className="flex items-center gap-2 group">
-              <LifeBuoy size={14} className="text-white/20 group-hover:text-accent transition-colors" />
-              <Text variant="small" as="span" className="text-[10px] font-bold uppercase tracking-widest text-white/30 group-hover:text-white transition-colors">Support Technique</Text>
             </Link>
           </Flex>
         </Flex>
