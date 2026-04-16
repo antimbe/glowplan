@@ -17,11 +17,7 @@ export default function Hero() {
     router.push(`/search?${params.toString()}`);
   };
 
-  const handleTagClick = (sectorId: string) => {
-    router.push(`/search?sector=${encodeURIComponent(sectorId)}`);
-  };
-
-  return (
+return (
     <Section className="relative min-h-[90vh] flex items-center pt-28 overflow-hidden bg-gray-50">
       {/* Background with advanced gradient overlay */}
       <Box
@@ -97,24 +93,6 @@ export default function Hero() {
             </Button>
           </Box>
 
-          <Flex wrap="wrap" justify="center" gap={4} className="pt-4">
-            {[
-              { label: "Coiffure", id: "coiffure" },
-              { label: "Ongles", id: "ongles" },
-              { label: "Sourcils & cils", id: "sourcils" },
-              { label: "Massage", id: "massage" },
-            ].map((tag) => (
-              <Text
-                key={tag.id}
-                variant="small"
-                as="span"
-                className="px-5 py-2 bg-white/5 hover:bg-white/10 backdrop-blur-sm rounded-full border border-white/10 text-white font-bold cursor-pointer transition-all hover:border-white/30"
-                onClick={() => handleTagClick(tag.id)}
-              >
-                {tag.label}
-              </Text>
-            ))}
-          </Flex>
 
         </Flex>
       </Container>
