@@ -90,7 +90,11 @@ export default function ClientsPage() {
         <ClientHistoryModal
           isOpen={isHistoryModalOpen}
           onClose={() => setIsHistoryModalOpen(false)}
-          clientName={`${selectedClient.first_name} ${selectedClient.last_name}`}
+          clientName={
+            (selectedClient.first_name || selectedClient.last_name)
+              ? `${selectedClient.first_name} ${selectedClient.last_name}`.trim()
+              : selectedClient.email
+          }
           clientProfileId={selectedClient.client_profile_id}
           clientEmail={selectedClient.email}
           isGuest={selectedClient.is_guest}
