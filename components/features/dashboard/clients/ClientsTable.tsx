@@ -56,17 +56,22 @@ export function ClientsTable({ clients, onBlock, blockingClient, onClientClick }
                                 <td className="px-6 py-4">
                                     <div className="flex items-center gap-3">
                                         <div className={cn(
-                                            "w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm",
+                                            "w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0",
                                             client.is_blocked
                                                 ? "bg-red-100 text-red-600"
-                                                : "bg-primary/10 text-primary"
+                                                : client.is_guest
+                                                    ? "bg-gray-100 text-gray-500"
+                                                    : "bg-primary/10 text-primary"
                                         )}>
-                                            {client.first_name.charAt(0).toUpperCase()}
+                                            {(client.first_name || client.email || "?").charAt(0).toUpperCase()}
                                         </div>
                                         <div>
                                             <div className="flex items-center gap-2 flex-wrap">
                                                 <span className="font-semibold text-gray-900">
-                                                    {client.first_name} {client.last_name}
+                                                    {client.first_name || client.last_name
+                                                        ? `${client.first_name} ${client.last_name}`.trim()
+                                                        : <span className="text-gray-400 italic font-normal">{client.email}</span>
+                                                    }
                                                 </span>
                                                 {client.is_guest && (
                                                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-500">

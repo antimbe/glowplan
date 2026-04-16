@@ -144,13 +144,17 @@ export async function GET(request: NextRequest) {
       .select(`
         *,
         services(name),
-        establishments(id, name, email, user_id)
+        establishments(id, name, email, user_id),
+        appointment_reminders!left(id, type)
       `)
       .eq("status", "confirmed")
       .lte("end_time", now.toISOString());
 
     if (pastApts && pastApts.length > 0) {
       for (const apt of pastApts) {
+        const alreadyProcessed = apt.appointment_reminders?.some((r: any) => r.type === 'appointment_followup_pro');
+        if (alreadyProcessed) continue;
+
         // Mettre à jour en "completed"
         await supabase
           .from("appointments")
@@ -182,8 +186,8 @@ export async function GET(request: NextRequest) {
             const startDate = new Date(apt.start_time);
             const emailData = EmailTemplates.appointmentFollowupPro({
               provider_name: apt.establishments.name || "Prestataire",
-              client_name: (apt.client_first_name && apt.client_last_name) 
-                ? `${apt.client_first_name} ${apt.client_last_name}` 
+              client_name: (apt.client_first_name && apt.client_last_name)
+                ? `${apt.client_first_name} ${apt.client_last_name}`
                 : (apt.client_name || "Client"),
               service_name: Array.isArray(apt.services) ? apt.services[0]?.name : apt.services?.name || "Prestation",
               appointment_date: formatDateFull(startDate),
@@ -191,11 +195,20 @@ export async function GET(request: NextRequest) {
               dashboard_link: `${baseUrl}/dashboard/agenda?date=${apt.start_time.split('T')[0]}`
             });
 
-            await sendEmail({
+            const result = await sendEmail({
               to: apt.establishments.email,
               subject: emailData.subject,
               html: emailData.html
             });
+
+            if (result.success) {
+              await supabase.from("appointment_reminders").insert({
+                appointment_id: apt.id,
+                establishment_id: apt.establishment_id,
+                type: "appointment_followup_pro",
+                status: "sent"
+              });
+            }
           }
         }
       }
