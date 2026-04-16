@@ -29,7 +29,7 @@ export default function ServiceCategories() {
           </Stack>
 
           <Button variant="ghost" size="sm" className="text-primary font-bold hover:bg-primary/5 group" asChild>
-            <Link href="/search" className="flex items-center gap-2">
+            <Link href="/categories" className="flex items-center gap-2">
               <Text variant="small" as="span">Explorer tout le catalogue</Text>
               <ChevronRight size={18} className="transition-transform group-hover:translate-x-1" />
             </Link>

@@ -36,7 +36,7 @@ export function SearchBar({
                         placeholder="Prestation, établissement..."
                         className="flex-1 bg-transparent outline-none min-w-0 text-gray-900 placeholder:text-gray-400"
                     />
-                    <div className="w-px h-6 bg-gray-300 flex-shrink-0" />
+                    <div className="self-stretch w-px bg-gray-200 flex-shrink-0" />
                     <MapPin size={20} className="text-gray-400 flex-shrink-0" />
                     <input
                         type="text"

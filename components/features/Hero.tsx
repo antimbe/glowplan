@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search, MapPin, Sparkles } from "lucide-react";
-import { Container, Section, Button, Input, Heading, Text, Box, Flex, Separator, Stack } from "@/components/ui";
+import { Container, Section, Button, Input, Heading, Text, Box, Flex, Stack } from "@/components/ui";
 
 export default function Hero() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -75,7 +75,7 @@ export default function Hero() {
               />
             </Box>
 
-            <Separator orientation="vertical" variant="muted" className="hidden md:block h-10 bg-gray-300 w-px" />
+            <div className="hidden md:block self-stretch w-px bg-gray-200" />
 
             <Box className="flex-1 w-full group">
               <Input
@@ -90,7 +90,7 @@ export default function Hero() {
               />
             </Box>
 
-            <Separator orientation="vertical" variant="muted" className="hidden md:block h-10 bg-gray-300 w-px" />
+            <div className="hidden md:block self-stretch w-px bg-gray-200" />
 
             <Button size="xl" className="h-16 px-12 shadow-lg shadow-primary/20 rounded-2xl w-full md:w-auto font-bold text-lg" onClick={handleSearch}>
               Trouver un pro
