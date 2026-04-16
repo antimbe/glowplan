@@ -75,7 +75,7 @@ export default function Hero() {
               />
             </Box>
 
-            <Separator orientation="vertical" variant="muted" className="hidden md:block h-10" />
+            <Separator orientation="vertical" variant="muted" className="hidden md:block h-10 bg-gray-300 w-px" />
 
             <Box className="flex-1 w-full group">
               <Input
@@ -89,6 +89,8 @@ export default function Hero() {
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
               />
             </Box>
+
+            <Separator orientation="vertical" variant="muted" className="hidden md:block h-10 bg-gray-300 w-px" />
 
             <Button size="xl" className="h-16 px-12 shadow-lg shadow-primary/20 rounded-2xl w-full md:w-auto font-bold text-lg" onClick={handleSearch}>
               Trouver un pro
