@@ -11,12 +11,20 @@ export async function GET(request: Request) {
   if (code) {
     const supabase = await createClient();
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-    
+
     if (!error && data.user) {
+      // Flux de réinitialisation de mot de passe — rediriger vers la page de reset correspondante
+      if (type === "recovery") {
+        const resetTarget = next.startsWith("/auth/pro")
+          ? "/auth/pro/reset-password"
+          : "/auth/client/reset-password";
+        return NextResponse.redirect(`${origin}${resetTarget}`);
+      }
+
       // Récupérer les métadonnées de l'utilisateur
       const userMetadata = data.user.user_metadata;
       const userType = userMetadata?.user_type;
-      
+
       // Si c'est un client (type dans URL ou dans métadonnées)
       if (type === "client" || userType === "client") {
         // Vérifier si le profil existe déjà
@@ -48,10 +56,10 @@ export async function GET(request: Request) {
               .eq("id", existingProfile.id);
           }
         }
-        
+
         return NextResponse.redirect(`${origin}/search`);
       }
-      
+
       return NextResponse.redirect(`${origin}${next}`);
     }
   }
