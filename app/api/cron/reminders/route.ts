@@ -1,4 +1,3 @@
-import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { NextRequest, NextResponse } from "next/server";
 import { formatDateFull, formatTime } from "@/lib/utils/formatters";
@@ -20,8 +19,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const supabase = await createClient();
-    const supabaseAdmin = createAdminClient();
+    // Cron job = pas de session utilisateur → on utilise le client admin pour bypasser les RLS
+    const supabase = createAdminClient();
     const baseUrl = getBaseUrl();
     const now = new Date();
 
@@ -155,6 +154,14 @@ export async function GET(request: NextRequest) {
         const alreadyProcessed = apt.appointment_reminders?.some((r: any) => r.type === 'appointment_followup_pro');
         if (alreadyProcessed) continue;
 
+        // Marquer immédiatement pour éviter tout doublon même si l'email échoue
+        await supabase.from("appointment_reminders").insert({
+          appointment_id: apt.id,
+          establishment_id: apt.establishment_id,
+          type: "appointment_followup_pro",
+          status: "sent"
+        });
+
         // Mettre à jour en "completed"
         await supabase
           .from("appointments")
@@ -195,20 +202,11 @@ export async function GET(request: NextRequest) {
               dashboard_link: `${baseUrl}/dashboard/agenda?date=${apt.start_time.split('T')[0]}`
             });
 
-            const result = await sendEmail({
+            await sendEmail({
               to: apt.establishments.email,
               subject: emailData.subject,
               html: emailData.html
             });
-
-            if (result.success) {
-              await supabase.from("appointment_reminders").insert({
-                appointment_id: apt.id,
-                establishment_id: apt.establishment_id,
-                type: "appointment_followup_pro",
-                status: "sent"
-              });
-            }
           }
         }
       }
