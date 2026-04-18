@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { DashboardSidebar, DashboardHeader } from "@/components/features/dashboard";
 import { Loader2 } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
-import { DashboardThemeContext, DEFAULT_THEME, type DashboardTheme } from "@/contexts/DashboardThemeContext";
+import { DashboardThemeContext, DEFAULT_THEME, type DashboardTheme, applyThemeColor } from "@/contexts/DashboardThemeContext";
 
 export default function DashboardLayout({
   children,
@@ -18,7 +18,15 @@ export default function DashboardLayout({
   const [establishmentId, setEstablishmentId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [theme, setTheme] = useState<DashboardTheme>(DEFAULT_THEME);
+  const [theme, setThemeState] = useState<DashboardTheme>(DEFAULT_THEME);
+
+  const setTheme = (updates: Partial<DashboardTheme>) => {
+    setThemeState(prev => {
+      const next = { ...prev, ...updates };
+      if (updates.color) applyThemeColor(updates.color);
+      return next;
+    });
+  };
   const supabase = createClient();
 
   useEffect(() => {
@@ -45,8 +53,10 @@ export default function DashboardLayout({
 
         if (est) {
           setEstablishmentId(est.id);
+          const color = est.dashboard_color || DEFAULT_THEME.color;
+          applyThemeColor(color);
           setTheme({
-            color: est.dashboard_color || DEFAULT_THEME.color,
+            color,
             logoUrl: est.dashboard_logo_url || null,
             establishmentName: est.name || null,
           });
@@ -74,8 +84,10 @@ export default function DashboardLayout({
         // A un établissement = pro
         setUser(user);
         setEstablishmentId(establishment[0].id);
+        const color2 = establishment[0].dashboard_color || DEFAULT_THEME.color;
+        applyThemeColor(color2);
         setTheme({
-          color: establishment[0].dashboard_color || DEFAULT_THEME.color,
+          color: color2,
           logoUrl: establishment[0].dashboard_logo_url || null,
           establishmentName: establishment[0].name || null,
         });
@@ -119,7 +131,7 @@ export default function DashboardLayout({
   }
 
   return (
-    <DashboardThemeContext.Provider value={theme}>
+    <DashboardThemeContext.Provider value={{ theme, setTheme }}>
       <div className="min-h-screen bg-gray-50">
         <DashboardSidebar
           onLogout={handleLogout}

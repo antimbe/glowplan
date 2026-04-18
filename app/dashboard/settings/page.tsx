@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   User,
   Lock,
@@ -18,8 +18,8 @@ import {
   RotateCcw
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { Button, Input, Card, Badge, Stack, Heading, Text, Switch, Separator } from "@/components/ui";
-import Image from "next/image";
+import { Button, Input, Card, Badge, Heading, Text, Switch } from "@/components/ui";
+import { useDashboardTheme, applyThemeColor } from "@/contexts/DashboardThemeContext";
 
 type SettingsTab = "account" | "notifications" | "security" | "appearance";
 
@@ -49,11 +49,20 @@ export default function SettingsPage() {
   const [successNotif, setSuccessNotif] = useState(false);
 
   // Appearance State
-  const [dashboardColor, setDashboardColor] = useState("#32422c");
+  const [dashboardColor, setDashboardColorState] = useState("#32422c");
+
+  const setDashboardColor = (color: string) => {
+    setDashboardColorState(color);
+    applyThemeColor(color);
+    setGlobalTheme({ color });
+  };
   const [dashboardLogoUrl, setDashboardLogoUrl] = useState("");
   const [loadingAppearance, setLoadingAppearance] = useState(false);
   const [successAppearance, setSuccessAppearance] = useState(false);
   const [establishmentId, setEstablishmentId] = useState<string | null>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
 
   // Delete account modal state
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -61,7 +70,8 @@ export default function SettingsPage() {
   const [isDeleting, setIsDeleting] = useState(false);
 
   const supabase = createClient();
-  
+  const { setTheme: setGlobalTheme } = useDashboardTheme();
+
   const handleDeleteAccount = async () => {
     if (deleteConfirmText.toLowerCase() !== "supprimer") return;
     setIsDeleting(true);
@@ -108,7 +118,7 @@ export default function SettingsPage() {
 
         if (est) {
           setEstablishmentId(est.id);
-          if (est.dashboard_color) setDashboardColor(est.dashboard_color);
+          if (est.dashboard_color) setDashboardColorState(est.dashboard_color);
           if (est.dashboard_logo_url) setDashboardLogoUrl(est.dashboard_logo_url);
         }
       }
@@ -194,15 +204,88 @@ export default function SettingsPage() {
     setLoadingAppearance(false);
   };
 
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const MAX_SIZE = 5 * 1024 * 1024; // 5 MB
+    if (file.size > MAX_SIZE) {
+      setUploadError("Le fichier est trop volumineux (max 5 Mo).");
+      return;
+    }
+
+    setUploadingLogo(true);
+    setUploadError(null);
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      setUploadError("Utilisateur non connecté.");
+      setUploadingLogo(false);
+      return;
+    }
+
+    const ext = file.name.split(".").pop();
+    // La policy RLS exige que le 1er segment du chemin soit l'UID
+    const path = `${user.id}/logos/logo.${ext}`;
+
+    const { error } = await supabase.storage
+      .from("establishment-photos")
+      .upload(path, file, { upsert: true, contentType: file.type });
+
+    if (error) {
+      setUploadError("Erreur lors de l'upload. Réessayez.");
+      setUploadingLogo(false);
+      return;
+    }
+
+    const { data: urlData } = supabase.storage
+      .from("establishment-photos")
+      .getPublicUrl(path);
+
+    // Ajouter un cache-buster pour forcer le refresh de l'image
+    const publicUrl = `${urlData.publicUrl}?t=${Date.now()}`;
+    setDashboardLogoUrl(publicUrl);
+    setGlobalTheme({ logoUrl: publicUrl });
+    setUploadingLogo(false);
+  };
+
   const PRESET_COLORS = [
+    // Neutres
+    { label: "Noir absolu",       value: "#0a0a0a" },
+    { label: "Charbon",           value: "#1a1a1a" },
+    { label: "Graphite",          value: "#2d2d2d" },
+    { label: "Gris ardoise",      value: "#404040" },
+    { label: "Gris moyen",        value: "#6b6b6b" },
+    { label: "Taupe",             value: "#5a5048" },
+    // Verts
     { label: "Vert forêt (défaut)", value: "#32422c" },
-    { label: "Noir élégant", value: "#1a1a1a" },
-    { label: "Bleu nuit", value: "#1e2d4a" },
-    { label: "Bordeaux", value: "#5c1a2e" },
-    { label: "Violet profond", value: "#2d1b4e" },
-    { label: "Brun chaud", value: "#3d2b1a" },
-    { label: "Ardoise bleue", value: "#2c3e50" },
+    { label: "Vert sauge",        value: "#4a5e3a" },
+    { label: "Vert bouteille",    value: "#1e3a2f" },
+    { label: "Kaki",              value: "#3d4a2e" },
+    { label: "Olive",             value: "#4b5320" },
+    { label: "Émeraude foncé",    value: "#1a3d2b" },
+    // Bleus
+    { label: "Bleu nuit",         value: "#1e2d4a" },
+    { label: "Marine",            value: "#0d2137" },
+    { label: "Ardoise bleue",     value: "#2c3e50" },
+    { label: "Bleu roi",          value: "#1a3a6e" },
+    { label: "Bleu pétrole",      value: "#1e3a4a" },
+    { label: "Bleu canard",       value: "#1a3d4a" },
+    // Rouges & Bordeaux
+    { label: "Bordeaux",          value: "#5c1a2e" },
+    { label: "Rouge rubis",       value: "#6b1a1a" },
+    { label: "Grenat",            value: "#4a1020" },
+    { label: "Terracotta foncé",  value: "#6b2d1a" },
+    // Violets & Roses
+    { label: "Violet profond",    value: "#2d1b4e" },
+    { label: "Aubergine",         value: "#3d1a4a" },
+    { label: "Prune",             value: "#4a1a3d" },
     { label: "Rose poudré foncé", value: "#4a2030" },
+    // Marrons & Chauds
+    { label: "Brun chaud",        value: "#3d2b1a" },
+    { label: "Chocolat",          value: "#2e1a0e" },
+    { label: "Caramel foncé",     value: "#4a3020" },
+    { label: "Cuivre",            value: "#5c3d1a" },
   ];
 
   return (
@@ -483,37 +566,41 @@ export default function SettingsPage() {
                   <h2 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">Couleur du tableau de bord</h2>
                 </div>
 
-                <Card className="p-6 border border-gray-200 shadow-sm rounded-2xl space-y-5">
-                  {/* Preview */}
-                  <div className="flex items-center gap-4">
+                <Card className="p-6 border border-gray-200 shadow-sm rounded-2xl space-y-6">
+
+                  {/* Aperçu couleur active */}
+                  <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
                     <div
-                      className="w-16 h-16 rounded-2xl shadow-md border border-white/20 flex-shrink-0"
+                      className="w-14 h-14 rounded-xl shadow-md flex-shrink-0 transition-all duration-300"
                       style={{ backgroundColor: dashboardColor }}
                     />
-                    <div>
-                      <p className="font-medium text-gray-900">Aperçu de la couleur</p>
-                      <p className="text-sm text-gray-500 font-mono mt-0.5">{dashboardColor}</p>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-gray-900">Couleur sélectionnée</p>
+                      <p className="text-sm text-gray-500 font-mono">{dashboardColor.toUpperCase()}</p>
                     </div>
-                    <input
-                      type="color"
-                      value={dashboardColor}
-                      onChange={(e) => setDashboardColor(e.target.value)}
-                      className="ml-auto w-10 h-10 rounded-xl cursor-pointer border border-gray-200 p-0.5"
-                      title="Choisir une couleur"
-                    />
+                    <button
+                      onClick={() => setDashboardColor("#32422c")}
+                      className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-700 transition-colors cursor-pointer ml-auto shrink-0"
+                      title="Remettre la couleur par défaut"
+                    >
+                      <RotateCcw size={13} />
+                      Défaut
+                    </button>
                   </div>
 
-                  {/* Presets */}
+                  {/* Palette de présets */}
                   <div>
-                    <p className="text-sm font-semibold text-gray-700 mb-3">Couleurs suggérées</p>
-                    <div className="flex flex-wrap gap-2.5">
+                    <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">Couleurs suggérées</p>
+                    <div className="grid grid-cols-10 gap-2">
                       {PRESET_COLORS.map((c) => (
                         <button
                           key={c.value}
                           title={c.label}
                           onClick={() => setDashboardColor(c.value)}
-                          className={`w-9 h-9 rounded-xl border-2 transition-all cursor-pointer hover:scale-110 ${
-                            dashboardColor === c.value ? "border-gray-900 scale-110" : "border-transparent"
+                          className={`w-full aspect-square rounded-lg border-2 transition-all duration-150 cursor-pointer hover:scale-110 hover:shadow-md ${
+                            dashboardColor === c.value
+                              ? "border-gray-900 scale-110 shadow-md"
+                              : "border-transparent"
                           }`}
                           style={{ backgroundColor: c.value }}
                         />
@@ -521,13 +608,39 @@ export default function SettingsPage() {
                     </div>
                   </div>
 
-                  <button
-                    onClick={() => setDashboardColor("#32422c")}
-                    className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
-                  >
-                    <RotateCcw size={12} />
-                    Remettre la couleur par défaut
-                  </button>
+                  {/* Séparateur */}
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 h-px bg-gray-200" />
+                    <span className="text-xs text-gray-400 font-medium">ou choisissez une couleur personnalisée</span>
+                    <div className="flex-1 h-px bg-gray-200" />
+                  </div>
+
+                  {/* Color picker natif stylisé */}
+                  <div className="flex items-center gap-4">
+                    <div className="relative flex-shrink-0">
+                      <div
+                        className="w-12 h-12 rounded-xl shadow-sm border border-gray-200 cursor-pointer overflow-hidden"
+                        style={{ backgroundColor: dashboardColor }}
+                        onClick={() => document.getElementById("custom-color-input")?.click()}
+                      />
+                      <input
+                        id="custom-color-input"
+                        type="color"
+                        value={dashboardColor}
+                        onChange={(e) => setDashboardColor(e.target.value)}
+                        className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                      />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-700">Couleur libre</p>
+                      <p className="text-xs text-gray-400">Cliquez sur le carré pour ouvrir le sélecteur de couleur</p>
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-gray-400 flex items-center gap-1.5">
+                    <span className="inline-block w-2 h-2 rounded-full bg-green-400" />
+                    Les changements s'appliquent en temps réel — cliquez sur "Enregistrer" pour les conserver.
+                  </p>
                 </Card>
               </section>
 
@@ -538,48 +651,81 @@ export default function SettingsPage() {
                 </div>
 
                 <Card className="p-6 border border-gray-200 shadow-sm rounded-2xl space-y-5">
-                  <div className="flex items-start gap-4">
+                  {/* Aperçu + zone upload */}
+                  <div className="flex items-center gap-5">
+                    {/* Aperçu */}
                     <div
-                      className="w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0 overflow-hidden border border-gray-200"
+                      className="w-20 h-20 rounded-2xl flex items-center justify-center flex-shrink-0 overflow-hidden border-2 border-dashed border-white/30 shadow-md"
                       style={{ backgroundColor: dashboardColor }}
                     >
                       {dashboardLogoUrl ? (
                         <img
                           src={dashboardLogoUrl}
                           alt="Logo aperçu"
-                          className="w-full h-full object-contain p-1.5"
+                          className="w-full h-full object-contain p-2"
                           onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                         />
                       ) : (
-                        <ImageIcon size={24} className="text-white/40" />
+                        <ImageIcon size={28} className="text-white/40" />
                       )}
                     </div>
+
+                    {/* Boutons */}
                     <div className="flex-1">
-                      <p className="font-medium text-gray-900 mb-1">URL de l'image</p>
-                      <p className="text-xs text-gray-500 mb-3">Copiez le lien direct vers votre logo (PNG ou SVG recommandé, fond transparent).</p>
-                      <Input
-                        type="url"
-                        placeholder="https://example.com/mon-logo.png"
-                        value={dashboardLogoUrl}
-                        onChange={(e) => setDashboardLogoUrl(e.target.value)}
+                      <p className="font-medium text-gray-900 mb-1">
+                        {dashboardLogoUrl ? "Changer le logo" : "Ajouter un logo"}
+                      </p>
+                      <p className="text-xs text-gray-500 mb-3">PNG, SVG ou JPG recommandé — fond transparent idéal. Max 5 Mo.</p>
+
+                      <input
+                        ref={logoInputRef}
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                        className="hidden"
+                        onChange={handleLogoUpload}
                       />
+
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => logoInputRef.current?.click()}
+                          disabled={uploadingLogo}
+                          className="rounded-lg text-xs font-semibold cursor-pointer"
+                        >
+                          {uploadingLogo ? (
+                            <span className="flex items-center gap-1.5">
+                              <Loader2 size={13} className="animate-spin" /> Upload en cours...
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-1.5">
+                              <ImageIcon size={13} />
+                              {dashboardLogoUrl ? "Remplacer le logo" : "Choisir un fichier"}
+                            </span>
+                          )}
+                        </Button>
+
+                        {dashboardLogoUrl && (
+                          <button
+                            onClick={() => { setDashboardLogoUrl(""); setGlobalTheme({ logoUrl: null }); }}
+                            className="flex items-center gap-1.5 text-xs text-red-400 hover:text-red-600 transition-colors cursor-pointer"
+                          >
+                            <RotateCcw size={12} />
+                            Supprimer
+                          </button>
+                        )}
+                      </div>
+
+                      {uploadError && (
+                        <p className="text-xs text-red-500 mt-2">{uploadError}</p>
+                      )}
                     </div>
                   </div>
 
-                  {dashboardLogoUrl && (
-                    <button
-                      onClick={() => setDashboardLogoUrl("")}
-                      className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
-                    >
-                      <RotateCcw size={12} />
-                      Supprimer le logo (revenir au logo GlowPlan)
-                    </button>
-                  )}
-
-                  <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-start gap-3">
-                    <Info size={15} className="text-blue-500 mt-0.5 shrink-0" />
-                    <p className="text-xs text-blue-700 leading-relaxed">
-                      Le logo s'affiche en haut à gauche du tableau de bord. Pour héberger une image, vous pouvez utiliser un service comme <span className="font-semibold">imgur.com</span> ou <span className="font-semibold">postimages.org</span> et copier le lien direct.
+                  <div className="bg-gray-50 border border-gray-100 rounded-xl p-4 flex items-start gap-3">
+                    <Info size={15} className="text-gray-400 mt-0.5 shrink-0" />
+                    <p className="text-xs text-gray-500 leading-relaxed">
+                      Le logo s'affiche en haut à gauche du tableau de bord, sur le fond de la couleur choisie. Un logo avec fond transparent donnera le meilleur rendu.
                     </p>
                   </div>
                 </Card>

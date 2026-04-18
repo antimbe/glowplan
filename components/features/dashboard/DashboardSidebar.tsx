@@ -59,7 +59,7 @@ interface DashboardSidebarProps {
 
 export default function DashboardSidebar({ onLogout, isOpen, onClose }: DashboardSidebarProps) {
   const pathname = usePathname();
-  const theme = useDashboardTheme();
+  const { theme } = useDashboardTheme();
 
   return (
     <>
