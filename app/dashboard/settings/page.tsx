@@ -233,7 +233,18 @@ export default function SettingsPage() {
       .upload(path, file, { upsert: true, contentType: file.type });
 
     if (error) {
-      setUploadError("Erreur lors de l'upload. Réessayez.");
+      console.error("[Logo upload error]", error);
+      if (error.message?.includes("Bucket not found")) {
+        setUploadError("Bucket de stockage introuvable. Contactez le support.");
+      } else if (error.message?.includes("row-level security") || error.statusCode === "403") {
+        setUploadError("Permission refusée. Vérifiez votre connexion.");
+      } else if (error.message?.includes("mime type")) {
+        setUploadError("Format non supporté. Utilisez JPG, PNG ou WEBP.");
+      } else if (error.message?.includes("size")) {
+        setUploadError("Fichier trop volumineux (max 10 Mo).");
+      } else {
+        setUploadError(`Erreur : ${error.message || "Réessayez."}`);
+      }
       setUploadingLogo(false);
       return;
     }
