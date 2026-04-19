@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { ArrowRight, Sparkles, CheckCircle } from "lucide-react";
-import { Container } from "@/components/ui";
+import { Container, Button } from "@/components/ui";
 import Link from "next/link";
 
 const highlights = ["Gratuit 30 jours", "Sans CB requise", "Configuration en 5 min"];
@@ -115,15 +115,22 @@ export default function CTASection() {
               transition={{ duration: 0.6, delay: 0.32, ease: [0.16, 1, 0.3, 1] }}
             >
               <Link href="/auth/pro/login">
-                <button className="cursor-pointer group inline-flex items-center gap-2 bg-[#c0a062] hover:bg-[#a88a50] text-white font-bold text-[15px] px-8 py-4 rounded-2xl shadow-[0_4px_24px_rgba(192,160,98,0.35)] hover:shadow-[0_6px_30px_rgba(192,160,98,0.45)] transition-all duration-200 min-w-[220px] justify-center">
+                <Button
+                  size="lg"
+                  className="bg-[#c0a062] hover:bg-[#a88a50] text-white font-bold rounded-2xl shadow-[0_4px_24px_rgba(192,160,98,0.35)] hover:shadow-[0_6px_30px_rgba(192,160,98,0.45)] min-w-[220px]"
+                >
                   Essayer gratuitement
-                  <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />
-                </button>
+                  <ArrowRight size={18} className="transition-transform group-hover/shine:translate-x-1" />
+                </Button>
               </Link>
               <Link href="/contact">
-                <button className="cursor-pointer inline-flex items-center gap-2 border border-white/20 text-white hover:bg-white hover:text-[#1a2414] font-bold text-[15px] px-8 py-4 rounded-2xl transition-all duration-200 min-w-[220px] justify-center backdrop-blur-sm">
+                <Button
+                  size="lg"
+                  variant="ghost"
+                  className="border border-white/20 text-white hover:bg-white hover:text-[#1a2414] rounded-2xl backdrop-blur-sm min-w-[220px]"
+                >
                   Prendre rendez-vous
-                </button>
+                </Button>
               </Link>
             </motion.div>
 

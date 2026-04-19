@@ -179,12 +179,14 @@ export async function GET(request: NextRequest) {
 
           // Notification Web
           if (finalPrefs.app_ask_review_pro) {
+            const startDate = new Date(apt.start_time);
+            const serviceName = Array.isArray(apt.services) ? apt.services[0]?.name : apt.services?.name;
             await supabase.from("notifications").insert({
               establishment_id: apt.establishment_id,
               type: "appointment_followup_pro",
               title: "Rendez-vous à valider",
-              content: `${apt.client_first_name || apt.client_name || "Le client"} s'est-il bien présenté pour sa prestation ?`,
-              link: `/dashboard/agenda?date=${apt.start_time.split('T')[0]}`
+              content: `${apt.client_first_name || apt.client_name || "Le client"} s'est-il présenté ?${serviceName ? ` — ${serviceName}` : ""} le ${formatDateFull(startDate)} à ${formatTime(startDate)}`,
+              link: `/dashboard/agenda?date=${apt.start_time.split('T')[0]}&view=day`
             });
           }
 

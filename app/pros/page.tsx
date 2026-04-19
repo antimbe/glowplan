@@ -250,9 +250,6 @@ export default function ProsPage() {
             <p className="text-white/45 max-w-xl mx-auto text-[15px] font-medium leading-relaxed mb-2">
               Du micro-entrepreneur à l'entreprise multi-établissements, trouvez la formule qui vous correspond.
             </p>
-            <p className="text-[#c0a062]/70 text-[13px] font-semibold">
-              🔥 30 jours offerts, sans engagement, sans CB requise.
-            </p>
           </motion.div>
 
           {/* Toggle */}
@@ -276,7 +273,6 @@ export default function ProsPage() {
             </button>
             <span className={`text-[13px] font-bold transition-colors ${isYearly ? "text-white" : "text-white/35"}`}>
               Annuel
-              <span className="ml-2 text-[10px] font-black text-[#c0a062] bg-[#c0a062]/15 px-2 py-0.5 rounded-full">-20%</span>
             </span>
           </motion.div>
 

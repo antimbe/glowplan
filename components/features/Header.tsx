@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { Container, Button, Logo, Link, Text, Box, Flex } from "@/components/ui";
-import { Menu, X, User } from "lucide-react";
+import { Menu, X, User, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { createClient } from "@/lib/supabase/client";
 
@@ -132,29 +132,48 @@ export default function Header() {
           </Box>
         </Flex>
 
-        {/* Mobile Menu Overlay */}
+        {/* Mobile Menu Overlay — full-screen, solid bg */}
         {mobileMenuOpen && (
-          <Box className="md:hidden overflow-hidden">
-            <Flex direction="col" className="py-8" gap={6}>
+          <Box className="md:hidden fixed inset-0 top-0 z-40 bg-[#1a2414] flex flex-col">
+            {/* Header row inside overlay */}
+            <Flex align="center" justify="between" className="px-5 py-4 border-b border-white/10">
+              <Link href="/" onClick={() => setMobileMenuOpen(false)}>
+                <Logo variant="light" size="md" className="h-8 w-auto" />
+              </Link>
+              <Button
+                variant="ghost"
+                className="text-white p-2 hover:bg-white/10 rounded-xl transition-colors min-w-0"
+                onClick={() => setMobileMenuOpen(false)}
+                aria-label="Fermer le menu"
+              >
+                <X size={26} />
+              </Button>
+            </Flex>
+
+            {/* Nav links */}
+            <Flex direction="col" className="flex-1 px-6 py-8" gap={2}>
               {navigationLinks.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="text-white/90 text-xl font-bold py-2 flex items-center justify-between group"
+                  className="text-white/80 hover:text-white text-2xl font-black py-3 border-b border-white/[0.07] flex items-center justify-between group transition-colors"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <Text as="span">{link.label}</Text>
+                  <ArrowRight size={18} className="opacity-0 group-hover:opacity-100 text-[#c0a062] transition-opacity" />
                 </Link>
               ))}
-              <Box className="pt-6 border-t border-white/10">
-                <Link href={isLoggedIn ? (isPro ? "/dashboard" : "/account") : "/auth/select-space"} onClick={() => setMobileMenuOpen(false)}>
-                  <Button variant="white" fullWidth size="lg" className="gap-3 font-bold cursor-pointer">
-                    <User size={20} strokeWidth={2.5} />
-                    <Text as="span">Mon compte</Text>
-                  </Button>
-                </Link>
-              </Box>
             </Flex>
+
+            {/* Bottom CTA */}
+            <Box className="px-6 pb-10">
+              <Link href={isLoggedIn ? (isPro ? "/dashboard" : "/account") : "/auth/select-space"} onClick={() => setMobileMenuOpen(false)}>
+                <Button variant="white" fullWidth size="lg" className="gap-3 font-bold cursor-pointer">
+                  <User size={20} strokeWidth={2.5} />
+                  <Text as="span">Mon compte</Text>
+                </Button>
+              </Link>
+            </Box>
           </Box>
         )}
       </Container>

@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Sparkles, ArrowUpRight } from "lucide-react";
-import { Container } from "@/components/ui";
+import { Container, Button } from "@/components/ui";
 import ProviderCard from "./ProviderCard";
 import Link from "next/link";
 
@@ -77,12 +77,15 @@ export default function FeaturedProviders() {
             </p>
           </div>
 
-          <Link
-            href="#all-providers"
-            className="inline-flex items-center gap-2 text-sm font-bold text-[#32422c] hover:text-[#c0a062] transition-colors group border border-[#32422c]/15 rounded-xl px-5 py-3 hover:border-[#c0a062]/30 bg-white hover:bg-[#c0a062]/5"
-          >
-            Explorer tous les pros
-            <ArrowUpRight size={16} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+          <Link href="#all-providers">
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-[#32422c]/15 text-[#32422c] hover:text-[#c0a062] hover:border-[#c0a062]/30 hover:bg-[#c0a062]/5 rounded-xl font-bold"
+            >
+              Explorer tous les pros
+              <ArrowUpRight size={15} className="transition-transform group-hover/shine:translate-x-0.5 group-hover/shine:-translate-y-0.5" />
+            </Button>
           </Link>
         </motion.div>
 
