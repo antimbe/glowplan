@@ -60,9 +60,9 @@ export default function Header() {
       as="header"
       className={cn(
         "fixed top-0 left-0 right-0 z-50 transition-all duration-500",
-        scrolled 
-          ? "bg-[#32422c]/90 backdrop-blur-xl py-3 shadow-lg shadow-black/5 border-b border-white/5" 
-          : "bg-[#32422c] py-6"
+        scrolled
+          ? "bg-[#32422c]/95 backdrop-blur-xl py-3 shadow-lg shadow-black/10"
+          : "bg-transparent py-6"
       )}
     >
       <Container>

@@ -1,118 +1,157 @@
 "use client";
 
-import { Container, Section, Card, Heading, Text, Box, Flex, List, ListItem, Stack } from "@/components/ui";
-import { cn } from "@/lib/utils/cn";
+import { motion } from "framer-motion";
 import { Calendar, Shield, TrendingUp, Clock, CheckCircle2, Sparkles } from "lucide-react";
+import { Container } from "@/components/ui";
+import { cn } from "@/lib/utils/cn";
 
 const features = [
   {
     icon: Calendar,
     title: "Gestion simplifiée",
     description: "Un calendrier intuitif pour organiser vos journées sans stress.",
-    color: "bg-blue-500",
   },
   {
     icon: Shield,
     title: "Sécurité totale",
     description: "Vos données et celles de vos clients sont protégées et cryptées.",
-    color: "bg-green-500",
   },
   {
     icon: TrendingUp,
     title: "Croissance boostée",
     description: "Suivez vos revenus et identifiez vos leviers de croissance.",
-    color: "bg-orange-500",
   },
   {
     icon: Clock,
     title: "Gain de temps",
-    description: "Automatisez vos rappels et réduisez les rendez-vous non honorés.",
-    color: "bg-purple-500",
+    description: "Automatisez vos rappels et réduisez les absences.",
   },
 ];
 
+const perks = [
+  "Zéro frais d'installation",
+  "Support client expert 7j/7",
+  "Interface mobile-first intuitive",
+];
+
+const ease: [number, number, number, number] = [0.16, 1, 0.3, 1];
+
+const containerVariants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.1, delayChildren: 0.15 } },
+};
+
+const itemVariants = {
+  hidden:  { opacity: 0, y: 24 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.65, ease } },
+};
+
 export default function WhyGlowPlan() {
   return (
-    <Section spacing="xl" className="bg-[#32422c] relative overflow-hidden">
-      {/* Background Decorative Elements */}
-      <Box className="absolute top-0 right-0 w-[500px] h-[500px] bg-white/5 rounded-full -mr-64 -mt-64 blur-3xl" />
-      <Box className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-black/20 rounded-full -ml-64 -mb-64 blur-3xl" />
-      
+    <section className="bg-[#1e2b18] relative overflow-hidden py-28">
+
+      {/* Background ambient glows */}
+      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[#c0a062]/6 rounded-full -mr-80 -mt-80 blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-black/30 rounded-full -ml-60 -mb-60 blur-[100px] pointer-events-none" />
+
       <Container className="relative z-10">
-        <Box className="grid lg:grid-cols-2 gap-20 items-center">
-          <Stack space={10} className="text-white">
-            <Stack space={6}>
-              <Flex align="center" gap={2} className="inline-flex px-4 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20">
-                <Sparkles size={16} className="text-accent" />
-                <Text variant="small" as="span" className="font-bold tracking-widest uppercase">Expertise Beauté</Text>
-              </Flex>
-              
-              <Heading level={2} variant="hero" className="text-white leading-tight text-balance">
-                L'allié indispensable de votre <Heading as="span" className="text-accent italic font-serif">réussite</Heading>.
-              </Heading>
-              
-              <Text variant="lead" className="text-white/70 max-w-lg font-medium text-balance">
-                GlowPlan a été conçu spécifiquement pour les professionnels de la beauté. Simple, élégant et redoutablement efficace pour propulser votre activité.
-              </Text>
-            </Stack>
+        <div className="grid lg:grid-cols-2 gap-20 items-center">
 
-            <List spacing="lg">
-              {[
-                "Zéro frais d'installation", 
-                "Support client expert 7j/7", 
-                "Interface mobile-first intuitive"
-              ].map((item) => (
-                <ListItem 
-                  key={item}
-                  icon={
-                    <Box className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center border border-accent/30">
-                      <CheckCircle2 className="text-accent w-4 h-4" />
-                    </Box>
-                  }
-                  className="text-white/90 font-bold"
-                >
-                  <Text as="span" className="text-lg tracking-wide">{item}</Text>
-                </ListItem>
+          {/* ── Left: text column ───────────────────────────── */}
+          <motion.div
+            className="text-white"
+            initial={{ opacity: 0, x: -30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          >
+            {/* Badge */}
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/[0.07] backdrop-blur-md border border-white/10 mb-8">
+              <Sparkles size={14} className="text-[#c0a062]" />
+              <span className="text-[10px] font-black tracking-[0.2em] uppercase text-white/50">
+                Expertise Beauté
+              </span>
+            </div>
+
+            {/* Headline */}
+            <h2 className="text-white text-[clamp(2.2rem,4.5vw,3.5rem)] font-black tracking-[-0.03em] leading-[1.08] mb-6">
+              L'allié indispensable de{" "}
+              <em
+                className="not-italic font-serif font-medium"
+                style={{
+                  background: "linear-gradient(135deg, #c0a062, #e8c87a)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                }}
+              >
+                votre réussite.
+              </em>
+            </h2>
+
+            <p className="text-white/50 text-lg font-medium leading-relaxed max-w-md mb-12">
+              GlowPlan a été conçu spécifiquement pour les professionnels de la beauté.
+              Simple, élégant et redoutablement efficace.
+            </p>
+
+            {/* Perks list */}
+            <ul className="space-y-4">
+              {perks.map((perk) => (
+                <li key={perk} className="flex items-center gap-3">
+                  <div className="w-6 h-6 rounded-full bg-[#c0a062]/15 border border-[#c0a062]/30 flex items-center justify-center shrink-0">
+                    <CheckCircle2 size={14} className="text-[#c0a062]" />
+                  </div>
+                  <span className="text-white/80 font-semibold text-[15px]">{perk}</span>
+                </li>
               ))}
-            </List>
-          </Stack>
+            </ul>
+          </motion.div>
 
-          <Box className="grid sm:grid-cols-2 gap-6 md:gap-8">
+          {/* ── Right: feature cards ────────────────────────── */}
+          <motion.div
+            className="grid sm:grid-cols-2 gap-4"
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.2 }}
+          >
             {features.map((feature, index) => {
               const Icon = feature.icon;
+              const isOffset = index % 2 === 1;
               return (
-                <Card 
-                  key={feature.title} 
-                  variant="glass" 
-                  padding="lg" 
+                <motion.div
+                  key={feature.title}
+                  variants={itemVariants}
                   className={cn(
-                    "group/card h-full transition-all duration-500 hover:bg-white/15",
-                    index % 2 === 1 
-                      ? "lg:translate-y-12 hover:lg:translate-y-10" 
-                      : "hover:-translate-y-2"
+                    "group relative p-6 rounded-2xl border border-white/[0.08] bg-white/[0.04] backdrop-blur-sm",
+                    "hover:bg-white/[0.08] hover:border-white/[0.14] transition-all duration-500",
+                    "shadow-[0_0_0_1px_rgba(255,255,255,0.03)]",
+                    isOffset ? "lg:translate-y-10" : ""
                   )}
+                  whileHover={{ y: isOffset ? 36 : -4 }}
+                  transition={{ type: "spring", stiffness: 200, damping: 20 }}
                 >
-                  <Flex direction="col" gap={6}>
-                    <Box className={cn(
-                      "w-14 h-14 rounded-2xl flex items-center justify-center transition-transform duration-500 group-hover/card:scale-110 group-hover/card:rotate-3 shadow-lg bg-white/10"
-                    )}>
-                      <Icon className="text-white w-7 h-7" />
-                    </Box>
-                    <Box className="space-y-3">
-                      <Heading level={3} variant="card" className="text-white text-xl">
-                        {feature.title}
-                      </Heading>
-                      <Text variant="small" className="text-white/60 leading-relaxed font-semibold">
-                        {feature.description}
-                      </Text>
-                    </Box>
-                  </Flex>
-                </Card>
+                  {/* Icon */}
+                  <div className="w-12 h-12 rounded-xl bg-white/[0.07] border border-white/10 flex items-center justify-center mb-5 group-hover:scale-110 group-hover:bg-[#c0a062]/15 group-hover:border-[#c0a062]/30 transition-all duration-500">
+                    <Icon size={22} className="text-white/70 group-hover:text-[#c0a062] transition-colors duration-300" />
+                  </div>
+
+                  {/* Text */}
+                  <h3 className="text-white font-bold text-[15px] mb-2 leading-tight">
+                    {feature.title}
+                  </h3>
+                  <p className="text-white/40 text-[13px] font-semibold leading-relaxed">
+                    {feature.description}
+                  </p>
+
+                  {/* Bottom accent line */}
+                  <div className="absolute bottom-0 left-6 right-6 h-[1px] bg-gradient-to-r from-transparent via-[#c0a062]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                </motion.div>
               );
             })}
-          </Box>
-        </Box>
+          </motion.div>
+
+        </div>
       </Container>
-    </Section>
+    </section>
   );
 }

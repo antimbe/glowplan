@@ -1,68 +1,110 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Container, Section, Button, Link, Heading, Text, Box, Flex, Stack } from "@/components/ui";
-import { ChevronRight } from "lucide-react";
+import { motion } from "framer-motion";
+import { ChevronRight, ArrowUpRight } from "lucide-react";
+import { Container } from "@/components/ui";
 import Image from "next/image";
+import Link from "next/link";
 
 const categories = [
-  { name: "Coiffure", image: "/coupes.jpg", sectorId: "coiffure" },
-  { name: "Ongles", image: "/ongles.jpg", sectorId: "ongles" },
-  { name: "Sourcils & cils", image: "/sourcils.jpg", sectorId: "sourcils" },
-  { name: "Massage", image: "/massages.jpg", sectorId: "massage" },
-  { name: "Barber", image: "/barber.jpg", sectorId: "barbier" },
-  { name: "Épilation", image: "/epilation.jpg", sectorId: "epilation" },
+  { name: "Coiffure",        image: "/coupes.jpg",    sectorId: "coiffure",  count: "420+ pros" },
+  { name: "Ongles",          image: "/ongles.jpg",    sectorId: "ongles",    count: "310+ pros" },
+  { name: "Sourcils & cils", image: "/sourcils.jpg",  sectorId: "sourcils",  count: "280+ pros" },
+  { name: "Massage",         image: "/massages.jpg",  sectorId: "massage",   count: "195+ pros" },
+  { name: "Barber",          image: "/barber.jpg",    sectorId: "barbier",   count: "240+ pros" },
+  { name: "Épilation",       image: "/epilation.jpg", sectorId: "epilation", count: "360+ pros" },
 ];
+
+const ease: [number, number, number, number] = [0.16, 1, 0.3, 1];
+
+const containerVariants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.07, delayChildren: 0.1 } },
+};
+
+const itemVariants = {
+  hidden:   { opacity: 0, y: 32, scale: 0.94 },
+  visible:  { opacity: 1, y: 0,  scale: 1, transition: { duration: 0.6, ease } },
+};
 
 export default function ServiceCategories() {
   const router = useRouter();
 
   return (
-    <Section spacing="lg" className="bg-white">
+    <section className="bg-white py-28 overflow-hidden">
       <Container>
-        <Flex align="end" justify="between" className="mb-16">
-          <Stack space={3}>
-            <Heading level={2} variant="section" className="text-gray-900">
-              Nos prestations <Text as="span" className="text-primary/30">phare</Text>
-            </Heading>
-            <Text variant="muted" className="text-lg text-balance">Découvrez l'univers qui vous correspond</Text>
-          </Stack>
 
-          <Button variant="ghost" size="sm" className="text-primary font-bold hover:bg-primary/5 group" asChild>
-            <Link href="/categories" className="flex items-center gap-2">
-              <Text variant="small" as="span">Explorer tout le catalogue</Text>
-              <ChevronRight size={18} className="transition-transform group-hover:translate-x-1" />
-            </Link>
-          </Button>
-        </Flex>
+        {/* Header */}
+        <motion.div
+          className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-16"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+        >
+          <div>
+            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#c0a062] mb-3">
+              Nos prestations
+            </p>
+            <h2 className="text-[clamp(2rem,4vw,3rem)] font-black tracking-[-0.03em] text-gray-900 leading-tight">
+              Choisissez votre{" "}
+              <span className="text-[#32422c] italic font-serif">univers</span>
+            </h2>
+          </div>
 
-        <Box className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 md:gap-12">
-          {categories.map((category) => (
-            <Flex
-              key={category.sectorId}
-              direction="col"
-              align="center"
-              gap={5}
+          <Link
+            href="/categories"
+            className="inline-flex items-center gap-2 text-sm font-bold text-[#32422c] hover:text-[#c0a062] transition-colors group"
+          >
+            Explorer tout le catalogue
+            <ArrowUpRight size={16} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+          </Link>
+        </motion.div>
+
+        {/* Grid */}
+        <motion.div
+          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-6"
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.15 }}
+        >
+          {categories.map((cat) => (
+            <motion.div
+              key={cat.sectorId}
+              variants={itemVariants}
               className="group cursor-pointer"
-              onClick={() => router.push(`/search?sector=${category.sectorId}`)}
+              onClick={() => router.push(`/search?sector=${cat.sectorId}`)}
             >
-              <Box className="relative w-28 h-28 md:w-36 md:h-36 aspect-square rounded-full overflow-hidden transition-all duration-500 group-hover:shadow-2xl group-hover:shadow-primary/20">
+              {/* Circle image */}
+              <div className="relative mx-auto mb-4 w-[100px] h-[100px] md:w-[120px] md:h-[120px] rounded-full overflow-hidden ring-2 ring-transparent group-hover:ring-[#c0a062]/50 transition-all duration-500 shadow-lg group-hover:shadow-xl group-hover:shadow-[#32422c]/15">
                 <Image
-                  src={category.image}
-                  alt={category.name}
+                  src={cat.image}
+                  alt={cat.name}
                   fill
                   className="object-cover transition-transform duration-700 group-hover:scale-110"
                 />
-                <Box className="absolute inset-0 bg-primary/10 group-hover:bg-transparent transition-colors duration-500" />
-                <Box className="absolute inset-0 border-2 border-primary/5 group-hover:border-primary/20 rounded-full transition-all duration-500" />
-              </Box>
-              <Text variant="default" as="span" className="font-bold text-gray-900 transition-all group-hover:text-primary group-hover:scale-105">
-                {category.name}
-              </Text>
-            </Flex>
+                {/* Overlay */}
+                <div className="absolute inset-0 bg-[#32422c]/20 group-hover:bg-[#32422c]/0 transition-colors duration-500" />
+                {/* Shine effect */}
+                <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/0 to-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              </div>
+
+              {/* Label */}
+              <div className="text-center">
+                <p className="text-[13px] font-bold text-gray-800 group-hover:text-[#32422c] transition-colors leading-tight mb-1">
+                  {cat.name}
+                </p>
+                <p className="text-[11px] font-semibold text-gray-400 group-hover:text-[#c0a062] transition-colors">
+                  {cat.count}
+                </p>
+              </div>
+            </motion.div>
           ))}
-        </Box>
+        </motion.div>
+
       </Container>
-    </Section>
+    </section>
   );
 }

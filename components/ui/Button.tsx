@@ -28,7 +28,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ) => {
     const Component = asChild ? Slot : "button";
     const baseStyles =
-      "inline-flex items-center justify-center font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed rounded-full active:scale-95 cursor-pointer";
+      "relative overflow-hidden group/shine inline-flex items-center justify-center font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed rounded-full active:scale-95 cursor-pointer";
 
     const variants = {
       primary:
@@ -65,8 +65,19 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       >
         {asChild ? children : (
           <>
-            {loading && <Loader2 className="animate-spin" size={20} />}
-            {children}
+            {/* Shine sweep — balaye de gauche à droite au hover */}
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 rounded-[inherit] overflow-hidden"
+            >
+              <span className="absolute top-0 left-0 h-full w-1/2 -translate-x-full group-hover/shine:translate-x-[250%] transition-transform duration-700 ease-in-out bg-gradient-to-r from-transparent via-white/25 to-transparent -skew-x-[20deg]" />
+            </span>
+
+            {/* Content above shine */}
+            {loading && <Loader2 className="animate-spin relative z-10" size={20} />}
+            <span className="relative z-10 inline-flex items-center gap-[inherit]">
+              {children}
+            </span>
           </>
         )}
       </Component>

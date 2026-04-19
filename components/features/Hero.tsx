@@ -2,100 +2,207 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search, MapPin, Sparkles } from "lucide-react";
-import { Container, Section, Button, Input, Heading, Text, Box, Flex, Stack } from "@/components/ui";
+import { motion } from "framer-motion";
+import { Search, MapPin, Sparkles, Star, Users, ArrowRight, TrendingUp } from "lucide-react";
+import { Container, Button, Box } from "@/components/ui";
+
+/* ─── animation variants ─────────────────────────────────────── */
+const ease = [0.16, 1, 0.3, 1] as const;
+
+const fadeUp = (delay = 0) => ({
+  hidden: { opacity: 0, y: 28 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.8, delay, ease } },
+});
+
+const fadeIn = (delay = 0) => ({
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: 0.7, delay, ease } },
+});
+
+const staggerContainer = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.08 } },
+};
+
+/* ─── stat pills data ─────────────────────────────────────────── */
+const stats = [
+  { icon: Users, label: "Professionnels", value: "2 400+" },
+  { icon: Star,  label: "Avis vérifiés",  value: "4.9 ★" },
+  { icon: TrendingUp, label: "Réservations", value: "150K+" },
+];
 
 export default function Hero() {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery,   setSearchQuery]   = useState("");
   const [locationQuery, setLocationQuery] = useState("");
   const router = useRouter();
 
   const handleSearch = () => {
     const params = new URLSearchParams();
-    if (searchQuery) params.set("q", searchQuery);
+    if (searchQuery)   params.set("q",        searchQuery);
     if (locationQuery) params.set("location", locationQuery);
     router.push(`/search?${params.toString()}`);
   };
 
-return (
-    <Section className="relative min-h-[90vh] flex items-center pt-28 overflow-hidden bg-gray-50">
-      {/* Background with advanced gradient overlay */}
+  return (
+    <section className="relative min-h-screen flex items-center overflow-hidden bg-[#0d1208]">
+
+      {/* ── Background image ───────────────────────────────── */}
       <Box
         className="absolute inset-0 z-0"
         style={{
-          backgroundImage: "url('https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=2074&auto=format&fit=crop')",
+          backgroundImage:
+            "url('https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=2074&auto=format&fit=crop')",
           backgroundSize: "cover",
-          backgroundPosition: "center",
+          backgroundPosition: "center 30%",
         }}
-      >
-        <Box className="absolute inset-0 bg-gradient-to-tr from-black/70 via-black/40 to-primary/30" />
-        <Box className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-gray-50" />
-      </Box>
+      />
 
-      <Container className="relative z-10 w-full">
-        <Flex direction="col" align="center" className="text-center max-w-4xl mx-auto space-y-10">
+      {/* ── Gradient overlays ──────────────────────────────── */}
+      <div className="absolute inset-0 z-[1] bg-gradient-to-br from-[#0d1208]/95 via-[#1a2414]/75 to-[#32422c]/40" />
+      <div className="absolute inset-0 z-[1] bg-gradient-to-t from-[#0d1208]/90 via-transparent to-transparent" />
 
-          <Box>
-            <Stack space={6} align="center">
-              <Flex align="center" gap={2} className="px-4 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white mb-4 mx-auto">
-                <Sparkles size={16} className="text-accent" />
-                <Text variant="small" as="span" className="font-bold tracking-widest uppercase text-[10px] md:text-xs">Votre beauté, simplifiée</Text>
-              </Flex>
+      {/* ── Ambient glow blobs ─────────────────────────────── */}
+      <motion.div
+        className="absolute top-1/4 right-1/4 w-[500px] h-[500px] rounded-full bg-[#c0a062]/10 blur-[120px] pointer-events-none z-[2]"
+        animate={{ scale: [1, 1.12, 1], opacity: [0.6, 1, 0.6] }}
+        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <motion.div
+        className="absolute bottom-1/4 left-1/4 w-[400px] h-[400px] rounded-full bg-[#32422c]/30 blur-[100px] pointer-events-none z-[2]"
+        animate={{ scale: [1, 1.08, 1], opacity: [0.4, 0.8, 0.4] }}
+        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+      />
 
-              <Flex align="center" justify="center" gap={4} className="text-white drop-shadow-2xl text-balance text-5xl md:text-6xl lg:text-7xl flex-wrap">
-                <Heading level={1} variant="hero" className="text-white">Révélez votre</Heading>
-                <Heading level={1} variant="hero" as="span" className="text-accent italic font-serif">éclat</Heading>
-                <Heading level={1} variant="hero" className="text-white">en un seul clic.</Heading>
-              </Flex>
+      {/* ── Main content ───────────────────────────────────── */}
+      <Container className="relative z-10 w-full pt-32 pb-20">
+        <motion.div
+          className="flex flex-col items-center text-center max-w-5xl mx-auto"
+          variants={staggerContainer}
+          initial="hidden"
+          animate="visible"
+        >
 
-              <Text variant="lead" className="text-white/90 max-w-2xl mx-auto drop-shadow-sm font-medium text-balance">
-                Découvrez et réservez les meilleurs soins beauté & bien-être auprès de professionnels passionnés près de chez vous.
-              </Text>
-            </Stack>
-          </Box>
+          {/* Badge */}
+          <motion.div variants={fadeIn(0)}>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/[0.06] backdrop-blur-md border border-white/10 text-white mb-8">
+              <Sparkles size={14} className="text-[#c0a062]" />
+              <span className="text-[11px] font-bold tracking-[0.18em] uppercase text-white/70">
+                Beauté & Bien-être en France
+              </span>
+            </div>
+          </motion.div>
 
-          {/* Floating Search Bar with Premium Design */}
-          <Box
-            className="w-full max-w-3xl mt-4 bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] p-2 flex flex-col md:flex-row items-center gap-2 transition-all hover:shadow-[0_30px_60px_rgba(0,0,0,0.2)]"
+          {/* Headline */}
+          <motion.h1
+            variants={fadeUp(0.05)}
+            className="text-[clamp(2.8rem,7vw,5.5rem)] font-black leading-[1.05] tracking-[-0.03em] text-white mb-6"
           >
-            <Box className="flex-1 w-full group">
-              <Input
-                variant="ghost"
-                placeholder="Prestation (coiffure, massage...)"
-                leftIcon={<Search className="text-primary/40 group-focus-within:text-primary transition-colors w-5 h-5" />}
-                fullWidth
-                className="h-16 font-semibold text-lg"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+            Révélez votre{" "}
+            <span className="relative inline-block">
+              <span
+                className="text-transparent bg-clip-text"
+                style={{ backgroundImage: "linear-gradient(135deg, #c0a062 0%, #e8c87a 50%, #c0a062 100%)" }}
+              >
+                éclat
+              </span>
+              {/* Underline glow */}
+              <motion.span
+                className="absolute -bottom-1 left-0 right-0 h-[3px] rounded-full bg-gradient-to-r from-[#c0a062]/0 via-[#c0a062]/80 to-[#c0a062]/0"
+                initial={{ scaleX: 0 }}
+                animate={{ scaleX: 1 }}
+                transition={{ duration: 0.9, delay: 0.6, ease }}
               />
-            </Box>
+            </span>{" "}
+            en un clic.
+          </motion.h1>
 
-            <div className="hidden md:block self-stretch w-px bg-gray-200" />
+          {/* Subtitle */}
+          <motion.p
+            variants={fadeUp(0.12)}
+            className="text-[clamp(1rem,2vw,1.25rem)] text-white/55 max-w-xl mx-auto font-medium leading-relaxed mb-12"
+          >
+            Découvrez et réservez les meilleurs professionnels de beauté
+            près de chez vous, en toute simplicité.
+          </motion.p>
 
-            <Box className="flex-1 w-full group">
-              <Input
-                variant="ghost"
-                placeholder="Où ? (Ville, CP)"
-                leftIcon={<MapPin className="text-primary/40 group-focus-within:text-primary transition-colors w-5 h-5" />}
-                fullWidth
-                className="h-16 font-semibold text-lg"
-                value={locationQuery}
-                onChange={(e) => setLocationQuery(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              />
-            </Box>
+          {/* ── Search Bar ─────────────────────────────────── */}
+          <motion.div variants={fadeUp(0.2)} className="w-full max-w-3xl">
+            <div className="relative bg-white/[0.07] backdrop-blur-2xl rounded-full border border-white/[0.12] p-2 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.08)] flex flex-col md:flex-row gap-2">
 
-            <div className="hidden md:block self-stretch w-px bg-gray-200" />
+              {/* Service field */}
+              <div className="flex-1 flex items-center gap-3 hover:bg-white/[0.06] rounded-full px-5 py-3 transition-colors group">
+                <Search size={16} className="text-[#c0a062] shrink-0" />
+                <div className="flex flex-col flex-1 min-w-0">
+                  <label className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#c0a062] italic mb-0.5">
+                    Prestation
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Coiffure, massage, ongles…"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                    className="bg-transparent text-white placeholder:text-white/30 text-sm font-semibold outline-none w-full italic"
+                  />
+                </div>
+              </div>
 
-            <Button size="xl" className="h-16 px-12 shadow-lg shadow-primary/20 rounded-2xl w-full md:w-auto font-bold text-lg" onClick={handleSearch}>
-              Trouver un pro
-            </Button>
-          </Box>
+              {/* Divider */}
+              <div className="hidden md:block w-px self-stretch bg-white/10 my-2" />
 
+              {/* Location field */}
+              <div className="flex-1 flex items-center gap-3 hover:bg-white/[0.06] rounded-full px-5 py-3 transition-colors group">
+                <MapPin size={16} className="text-[#c0a062] shrink-0" />
+                <div className="flex flex-col flex-1 min-w-0">
+                  <label className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#c0a062] italic mb-0.5">
+                    Localisation
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ville ou code postal"
+                    value={locationQuery}
+                    onChange={(e) => setLocationQuery(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                    className="bg-transparent text-white placeholder:text-white/30 text-sm font-semibold outline-none w-full italic"
+                  />
+                </div>
+              </div>
 
-        </Flex>
+              {/* CTA Button */}
+              <Button
+                size="lg"
+                className="bg-gradient-to-br from-[#d4b070] via-[#c0a062] to-[#a8854e] hover:from-[#e0bc78] hover:via-[#cca96e] hover:to-[#b8945a] text-white font-bold rounded-full px-8 shrink-0 shadow-[0_4px_24px_rgba(192,160,98,0.45),inset_0_1px_0_rgba(255,255,255,0.2)] hover:shadow-[0_6px_32px_rgba(192,160,98,0.6)] transition-all duration-300 h-auto min-h-[52px]"
+                onClick={handleSearch}
+              >
+                <Search size={18} className="mr-2 md:hidden" />
+                <span className="hidden md:inline">Trouver un pro</span>
+                <ArrowRight size={18} className="hidden md:inline ml-2 transition-transform duration-300 group-hover/shine:translate-x-1" />
+              </Button>
+            </div>
+          </motion.div>
+
+          {/* ── Stats row ──────────────────────────────────── */}
+          <motion.div
+            variants={fadeUp(0.3)}
+            className="flex flex-wrap items-center justify-center gap-3 mt-10"
+          >
+            {stats.map(({ icon: Icon, label, value }) => (
+              <div
+                key={label}
+                className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-white/[0.05] backdrop-blur-md border border-white/[0.08] hover:bg-white/[0.09] transition-colors"
+              >
+                <Icon size={14} className="text-[#c0a062]" />
+                <span className="text-[13px] font-bold text-white/50">{label}</span>
+                <span className="text-[13px] font-black text-white">{value}</span>
+              </div>
+            ))}
+          </motion.div>
+
+        </motion.div>
       </Container>
-    </Section>
+
+      {/* ── Bottom fade into next section ──────────────────── */}
+      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-gray-50 to-transparent z-10 pointer-events-none" />
+    </section>
   );
 }
