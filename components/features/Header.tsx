@@ -1,10 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { Container, Button, Logo, Link, Text, Box, Flex } from "@/components/ui";
 import { Menu, X, User } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { createClient } from "@/lib/supabase/client";
+
+// Pages with a dark hero — navbar starts transparent
+const DARK_HERO_ROUTES = ["/", "/about", "/pros", "/contact"];
 
 const navigationLinks = [
   { label: "Accueil", href: "/" },
@@ -18,7 +22,11 @@ export default function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isPro, setIsPro] = useState(false);
+  const pathname = usePathname();
   const supabase = createClient();
+
+  // Transparent only on pages that have a dark hero
+  const hasDarkHero = DARK_HERO_ROUTES.includes(pathname);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -60,7 +68,7 @@ export default function Header() {
       as="header"
       className={cn(
         "fixed top-0 left-0 right-0 z-50 transition-all duration-500",
-        scrolled
+        scrolled || !hasDarkHero
           ? "bg-[#32422c]/95 backdrop-blur-xl py-3 shadow-lg shadow-black/10"
           : "bg-transparent py-6"
       )}

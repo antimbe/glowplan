@@ -126,12 +126,12 @@ export default function Hero() {
           </motion.p>
 
           {/* ── Search Bar ─────────────────────────────────── */}
-          <motion.div variants={fadeUp(0.2)} className="w-full max-w-3xl">
-            <div className="relative bg-white/[0.07] backdrop-blur-2xl rounded-full border border-white/[0.12] p-2 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.08)] flex flex-col md:flex-row gap-2">
+          <motion.div variants={fadeUp(0.2)} className="w-full max-w-3xl px-2 md:px-0">
+            <div className="relative bg-white/[0.07] backdrop-blur-2xl rounded-2xl md:rounded-full border border-white/[0.12] p-2 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.08)] flex flex-col md:flex-row gap-1.5 md:gap-2">
 
               {/* Service field */}
-              <div className="flex-1 flex items-center gap-3 hover:bg-white/[0.06] rounded-full px-5 py-3 transition-colors group">
-                <Search size={16} className="text-[#c0a062] shrink-0" />
+              <div className="flex-1 flex items-center gap-3 hover:bg-white/[0.06] rounded-xl md:rounded-full px-4 py-3 transition-colors">
+                <Search size={15} className="text-[#c0a062] shrink-0" />
                 <div className="flex flex-col flex-1 min-w-0">
                   <label className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#c0a062] italic mb-0.5">
                     Prestation
@@ -142,17 +142,18 @@ export default function Hero() {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                    className="bg-transparent text-white placeholder:text-white/30 text-sm font-semibold outline-none w-full italic"
+                    className="bg-transparent text-white placeholder:text-white/30 text-[13px] md:text-sm font-semibold outline-none w-full italic"
                   />
                 </div>
               </div>
 
-              {/* Divider */}
+              {/* Divider — horizontal on mobile, vertical on desktop */}
+              <div className="block md:hidden h-px bg-white/10 mx-3" />
               <div className="hidden md:block w-px self-stretch bg-white/10 my-2" />
 
               {/* Location field */}
-              <div className="flex-1 flex items-center gap-3 hover:bg-white/[0.06] rounded-full px-5 py-3 transition-colors group">
-                <MapPin size={16} className="text-[#c0a062] shrink-0" />
+              <div className="flex-1 flex items-center gap-3 hover:bg-white/[0.06] rounded-xl md:rounded-full px-4 py-3 transition-colors">
+                <MapPin size={15} className="text-[#c0a062] shrink-0" />
                 <div className="flex flex-col flex-1 min-w-0">
                   <label className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#c0a062] italic mb-0.5">
                     Localisation
@@ -163,7 +164,7 @@ export default function Hero() {
                     value={locationQuery}
                     onChange={(e) => setLocationQuery(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                    className="bg-transparent text-white placeholder:text-white/30 text-sm font-semibold outline-none w-full italic"
+                    className="bg-transparent text-white placeholder:text-white/30 text-[13px] md:text-sm font-semibold outline-none w-full italic"
                   />
                 </div>
               </div>
@@ -171,12 +172,11 @@ export default function Hero() {
               {/* CTA Button */}
               <Button
                 size="lg"
-                className="bg-gradient-to-br from-[#d4b070] via-[#c0a062] to-[#a8854e] hover:from-[#e0bc78] hover:via-[#cca96e] hover:to-[#b8945a] text-white font-bold rounded-full px-8 shrink-0 shadow-[0_4px_24px_rgba(192,160,98,0.45),inset_0_1px_0_rgba(255,255,255,0.2)] hover:shadow-[0_6px_32px_rgba(192,160,98,0.6)] transition-all duration-300 h-auto min-h-[52px]"
+                className="bg-gradient-to-br from-[#d4b070] via-[#c0a062] to-[#a8854e] hover:from-[#e0bc78] hover:via-[#cca96e] hover:to-[#b8945a] text-white font-bold rounded-xl md:rounded-full px-8 shrink-0 shadow-[0_4px_24px_rgba(192,160,98,0.45),inset_0_1px_0_rgba(255,255,255,0.2)] hover:shadow-[0_6px_32px_rgba(192,160,98,0.6)] transition-all duration-300 h-12 md:h-auto md:min-h-[52px] w-full md:w-auto"
                 onClick={handleSearch}
               >
-                <Search size={18} className="mr-2 md:hidden" />
-                <span className="hidden md:inline">Trouver un pro</span>
-                <ArrowRight size={18} className="hidden md:inline ml-2 transition-transform duration-300 group-hover/shine:translate-x-1" />
+                <span>Trouver un pro</span>
+                <ArrowRight size={17} className="ml-1.5 transition-transform duration-300 group-hover/shine:translate-x-1" />
               </Button>
             </div>
           </motion.div>
