@@ -105,13 +105,16 @@ export function SearchBar({
               className="flex-1 bg-transparent outline-none text-gray-900 placeholder:text-gray-400 font-medium"
             />
           </div>
-          <button
+          <Button
             onClick={onSearch}
-            className="w-full flex items-center justify-center gap-2 bg-[#32422c] hover:bg-[#3d5438] text-white font-bold py-3.5 rounded-xl cursor-pointer shadow-md transition-colors"
+            variant="primary"
+            size="md"
+            fullWidth
+            className="rounded-xl font-bold gap-2"
           >
             <Search size={18} />
             Rechercher
-          </button>
+          </Button>
         </div>
 
         {/* ── Category chips ── */}
