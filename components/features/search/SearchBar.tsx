@@ -1,6 +1,7 @@
 "use client";
 
 import { Search, MapPin, ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui";
 import { ACTIVITY_SECTORS } from "@/lib/constants/sectors";
 
 interface SearchBarProps {
@@ -91,13 +92,13 @@ export function SearchBar({
             </div>
 
             {/* Bouton doré */}
-            <button
+            <Button
               onClick={onSearch}
-              className="group cursor-pointer bg-gradient-to-br from-[#d4b070] via-[#c0a062] to-[#a8854e] hover:from-[#e0bc78] hover:via-[#cca96e] hover:to-[#b8945a] text-white font-bold rounded-xl md:rounded-full px-8 shrink-0 shadow-[0_4px_24px_rgba(192,160,98,0.45),inset_0_1px_0_rgba(255,255,255,0.2)] hover:shadow-[0_6px_32px_rgba(192,160,98,0.6),inset_0_1px_0_rgba(255,255,255,0.25)] transition-all duration-300 h-12 md:min-h-[52px] w-full md:w-auto flex items-center justify-center gap-2"
+              className="bg-gradient-to-br from-[#d4b070] via-[#c0a062] to-[#a8854e] hover:from-[#e0bc78] hover:via-[#cca96e] hover:to-[#b8945a] shadow-none hover:shadow-none rounded-xl md:rounded-full px-8 shrink-0 h-12 md:min-h-[52px] w-full md:w-auto font-bold"
             >
               <span>Rechercher</span>
-              <ArrowRight size={17} className="transition-transform duration-300 group-hover:translate-x-1" />
-            </button>
+              <ArrowRight size={17} className="transition-transform duration-300 group-hover/shine:translate-x-1" />
+            </Button>
           </div>
         </div>
       </div>
@@ -108,7 +109,7 @@ export function SearchBar({
       {onSectorClick && (
         <div className="bg-[#1e2b18]">
           <div className="relative max-w-4xl mx-auto">
-            <div className="flex gap-2 overflow-x-auto py-4 px-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="flex gap-2 overflow-x-auto py-4 px-4 pb-3 [scrollbar-width:thin] [scrollbar-color:#c0a062_rgba(255,255,255,0.1)] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-white/10 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#c0a062] [&::-webkit-scrollbar-thumb]:rounded-full">
               {/* Chip « Tous » */}
               <button
                 onClick={() => onSectorClick("")}
