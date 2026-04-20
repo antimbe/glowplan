@@ -48,7 +48,7 @@ export function SearchBar({
         <div className="relative max-w-4xl mx-auto px-4 pt-7 pb-5">
 
           {/* Frosted-glass search bar — même style que la homepage */}
-          <div className="relative bg-white/[0.07] backdrop-blur-2xl rounded-2xl md:rounded-full border border-white/[0.12] p-2 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.08)] flex flex-col md:flex-row gap-1.5 md:gap-0">
+          <div className="relative bg-white/[0.07] backdrop-blur-2xl rounded-2xl md:rounded-full border border-white/[0.12] p-2 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.08)] flex flex-col md:flex-row md:items-center gap-1.5 md:gap-0">
 
             {/* Prestation */}
             <div className="flex-1 flex items-center gap-3 hover:bg-white/[0.06] rounded-xl md:rounded-full px-4 py-3 transition-colors">
@@ -93,7 +93,7 @@ export function SearchBar({
             {/* Bouton doré */}
             <button
               onClick={onSearch}
-              className="cursor-pointer bg-gradient-to-br from-[#d4b070] via-[#c0a062] to-[#a8854e] hover:from-[#e0bc78] hover:via-[#cca96e] hover:to-[#b8945a] text-white font-bold rounded-xl md:rounded-full px-8 shrink-0 shadow-[0_4px_24px_rgba(192,160,98,0.45)] hover:shadow-[0_6px_32px_rgba(192,160,98,0.6)] transition-all duration-300 h-12 md:min-h-[52px] w-full md:w-auto flex items-center justify-center gap-2"
+              className="group cursor-pointer bg-gradient-to-br from-[#d4b070] via-[#c0a062] to-[#a8854e] hover:from-[#e0bc78] hover:via-[#cca96e] hover:to-[#b8945a] text-white font-bold rounded-xl md:rounded-full px-8 shrink-0 shadow-[0_4px_24px_rgba(192,160,98,0.45),inset_0_1px_0_rgba(255,255,255,0.2)] hover:shadow-[0_6px_32px_rgba(192,160,98,0.6),inset_0_1px_0_rgba(255,255,255,0.25)] transition-all duration-300 h-12 md:min-h-[52px] w-full md:w-auto flex items-center justify-center gap-2"
             >
               <span>Rechercher</span>
               <ArrowRight size={17} className="transition-transform duration-300 group-hover:translate-x-1" />
@@ -107,7 +107,7 @@ export function SearchBar({
       ────────────────────────────────────────────────────────── */}
       {onSectorClick && (
         <div className="bg-[#1e2b18]">
-          <div className="relative">
+          <div className="relative max-w-4xl mx-auto">
             <div className="flex gap-2 overflow-x-auto py-4 px-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {/* Chip « Tous » */}
               <button
