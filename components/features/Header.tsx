@@ -6,6 +6,7 @@ import { Container, Button, Logo, Link, Text, Box, Flex } from "@/components/ui"
 import { Menu, X, User, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { createClient } from "@/lib/supabase/client";
+import { motion, AnimatePresence } from "framer-motion";
 
 // Pages with a dark hero — navbar starts transparent
 const DARK_HERO_ROUTES = ["/", "/about", "/pros", "/contact", "/categories", "/search"];
@@ -27,6 +28,9 @@ export default function Header() {
 
   // Transparent only on pages that have a dark hero
   const hasDarkHero = DARK_HERO_ROUTES.includes(pathname);
+
+  // Force solid bg when mobile menu is open (prevents transparent bar over menu)
+  const showSolidBg = scrolled || !hasDarkHero || mobileMenuOpen;
 
   useEffect(() => {
     const handleScroll = () => {
@@ -68,7 +72,7 @@ export default function Header() {
       as="header"
       className={cn(
         "fixed top-0 left-0 right-0 z-50 transition-all duration-500",
-        scrolled || !hasDarkHero
+        showSolidBg
           ? "bg-[#32422c]/95 backdrop-blur-xl py-3 shadow-lg shadow-black/10"
           : "bg-transparent py-6"
       )}
@@ -132,50 +136,69 @@ export default function Header() {
           </Box>
         </Flex>
 
-        {/* Mobile Menu Overlay — full-screen, solid bg */}
-        {mobileMenuOpen && (
-          <Box className="md:hidden fixed inset-0 top-0 z-40 bg-[#1a2414] flex flex-col">
-            {/* Header row inside overlay */}
-            <Flex align="center" justify="between" className="px-5 py-4 border-b border-white/10">
-              <Link href="/" onClick={() => setMobileMenuOpen(false)}>
-                <Logo variant="light" size="md" className="h-8 w-auto" />
-              </Link>
-              <Button
-                variant="ghost"
-                className="text-white p-2 hover:bg-white/10 rounded-xl transition-colors min-w-0"
-                onClick={() => setMobileMenuOpen(false)}
-                aria-label="Fermer le menu"
-              >
-                <X size={26} />
-              </Button>
-            </Flex>
-
-            {/* Nav links */}
-            <Flex direction="col" className="flex-1 px-6 py-8" gap={2}>
-              {navigationLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="text-white/80 hover:text-white text-2xl font-black py-3 border-b border-white/[0.07] flex items-center justify-between group transition-colors"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <Text as="span">{link.label}</Text>
-                  <ArrowRight size={18} className="opacity-0 group-hover:opacity-100 text-[#c0a062] transition-opacity" />
+        {/* Mobile Menu Overlay — full-screen, animated */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              className="md:hidden fixed inset-0 top-0 z-40 bg-[#1a2414] flex flex-col"
+              initial={{ opacity: 0, y: -12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+            >
+              {/* Header row inside overlay */}
+              <Flex align="center" justify="between" className="px-5 py-4 border-b border-white/10">
+                <Link href="/" onClick={() => setMobileMenuOpen(false)}>
+                  <Logo variant="light" size="md" className="h-8 w-auto" />
                 </Link>
-              ))}
-            </Flex>
-
-            {/* Bottom CTA */}
-            <Box className="px-6 pb-10">
-              <Link href={isLoggedIn ? (isPro ? "/dashboard" : "/account") : "/auth/select-space"} onClick={() => setMobileMenuOpen(false)}>
-                <Button variant="white" fullWidth size="lg" className="gap-3 font-bold cursor-pointer">
-                  <User size={20} strokeWidth={2.5} />
-                  <Text as="span">Mon compte</Text>
+                <Button
+                  variant="ghost"
+                  className="text-white p-2 hover:bg-white/10 rounded-xl transition-colors min-w-0"
+                  onClick={() => setMobileMenuOpen(false)}
+                  aria-label="Fermer le menu"
+                >
+                  <X size={26} />
                 </Button>
-              </Link>
-            </Box>
-          </Box>
-        )}
+              </Flex>
+
+              {/* Nav links — staggered */}
+              <Flex direction="col" className="flex-1 px-6 py-8" gap={2}>
+                {navigationLinks.map((link, i) => (
+                  <motion.div
+                    key={link.href}
+                    initial={{ opacity: 0, x: -16 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1], delay: 0.06 + i * 0.06 }}
+                  >
+                    <Link
+                      href={link.href}
+                      className="text-white/80 hover:text-white text-2xl font-black py-3 border-b border-white/[0.07] flex items-center justify-between group transition-colors"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <Text as="span">{link.label}</Text>
+                      <ArrowRight size={18} className="opacity-0 group-hover:opacity-100 text-[#c0a062] transition-opacity" />
+                    </Link>
+                  </motion.div>
+                ))}
+              </Flex>
+
+              {/* Bottom CTA */}
+              <motion.div
+                className="px-6 pb-10"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1], delay: 0.28 }}
+              >
+                <Link href={isLoggedIn ? (isPro ? "/dashboard" : "/account") : "/auth/select-space"} onClick={() => setMobileMenuOpen(false)}>
+                  <Button variant="white" fullWidth size="lg" className="gap-3 font-bold cursor-pointer">
+                    <User size={20} strokeWidth={2.5} />
+                    <Text as="span">Mon compte</Text>
+                  </Button>
+                </Link>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </Container>
     </Box>
   );

@@ -1,7 +1,6 @@
 "use client";
 
-import { Search, MapPin } from "lucide-react";
-import { Button } from "@/components/ui";
+import { Search, MapPin, ArrowRight } from "lucide-react";
 import { ACTIVITY_SECTORS } from "@/lib/constants/sectors";
 
 interface SearchBarProps {
@@ -13,6 +12,13 @@ interface SearchBarProps {
   activeSector?: string;
   onSectorClick?: (sectorId: string) => void;
 }
+
+const CHIP_CLASS_BASE =
+  "flex-shrink-0 px-4 py-2 rounded-full text-[11px] font-black tracking-wide uppercase transition-all duration-200 cursor-pointer border whitespace-nowrap";
+const CHIP_ACTIVE =
+  "bg-[#c0a062] border-[#c0a062] text-white shadow-md shadow-[#c0a062]/30";
+const CHIP_IDLE =
+  "bg-white/10 border-white/20 text-white/60 hover:bg-white/20 hover:text-white";
 
 export function SearchBar({
   searchQuery,
@@ -27,140 +33,125 @@ export function SearchBar({
     if (e.key === "Enter") onSearch();
   };
 
-  const sectors = ACTIVITY_SECTORS.filter((s) => s.id !== "medical");
+  const sectors = ACTIVITY_SECTORS.filter((s) => s.id !== "medical" && s.id !== "protheses");
 
   return (
-    <div className="relative bg-[#1e2b18] overflow-hidden pt-20">
-      {/* Ambient glows */}
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#c0a062]/6 rounded-full -mr-60 -mt-60 blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-80 h-80 bg-[#32422c]/60 rounded-full -ml-40 blur-[80px] pointer-events-none" />
+    <>
+      {/* ── Bande sombre : inputs ──────────────────────────────
+          overflow-hidden uniquement ici pour clipper les glows
+      ────────────────────────────────────────────────────────── */}
+      <div className="relative bg-[#1e2b18] overflow-hidden pt-20">
+        {/* Ambient glows */}
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#c0a062]/6 rounded-full -mr-60 -mt-60 blur-[120px] pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-80 h-80 bg-[#32422c]/60 rounded-full -ml-40 blur-[80px] pointer-events-none" />
 
-      <div className="relative max-w-6xl mx-auto px-4 pt-7 pb-5">
+        <div className="relative max-w-4xl mx-auto px-4 pt-7 pb-5">
 
-        {/* ── Desktop unified search box ── */}
-        <div className="hidden sm:flex items-center bg-white rounded-2xl shadow-2xl shadow-black/30 overflow-hidden">
-          {/* Prestation input */}
-          <div className="flex items-center gap-3 flex-1 px-5 py-4 min-w-0">
-            <Search size={18} className="text-[#32422c]/40 flex-shrink-0" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Prestation, établissement..."
-              className="flex-1 bg-transparent outline-none text-gray-900 placeholder:text-gray-400 font-medium text-[15px] min-w-0"
-            />
-          </div>
+          {/* Frosted-glass search bar — même style que la homepage */}
+          <div className="relative bg-white/[0.07] backdrop-blur-2xl rounded-2xl md:rounded-full border border-white/[0.12] p-2 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.08)] flex flex-col md:flex-row gap-1.5 md:gap-0">
 
-          <div className="self-stretch w-px bg-gray-100 flex-shrink-0" />
+            {/* Prestation */}
+            <div className="flex-1 flex items-center gap-3 hover:bg-white/[0.06] rounded-xl md:rounded-full px-4 py-3 transition-colors">
+              <Search size={15} className="text-[#c0a062] shrink-0" />
+              <div className="flex flex-col flex-1 min-w-0">
+                <label className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#c0a062] italic mb-0.5">
+                  Prestation
+                </label>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Coiffure, massage, ongles…"
+                  className="bg-transparent text-white placeholder:text-white/30 text-sm font-semibold outline-none w-full italic"
+                />
+              </div>
+            </div>
 
-          {/* Ville input */}
-          <div className="flex items-center gap-3 px-5 py-4">
-            <MapPin size={18} className="text-[#32422c]/40 flex-shrink-0" />
-            <input
-              type="text"
-              value={locationQuery}
-              onChange={(e) => setLocationQuery(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Ville"
-              className="w-36 bg-transparent outline-none text-gray-900 placeholder:text-gray-400 font-medium text-[15px]"
-            />
-          </div>
+            {/* Séparateur */}
+            <div className="block md:hidden h-px bg-white/10 mx-3" />
+            <div className="hidden md:block w-px self-stretch bg-white/10 my-2" />
 
-          {/* CTA */}
-          <div className="p-2 flex-shrink-0">
-            <Button
+            {/* Localisation */}
+            <div className="flex-1 flex items-center gap-3 hover:bg-white/[0.06] rounded-xl md:rounded-full px-4 py-3 transition-colors">
+              <MapPin size={15} className="text-[#c0a062] shrink-0" />
+              <div className="flex flex-col flex-1 min-w-0">
+                <label className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#c0a062] italic mb-0.5">
+                  Localisation
+                </label>
+                <input
+                  type="text"
+                  value={locationQuery}
+                  onChange={(e) => setLocationQuery(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Ville ou code postal"
+                  className="bg-transparent text-white placeholder:text-white/30 text-sm font-semibold outline-none w-full italic"
+                />
+              </div>
+            </div>
+
+            {/* Bouton doré */}
+            <button
               onClick={onSearch}
-              variant="primary"
-              size="sm"
-              className="rounded-xl font-bold px-6 py-3.5 text-sm gap-2"
+              className="cursor-pointer bg-gradient-to-br from-[#d4b070] via-[#c0a062] to-[#a8854e] hover:from-[#e0bc78] hover:via-[#cca96e] hover:to-[#b8945a] text-white font-bold rounded-xl md:rounded-full px-8 shrink-0 shadow-[0_4px_24px_rgba(192,160,98,0.45)] hover:shadow-[0_6px_32px_rgba(192,160,98,0.6)] transition-all duration-300 h-12 md:min-h-[52px] w-full md:w-auto flex items-center justify-center gap-2"
             >
-              <Search size={15} />
-              Rechercher
-            </Button>
+              <span>Rechercher</span>
+              <ArrowRight size={17} className="transition-transform duration-300 group-hover:translate-x-1" />
+            </button>
           </div>
         </div>
+      </div>
 
-        {/* ── Mobile search ── */}
-        <div className="sm:hidden space-y-2">
-          <div className="flex items-center gap-3 bg-white rounded-xl px-4 py-3.5 shadow-lg shadow-black/20">
-            <Search size={18} className="text-[#32422c]/40 flex-shrink-0" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Prestation, établissement..."
-              className="flex-1 bg-transparent outline-none text-gray-900 placeholder:text-gray-400 font-medium"
-            />
-          </div>
-          <div className="flex items-center gap-3 bg-white rounded-xl px-4 py-3.5 shadow-lg shadow-black/20">
-            <MapPin size={18} className="text-[#32422c]/40 flex-shrink-0" />
-            <input
-              type="text"
-              value={locationQuery}
-              onChange={(e) => setLocationQuery(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Ville"
-              className="flex-1 bg-transparent outline-none text-gray-900 placeholder:text-gray-400 font-medium"
-            />
-          </div>
-          <Button
-            onClick={onSearch}
-            variant="primary"
-            size="md"
-            fullWidth
-            className="rounded-xl font-bold gap-2"
-          >
-            <Search size={18} />
-            Rechercher
-          </Button>
-        </div>
-
-        {/* ── Category chips ── */}
-        {onSectorClick && (
-          <div className="mt-4 -mx-4 relative">
-            {/* Scroll container — negative margin escape padding parent */}
-            <div className="flex gap-2 overflow-x-auto px-4 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      {/* ── Bande sombre : chips ──────────────────────────────
+          PAS de overflow-hidden → scroll horizontal fonctionne
+      ────────────────────────────────────────────────────────── */}
+      {onSectorClick && (
+        <div className="bg-[#1e2b18]">
+          <div className="relative">
+            <div className="flex gap-2 overflow-x-auto py-4 px-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {/* Chip « Tous » */}
               <button
                 onClick={() => onSectorClick("")}
-                className={[
-                  "flex-shrink-0 px-4 py-2 rounded-full text-[11px] font-black tracking-wide uppercase transition-all duration-200 cursor-pointer border whitespace-nowrap",
-                  !activeSector
-                    ? "bg-[#c0a062] border-[#c0a062] text-white shadow-md shadow-[#c0a062]/30"
-                    : "bg-white/10 border-white/20 text-white/60 hover:bg-white/20 hover:text-white",
-                ].join(" ")}
+                className={`${CHIP_CLASS_BASE} ${!activeSector ? CHIP_ACTIVE : CHIP_IDLE}`}
               >
                 Tous
               </button>
+
               {sectors.map((s) => (
                 <button
                   key={s.id}
                   onClick={() => onSectorClick(s.id)}
-                  className={[
-                    "flex-shrink-0 px-4 py-2 rounded-full text-[11px] font-black tracking-wide uppercase transition-all duration-200 cursor-pointer border whitespace-nowrap",
-                    activeSector === s.id
-                      ? "bg-[#c0a062] border-[#c0a062] text-white shadow-md shadow-[#c0a062]/30"
-                      : "bg-white/10 border-white/20 text-white/60 hover:bg-white/20 hover:text-white",
-                  ].join(" ")}
+                  className={`${CHIP_CLASS_BASE} ${activeSector === s.id ? CHIP_ACTIVE : CHIP_IDLE}`}
                 >
                   {s.label}
                 </button>
               ))}
-              {/* Trailing spacer : dernier chip jamais collé au bord */}
+
+              {/* Spacer fin */}
               <div className="flex-shrink-0 w-4" aria-hidden="true" />
             </div>
-            {/* Gradient fade droit — indique qu'il y a du contenu à scroller */}
-            <div className="absolute right-0 top-0 bottom-1 w-10 bg-gradient-to-l from-[#1e2b18] to-transparent pointer-events-none" />
-          </div>
-        )}
-      </div>
 
-      {/* Wave bottom */}
-      <div
-        className="h-8 bg-gray-50"
-        style={{ clipPath: "ellipse(60% 100% at 50% 100%)", marginTop: "-1px" }}
-      />
-    </div>
+            {/* Fondu droit */}
+            <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-[#1e2b18] to-transparent pointer-events-none" />
+          </div>
+
+          {/* Wave */}
+          <div
+            className="h-8 bg-gray-50"
+            style={{ clipPath: "ellipse(60% 100% at 50% 100%)", marginTop: "-1px" }}
+          />
+        </div>
+      )}
+
+      {/* Wave quand pas de chips */}
+      {!onSectorClick && (
+        <div className="bg-[#1e2b18]">
+          <div
+            className="h-8 bg-gray-50"
+            style={{ clipPath: "ellipse(60% 100% at 50% 100%)", marginTop: "-1px" }}
+          />
+        </div>
+      )}
+    </>
   );
 }

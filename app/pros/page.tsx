@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import Header from "@/components/features/Header";
 import Footer from "@/components/features/Footer";
 import CTASection from "@/components/features/CTASection";
-import ContactQuickLinks, { prosLinks } from "@/components/features/contact/ContactQuickLinks";
 import { Button } from "@/components/ui";
 import {
   Heart, Calendar, Users, BarChart2, Sparkles,
@@ -189,10 +188,13 @@ export default function ProsPage() {
                   <ArrowRight size={18} className="ml-1 transition-transform group-hover/shine:translate-x-1" />
                 </Button>
               </Link>
-              <a href="#features" className="text-[14px] font-bold text-white/40 hover:text-white/70 transition-colors flex items-center gap-1.5">
+              <button
+                onClick={() => document.getElementById("features")?.scrollIntoView({ behavior: "smooth" })}
+                className="text-[14px] font-bold text-white/40 hover:text-white/70 transition-colors flex items-center gap-1.5 cursor-pointer"
+              >
                 Voir les fonctionnalités
                 <ArrowRight size={14} />
-              </a>
+              </button>
             </motion.div>
 
             {/* Social proof */}
@@ -201,9 +203,9 @@ export default function ProsPage() {
               variants={{ hidden: { opacity: 0 }, visible: { opacity: 1, transition: { duration: 0.6, delay: 0.3 } } }}
             >
               {[
-                { icon: Zap,  text: "Sans engagement" },
-                { icon: Star, text: "4.9 / 5 pros satisfaits" },
-                { icon: Lock, text: "Données sécurisées" },
+                { icon: Zap,   text: "Sans engagement" },
+                { icon: Heart, text: "Inscription en 2 minutes" },
+                { icon: Star,  text: "Accès immédiat & gratuit" },
               ].map(({ icon: Icon, text }) => (
                 <div key={text} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/[0.05] backdrop-blur-md border border-white/[0.07]">
                   <Icon size={13} className="text-[#c0a062]" />
@@ -284,8 +286,8 @@ export default function ProsPage() {
                 <div className="w-12 h-12 rounded-full bg-[#c0a062]/15 border border-[#c0a062]/30 flex items-center justify-center mx-auto mb-4">
                   <Lock size={20} className="text-[#c0a062]" />
                 </div>
-                <p className="text-white font-black text-[17px] mb-1">Bientôt disponible</p>
-                <p className="text-white/40 text-[13px] font-medium">Les offres payantes arrivent prochainement.</p>
+                <p className="text-[#4a7c59] font-black text-[17px] mb-1">Bientôt disponible</p>
+                <p className="text-[#4a7c59]/80 text-[13px] font-medium">Les offres payantes arrivent prochainement.</p>
                 <div className="mt-4 px-4 py-2 rounded-full bg-[#c0a062]/15 border border-[#c0a062]/30 inline-block">
                   <span className="text-[#c0a062] text-[11px] font-black tracking-[0.15em] uppercase">Gratuit en ce moment</span>
                 </div>
@@ -448,7 +450,6 @@ export default function ProsPage() {
           5. CTA + QUICK LINKS + FOOTER
       ════════════════════════════════════════════════════════════ */}
       <CTASection />
-      <ContactQuickLinks links={prosLinks} showHeader={false} />
       <Footer />
     </main>
   );

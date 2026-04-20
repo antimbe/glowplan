@@ -102,7 +102,6 @@ function SearchContent() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
 
       {/* ── SearchBar + category chips ── */}
       <SearchBar
@@ -272,14 +271,17 @@ function SearchContent() {
 ───────────────────────────────────────────── */
 export default function SearchPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-          <div className="w-10 h-10 rounded-full border-[3px] border-[#32422c] border-t-transparent animate-spin" />
-        </div>
-      }
-    >
-      <SearchContent />
-    </Suspense>
+    <>
+      <Header />
+      <Suspense
+        fallback={
+          <div className="min-h-screen bg-gray-50 flex items-center justify-center pt-20">
+            <div className="w-10 h-10 rounded-full border-[3px] border-[#32422c] border-t-transparent animate-spin" />
+          </div>
+        }
+      >
+        <SearchContent />
+      </Suspense>
+    </>
   );
 }
