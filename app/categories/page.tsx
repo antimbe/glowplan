@@ -271,7 +271,6 @@ export default function CategoriesPage() {
                     </div>
                   </Link>
                 </motion.div>
-              );
             ))}
           </motion.div>
 
