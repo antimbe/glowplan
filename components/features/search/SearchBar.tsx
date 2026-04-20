@@ -1,6 +1,7 @@
 "use client";
 
 import { Search, MapPin } from "lucide-react";
+import { Button } from "@/components/ui";
 import { ACTIVITY_SECTORS } from "@/lib/constants/sectors";
 
 interface SearchBarProps {
