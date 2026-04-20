@@ -69,7 +69,7 @@ export default function ProviderCard({
           <Flex align="center" gap={1.5}>
             <MapPin size={16} className="text-primary/40" />
             <Text variant="small" as="span" className="text-gray-500 font-semibold">{location}</Text>
-            {reviewCount > 0 && (
+            {(reviewCount ?? 0) > 0 && (
               <Text variant="small" as="span" className="text-gray-400 font-medium ml-1">
                 • {reviewCount} avis
               </Text>
