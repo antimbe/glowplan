@@ -23,9 +23,19 @@ export default function FeaturedPartnersAdminPage() {
   const featuredCount = establishments.filter((e) => e.is_featured).length;
 
   async function fetchEstablishments() {
-    const res = await fetch("/api/admin/featured");
-    const data = await res.json();
-    setEstablishments(data);
+    try {
+      const res = await fetch("/api/admin/featured");
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? "Erreur lors du chargement");
+        setEstablishments([]);
+      } else {
+        setEstablishments(Array.isArray(data) ? data : []);
+      }
+    } catch {
+      setError("Impossible de contacter l'API");
+      setEstablishments([]);
+    }
     setLoading(false);
   }
 
@@ -38,16 +48,22 @@ export default function FeaturedPartnersAdminPage() {
     setSuccessMsg(null);
     setUpdating(est.id);
 
-    const res = await fetch("/api/admin/featured", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ establishmentId: est.id, featured: !est.is_featured }),
-    });
-
-    const data = await res.json();
+    let res: Response, data: { error?: string };
+    try {
+      res = await fetch("/api/admin/featured", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ establishmentId: est.id, featured: !est.is_featured }),
+      });
+      data = await res.json();
+    } catch {
+      setError("Impossible de contacter l'API");
+      setUpdating(null);
+      return;
+    }
 
     if (!res.ok) {
-      setError(data.error);
+      setError(data.error ?? "Erreur inconnue");
     } else {
       setEstablishments((prev) =>
         prev.map((e) => (e.id === est.id ? { ...e, is_featured: !e.is_featured } : e))
