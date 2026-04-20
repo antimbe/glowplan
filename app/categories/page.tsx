@@ -7,10 +7,10 @@ import { motion } from "framer-motion";
 import {
   ArrowLeft,
   ArrowUpRight,
-  Scissors,
   Sparkles,
   ChevronRight,
 } from "lucide-react";
+import { Button } from "@/components/ui";
 import Header from "@/components/features/Header";
 import Footer from "@/components/features/Footer";
 
@@ -66,14 +66,6 @@ const sectors = [
     short: "Soins",
     image: "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=600&q=80",
     group: "corps",
-  },
-  {
-    id: "protheses",
-    label: "Prothèses capillaires",
-    short: "Prothèses",
-    image: null,
-    Icon: Scissors,
-    group: "cheveux",
   },
   {
     id: "tatouage",
@@ -170,7 +162,7 @@ export default function CategoriesPage() {
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/[0.07] backdrop-blur-md border border-white/10 mb-6">
                 <Sparkles size={13} className="text-[#c0a062]" />
                 <span className="text-[10px] font-black tracking-[0.2em] uppercase text-white/50">
-                  10 catégories disponibles
+                  9 catégories disponibles
                 </span>
               </div>
 
@@ -239,9 +231,7 @@ export default function CategoriesPage() {
             initial="hidden"
             animate="visible"
           >
-            {filtered.map((sector) => {
-              const Icon = "Icon" in sector ? sector.Icon : null;
-              return (
+            {filtered.map((sector) => (
                 <motion.div key={sector.id} variants={itemVariants}>
                   <Link
                     href={`/search?sector=${sector.id}`}
@@ -257,22 +247,7 @@ export default function CategoriesPage() {
                         className="object-cover transition-transform duration-700 group-hover:scale-105"
                       />
                     ) : (
-                      <div className="absolute inset-0 bg-gradient-to-br from-[#32422c] to-[#1e2b18] flex items-center justify-center">
-                        {/* Subtle texture */}
-                        <div className="absolute inset-0 opacity-10"
-                          style={{
-                            backgroundImage:
-                              "radial-gradient(circle at 20% 50%, #c0a062 0%, transparent 60%), radial-gradient(circle at 80% 20%, #c0a062 0%, transparent 50%)",
-                          }}
-                        />
-                        {Icon && (
-                          <Icon
-                            size={52}
-                            strokeWidth={1.2}
-                            className="text-[#c0a062]/70 relative z-10"
-                          />
-                        )}
-                      </div>
+                      <div className="absolute inset-0 bg-gradient-to-br from-[#32422c] to-[#1e2b18]" />
                     )}
 
                     {/* Gradient overlay */}
@@ -297,7 +272,7 @@ export default function CategoriesPage() {
                   </Link>
                 </motion.div>
               );
-            })}
+            ))}
           </motion.div>
 
           {/* Empty state */}
@@ -344,15 +319,16 @@ export default function CategoriesPage() {
             </div>
 
             <div className="relative z-10 shrink-0">
-              <Link
-                href="/signup"
-                className="group inline-flex items-center gap-2.5 bg-[#c0a062] hover:bg-[#d4b576] text-white font-black text-sm px-6 py-3.5 rounded-xl transition-all duration-200 shadow-lg shadow-[#c0a062]/20 hover:shadow-[#c0a062]/30 hover:scale-[1.02]"
-              >
-                Créer mon espace pro
-                <ArrowUpRight
-                  size={16}
-                  className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-                />
+              <Link href="/auth/pro/login">
+                <Button
+                  variant="primary"
+                  size="md"
+                  className="gap-2.5 font-black bg-[#c0a062] shadow-lg shadow-[#c0a062]/30 hover:shadow-[#c0a062]/50 hover:bg-[#d4b576] focus:ring-[#c0a062]"
+                  style={{ borderRadius: "0.75rem" }}
+                >
+                  Créer mon espace pro
+                  <ArrowUpRight size={16} />
+                </Button>
               </Link>
             </div>
           </motion.div>
