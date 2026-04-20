@@ -40,30 +40,28 @@ export async function PATCH(request: NextRequest) {
 export async function GET() {
   const supabase = createAdminClient();
 
-  // Essai avec is_featured
-  let { data, error } = await supabase
+  const { data, error } = await supabase
     .from("establishments")
-    .select("id, name, city, main_photo_url, is_featured, is_profile_complete")
+    .select(`
+      id, name, city, main_photo_url, is_featured, is_profile_complete,
+      services(id)
+    `)
     .order("name");
-
-  // Si la colonne n'existe pas encore (migration non appliquée), on récupère sans
-  if (error?.message?.includes("is_featured")) {
-    const fallback = await supabase
-      .from("establishments")
-      .select("id, name, city, main_photo_url, is_profile_complete")
-      .order("name");
-
-    if (fallback.error) return NextResponse.json({ error: fallback.error.message }, { status: 500 });
-
-    // On ajoute is_featured: false par défaut
-    data = (fallback.data ?? []).map((e: Record<string, unknown>) => ({ ...e, is_featured: false }));
-    error = null;
-  }
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  // Trier : featured en premier
-  const sorted = [...(data ?? [])].sort((a, b) => Number(b.is_featured) - Number(a.is_featured));
+  const result = (data ?? []).map((e) => ({
+    id: e.id,
+    name: e.name,
+    city: e.city,
+    main_photo_url: e.main_photo_url,
+    is_featured: e.is_featured,
+    is_profile_complete: e.is_profile_complete,
+    services_count: Array.isArray(e.services) ? e.services.length : 0,
+  }));
 
-  return NextResponse.json(sorted);
+  // Trier : featured en premier, puis par nom
+  result.sort((a, b) => Number(b.is_featured) - Number(a.is_featured));
+
+  return NextResponse.json(result);
 }

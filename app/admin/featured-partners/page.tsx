@@ -11,6 +11,7 @@ interface Establishment {
   main_photo_url: string | null;
   is_featured: boolean;
   is_profile_complete: boolean;
+  services_count: number;
 }
 
 export default function FeaturedPartnersAdminPage() {
@@ -172,6 +173,11 @@ export default function FeaturedPartnersAdminPage() {
                         Profil incomplet
                       </span>
                     )}
+                    {est.services_count === 0 && (
+                      <span className="text-[10px] font-bold text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full">
+                        ⚠ Aucune prestation
+                      </span>
+                    )}
                   </div>
                   {est.city && (
                     <p className="text-sm text-gray-400 flex items-center gap-1 mt-0.5">
@@ -184,7 +190,7 @@ export default function FeaturedPartnersAdminPage() {
                 {/* Toggle button */}
                 <button
                   onClick={() => toggleFeatured(est)}
-                  disabled={updating === est.id || (!est.is_featured && featuredCount >= 3)}
+                  disabled={updating === est.id || (!est.is_featured && featuredCount >= 3) || (!est.is_featured && est.services_count === 0)}
                   className={`shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
                     est.is_featured
                       ? "bg-red-50 text-red-600 hover:bg-red-100 border border-red-100"

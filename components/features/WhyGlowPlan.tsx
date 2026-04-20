@@ -12,9 +12,9 @@ const features = [
     description: "Un calendrier intuitif pour organiser vos journées sans stress.",
   },
   {
-    icon: Shield,
-    title: "Sécurité totale",
-    description: "Vos données et celles de vos clients sont protégées et cryptées.",
+    icon: Clock,
+    title: "Gain de temps",
+    description: "Automatisez vos rappels et réduisez les absences non honorées.",
   },
   {
     icon: TrendingUp,
@@ -22,9 +22,9 @@ const features = [
     description: "Suivez vos revenus et identifiez vos leviers de croissance.",
   },
   {
-    icon: Clock,
-    title: "Gain de temps",
-    description: "Automatisez vos rappels et réduisez les absences.",
+    icon: Shield,
+    title: "Réservation 24h/24",
+    description: "Vos clients réservent quand ils veulent, même en dehors de vos heures d'ouverture.",
   },
 ];
 
@@ -121,14 +121,14 @@ export default function WhyGlowPlan() {
                 <motion.div
                   key={feature.title}
                   variants={itemVariants}
+                  initial={{ y: isOffset ? 40 : 0 }}
+                  whileHover={{ y: isOffset ? 32 : -8 }}
+                  transition={{ type: "spring", stiffness: 200, damping: 20 }}
                   className={cn(
                     "group relative p-6 rounded-2xl border border-white/[0.08] bg-white/[0.04] backdrop-blur-sm",
-                    "hover:bg-white/[0.08] hover:border-white/[0.14] transition-all duration-500",
+                    "hover:bg-white/[0.08] hover:border-white/[0.14] transition-colors duration-500",
                     "shadow-[0_0_0_1px_rgba(255,255,255,0.03)]",
-                    isOffset ? "lg:translate-y-10" : ""
                   )}
-                  whileHover={{ y: isOffset ? 36 : -4 }}
-                  transition={{ type: "spring", stiffness: 200, damping: 20 }}
                 >
                   {/* Icon */}
                   <div className="w-12 h-12 rounded-xl bg-white/[0.07] border border-white/10 flex items-center justify-center mb-5 group-hover:scale-110 group-hover:bg-[#c0a062]/15 group-hover:border-[#c0a062]/30 transition-all duration-500">
