@@ -2,21 +2,25 @@ import { Card, CardContent, Badge, Button, Link, Heading, Text, Box, Flex, Stack
 import { MapPin, Star, Heart, Calendar } from "lucide-react";
 
 interface ProviderCardProps {
+  id: string;
   name: string;
   location: string;
   rating?: number;
   reviewCount?: number;
   services: string[];
   imageUrl?: string;
+  minPrice?: number;
 }
 
 export default function ProviderCard({
+  id,
   name,
   location,
   rating,
   reviewCount,
   services,
   imageUrl,
+  minPrice,
 }: ProviderCardProps) {
   return (
     <Card 
@@ -84,16 +88,22 @@ export default function ProviderCard({
 
         <Flex align="center" justify="between" gap={4} className="pt-4 border-t border-gray-100">
           <Flex direction="col">
-            <Text variant="muted" className="text-[10px] uppercase tracking-widest font-bold">À partir de</Text>
-            <Text variant="default" as="span" className="font-extrabold text-primary text-xl">25€</Text>
+            {minPrice != null ? (
+              <>
+                <Text variant="muted" className="text-[10px] uppercase tracking-widest font-bold">À partir de</Text>
+                <Text variant="default" as="span" className="font-extrabold text-primary text-xl">{minPrice}€</Text>
+              </>
+            ) : (
+              <Text variant="muted" className="text-[11px] font-semibold text-gray-400">Sur devis</Text>
+            )}
           </Flex>
-          <Button 
-            variant="primary" 
-            size="md" 
+          <Button
+            variant="primary"
+            size="md"
             className="font-bold shadow-lg shadow-primary/20 group/btn"
             asChild
           >
-            <Link href="#" className="flex items-center gap-2">
+            <Link href={`/establishment/${id}`} className="flex items-center gap-2">
               <Calendar size={18} className="group-hover/btn:scale-110 transition-transform" />
               <Text variant="small" as="span" className="font-bold">Réserver</Text>
             </Link>

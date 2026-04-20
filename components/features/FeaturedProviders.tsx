@@ -1,40 +1,23 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Sparkles, ArrowUpRight } from "lucide-react";
 import { Container, Button } from "@/components/ui";
 import ProviderCard from "./ProviderCard";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
 
-const providers = [
-  {
-    name: "L'Art du Rasoir",
-    location: "Paris 11e",
-    rating: 4.8,
-    reviewCount: 127,
-    services: ["Coiffure", "Barbe"],
-    imageUrl:
-      "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?q=80&w=2070&auto=format&fit=crop",
-  },
-  {
-    name: "Lovely Nails Class",
-    location: "Courbevoie",
-    rating: 4.9,
-    reviewCount: 203,
-    services: ["Ongles", "Manucure"],
-    imageUrl:
-      "https://images.unsplash.com/photo-1604654894610-df63bc536371?q=80&w=1974&auto=format&fit=crop",
-  },
-  {
-    name: "Charme & Spa",
-    location: "Montreuil",
-    rating: 4.7,
-    reviewCount: 89,
-    services: ["Esthétique", "Soins"],
-    imageUrl:
-      "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?q=80&w=2070&auto=format&fit=crop",
-  },
-];
+interface Provider {
+  id: string;
+  name: string;
+  city: string;
+  main_photo_url: string | null;
+  rating: number | null;
+  reviewCount: number;
+  services: string[];
+  minPrice: number | null;
+}
 
 const ease: [number, number, number, number] = [0.16, 1, 0.3, 1];
 
@@ -49,6 +32,87 @@ const cardVariants = {
 };
 
 export default function FeaturedProviders() {
+  const [providers, setProviders] = useState<Provider[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchProviders() {
+      const supabase = createClient();
+
+      // Fetch establishments with profile complete
+      const { data: establishments } = await supabase
+        .from("establishments")
+        .select("id, name, city, main_photo_url")
+        .eq("is_profile_complete", true)
+        .limit(6);
+
+      if (!establishments || establishments.length === 0) {
+        setLoading(false);
+        return;
+      }
+
+      const ids = establishments.map((e) => e.id);
+
+      // Fetch reviews for average rating
+      const { data: reviews } = await supabase
+        .from("reviews")
+        .select("establishment_id, rating")
+        .in("establishment_id", ids);
+
+      // Fetch services (top 3 per establishment)
+      const { data: services } = await supabase
+        .from("services")
+        .select("establishment_id, name, price")
+        .in("establishment_id", ids);
+
+      // Build providers list
+      const result: Provider[] = establishments.map((est) => {
+        const estReviews = reviews?.filter((r) => r.establishment_id === est.id) ?? [];
+        const avgRating =
+          estReviews.length > 0
+            ? Math.round((estReviews.reduce((sum, r) => sum + r.rating, 0) / estReviews.length) * 10) / 10
+            : null;
+
+        const estServices = services?.filter((s) => s.establishment_id === est.id) ?? [];
+        const serviceNames = [...new Set(estServices.map((s) => s.name))].slice(0, 3);
+        const prices = estServices.map((s) => s.price).filter(Boolean) as number[];
+        const minPrice = prices.length > 0 ? Math.min(...prices) : null;
+
+        return {
+          id: est.id,
+          name: est.name,
+          city: est.city || "",
+          main_photo_url: est.main_photo_url,
+          rating: avgRating,
+          reviewCount: estReviews.length,
+          services: serviceNames,
+          minPrice,
+        };
+      });
+
+      setProviders(result);
+      setLoading(false);
+    }
+
+    fetchProviders();
+  }, []);
+
+  if (loading) {
+    return (
+      <section className="bg-[#f7f5f2] py-28">
+        <Container>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-96 bg-gray-200 rounded-2xl animate-pulse" />
+            ))}
+          </div>
+        </Container>
+      </section>
+    );
+  }
+
+  if (providers.length === 0) return null;
+
   return (
     <section className="bg-[#f7f5f2] py-28 overflow-hidden">
       <Container>
@@ -77,7 +141,7 @@ export default function FeaturedProviders() {
             </p>
           </div>
 
-          <Link href="#all-providers">
+          <Link href="/search">
             <Button
               variant="outline"
               size="sm"
@@ -98,8 +162,17 @@ export default function FeaturedProviders() {
           viewport={{ once: true, amount: 0.1 }}
         >
           {providers.map((provider) => (
-            <motion.div key={provider.name} variants={cardVariants}>
-              <ProviderCard {...provider} />
+            <motion.div key={provider.id} variants={cardVariants}>
+              <ProviderCard
+                id={provider.id}
+                name={provider.name}
+                location={provider.city}
+                rating={provider.rating ?? undefined}
+                reviewCount={provider.reviewCount}
+                services={provider.services}
+                imageUrl={provider.main_photo_url ?? undefined}
+                minPrice={provider.minPrice ?? undefined}
+              />
             </motion.div>
           ))}
         </motion.div>
