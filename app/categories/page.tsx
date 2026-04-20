@@ -7,11 +7,7 @@ import { motion } from "framer-motion";
 import {
   ArrowLeft,
   ArrowUpRight,
-  Leaf,
   Scissors,
-  Paintbrush,
-  Palette,
-  Stethoscope,
   Sparkles,
   ChevronRight,
 } from "lucide-react";
@@ -68,8 +64,7 @@ const sectors = [
     id: "soins",
     label: "Soins du corps",
     short: "Soins",
-    image: null,
-    Icon: Leaf,
+    image: "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=600&q=80",
     group: "corps",
   },
   {
@@ -84,25 +79,15 @@ const sectors = [
     id: "tatouage",
     label: "Tatouage & piercing",
     short: "Tatouage",
-    image: null,
-    Icon: Paintbrush,
+    image: "https://images.unsplash.com/photo-1598371839696-5c5bb00bdc28?w=600&q=80",
     group: "art",
   },
   {
     id: "maquillage",
     label: "Maquillage",
     short: "Maquillage",
-    image: null,
-    Icon: Palette,
+    image: "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=600&q=80",
     group: "visage",
-  },
-  {
-    id: "medical",
-    label: "Médical & dentaire",
-    short: "Médical",
-    image: null,
-    Icon: Stethoscope,
-    group: "corps",
   },
 ];
 
@@ -185,7 +170,7 @@ export default function CategoriesPage() {
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/[0.07] backdrop-blur-md border border-white/10 mb-6">
                 <Sparkles size={13} className="text-[#c0a062]" />
                 <span className="text-[10px] font-black tracking-[0.2em] uppercase text-white/50">
-                  {sectors.length} catégories disponibles
+                  10 catégories disponibles
                 </span>
               </div>
 

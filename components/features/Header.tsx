@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils/cn";
 import { createClient } from "@/lib/supabase/client";
 
 // Pages with a dark hero — navbar starts transparent
-const DARK_HERO_ROUTES = ["/", "/about", "/pros", "/contact"];
+const DARK_HERO_ROUTES = ["/", "/about", "/pros", "/contact", "/categories"];
 
 const navigationLinks = [
   { label: "Accueil", href: "/" },
