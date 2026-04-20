@@ -1,7 +1,7 @@
 "use client";
 
 import { Search, Heart, Star, MapPin, Calendar } from "lucide-react";
-import { Box, Flex } from "@/components/ui";
+import { Box, Flex, Button } from "@/components/ui";
 import Image from "next/image";
 import Link from "next/link";
 import { EstablishmentSearchResult } from "./types";
@@ -238,10 +238,14 @@ function EstablishmentCard({
               </p>
             </div>
 
-            <div className="flex items-center gap-2 bg-[#32422c] hover:bg-[#3d5438] text-white font-bold text-sm px-5 py-2.5 rounded-xl transition-all duration-200 shadow-md shadow-[#32422c]/15 group-hover:scale-[1.03]">
+            <Button
+              variant="primary"
+              size="sm"
+              className="rounded-xl font-bold gap-2 px-5 group-hover:scale-[1.03]"
+            >
               <Calendar size={15} />
-              <span>Réserver</span>
-            </div>
+              Réserver
+            </Button>
           </Flex>
         </div>
       </div>

@@ -119,32 +119,39 @@ export function SearchBar({
 
         {/* ── Category chips ── */}
         {onSectorClick && (
-          <div className="mt-4 flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            <button
-              onClick={() => onSectorClick("")}
-              className={[
-                "flex-shrink-0 px-4 py-2 rounded-full text-[11px] font-black tracking-wide uppercase transition-all duration-200 cursor-pointer border whitespace-nowrap",
-                !activeSector
-                  ? "bg-[#c0a062] border-[#c0a062] text-white shadow-md shadow-[#c0a062]/30"
-                  : "bg-white/10 border-white/20 text-white/60 hover:bg-white/20 hover:text-white",
-              ].join(" ")}
-            >
-              Tous
-            </button>
-            {sectors.map((s) => (
+          <div className="mt-4 -mx-4 relative">
+            {/* Scroll container — negative margin escape padding parent */}
+            <div className="flex gap-2 overflow-x-auto px-4 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <button
-                key={s.id}
-                onClick={() => onSectorClick(s.id)}
+                onClick={() => onSectorClick("")}
                 className={[
                   "flex-shrink-0 px-4 py-2 rounded-full text-[11px] font-black tracking-wide uppercase transition-all duration-200 cursor-pointer border whitespace-nowrap",
-                  activeSector === s.id
+                  !activeSector
                     ? "bg-[#c0a062] border-[#c0a062] text-white shadow-md shadow-[#c0a062]/30"
                     : "bg-white/10 border-white/20 text-white/60 hover:bg-white/20 hover:text-white",
                 ].join(" ")}
               >
-                {s.label}
+                Tous
               </button>
-            ))}
+              {sectors.map((s) => (
+                <button
+                  key={s.id}
+                  onClick={() => onSectorClick(s.id)}
+                  className={[
+                    "flex-shrink-0 px-4 py-2 rounded-full text-[11px] font-black tracking-wide uppercase transition-all duration-200 cursor-pointer border whitespace-nowrap",
+                    activeSector === s.id
+                      ? "bg-[#c0a062] border-[#c0a062] text-white shadow-md shadow-[#c0a062]/30"
+                      : "bg-white/10 border-white/20 text-white/60 hover:bg-white/20 hover:text-white",
+                  ].join(" ")}
+                >
+                  {s.label}
+                </button>
+              ))}
+              {/* Trailing spacer : dernier chip jamais collé au bord */}
+              <div className="flex-shrink-0 w-4" aria-hidden="true" />
+            </div>
+            {/* Gradient fade droit — indique qu'il y a du contenu à scroller */}
+            <div className="absolute right-0 top-0 bottom-1 w-10 bg-gradient-to-l from-[#1e2b18] to-transparent pointer-events-none" />
           </div>
         )}
       </div>
