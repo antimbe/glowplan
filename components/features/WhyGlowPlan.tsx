@@ -121,13 +121,11 @@ export default function WhyGlowPlan() {
                 <motion.div
                   key={feature.title}
                   variants={itemVariants}
-                  initial={{ y: isOffset ? 40 : 0 }}
-                  whileHover={{ y: isOffset ? 32 : -8 }}
-                  transition={{ type: "spring", stiffness: 200, damping: 20 }}
                   className={cn(
                     "group relative p-6 rounded-2xl border border-white/[0.08] bg-white/[0.04] backdrop-blur-sm",
                     "hover:bg-white/[0.08] hover:border-white/[0.14] transition-colors duration-500",
                     "shadow-[0_0_0_1px_rgba(255,255,255,0.03)]",
+                    isOffset ? "lg:translate-y-10" : ""
                   )}
                 >
                   {/* Icon */}
