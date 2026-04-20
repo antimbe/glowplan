@@ -69,13 +69,15 @@ export function SearchBar({
 
           {/* CTA */}
           <div className="p-2 flex-shrink-0">
-            <button
+            <Button
               onClick={onSearch}
-              className="flex items-center gap-2 bg-[#32422c] hover:bg-[#3d5438] text-white font-bold text-sm px-6 py-3.5 rounded-xl transition-all duration-200 cursor-pointer hover:scale-[1.02] active:scale-[0.98] shadow-md shadow-[#32422c]/20"
+              variant="primary"
+              size="sm"
+              className="rounded-xl font-bold px-6 py-3.5 text-sm gap-2"
             >
               <Search size={15} />
               Rechercher
-            </button>
+            </Button>
           </div>
         </div>
 
