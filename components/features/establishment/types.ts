@@ -11,6 +11,8 @@ export interface Establishment {
     description: string | null;
     email: string | null;
     phone: string | null;
+    instagram: string | null;
+    website: string | null;
     address: string | null;
     city: string | null;
     postal_code: string | null;
