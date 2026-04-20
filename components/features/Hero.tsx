@@ -182,6 +182,7 @@ export default function Hero() {
           </motion.div>
 
           {/* ── Stats row ──────────────────────────────────── */}
+          {/* TODO: réactiver quand on aura les vraies stats
           <motion.div
             variants={fadeUp(0.3)}
             className="flex flex-wrap items-center justify-center gap-3 mt-10"
@@ -197,6 +198,7 @@ export default function Hero() {
               </div>
             ))}
           </motion.div>
+          */}
 
         </motion.div>
       </Container>

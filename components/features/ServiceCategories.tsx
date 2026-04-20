@@ -8,12 +8,12 @@ import Image from "next/image";
 import Link from "next/link";
 
 const categories = [
-  { name: "Coiffure",        image: "/coupes.jpg",    sectorId: "coiffure",  count: "420+ pros" },
-  { name: "Ongles",          image: "/ongles.jpg",    sectorId: "ongles",    count: "310+ pros" },
-  { name: "Sourcils & cils", image: "/sourcils.jpg",  sectorId: "sourcils",  count: "280+ pros" },
-  { name: "Massage",         image: "/massages.jpg",  sectorId: "massage",   count: "195+ pros" },
-  { name: "Barber",          image: "/barber.jpg",    sectorId: "barbier",   count: "240+ pros" },
-  { name: "Épilation",       image: "/epilation.jpg", sectorId: "epilation", count: "360+ pros" },
+  { name: "Coiffure",        image: "/coupes.jpg",    sectorId: "coiffure"  },
+  { name: "Ongles",          image: "/ongles.jpg",    sectorId: "ongles"    },
+  { name: "Sourcils & cils", image: "/sourcils.jpg",  sectorId: "sourcils"  },
+  { name: "Massage",         image: "/massages.jpg",  sectorId: "massage"   },
+  { name: "Barber",          image: "/barber.jpg",    sectorId: "barbier"   },
+  { name: "Épilation",       image: "/epilation.jpg", sectorId: "epilation" },
 ];
 
 const ease: [number, number, number, number] = [0.16, 1, 0.3, 1];
@@ -93,11 +93,8 @@ export default function ServiceCategories() {
 
               {/* Label */}
               <div className="text-center">
-                <p className="text-[13px] font-bold text-gray-800 group-hover:text-[#32422c] transition-colors leading-tight mb-1">
+                <p className="text-[13px] font-bold text-gray-800 group-hover:text-[#32422c] transition-colors leading-tight">
                   {cat.name}
-                </p>
-                <p className="text-[11px] font-semibold text-gray-400 group-hover:text-[#c0a062] transition-colors">
-                  {cat.count}
                 </p>
               </div>
             </motion.div>

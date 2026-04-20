@@ -39,12 +39,13 @@ export default function FeaturedProviders() {
     async function fetchProviders() {
       const supabase = createClient();
 
-      // Fetch establishments with profile complete
+      // Fetch les 3 établissements mis en avant par l'équipe GlowPlan
       const { data: establishments } = await supabase
         .from("establishments")
         .select("id, name, city, main_photo_url")
+        .eq("is_featured", true)
         .eq("is_profile_complete", true)
-        .limit(6);
+        .limit(3);
 
       if (!establishments || establishments.length === 0) {
         setLoading(false);
@@ -141,16 +142,15 @@ export default function FeaturedProviders() {
             </p>
           </div>
 
-          <Link href="/search">
-            <Button
-              variant="outline"
-              size="sm"
-              className="border-[#32422c]/15 text-[#32422c] hover:text-[#c0a062] hover:border-[#c0a062]/30 hover:bg-[#c0a062]/5 rounded-xl font-bold"
-            >
-              Explorer tous les pros
-              <ArrowUpRight size={15} className="transition-transform group-hover/shine:translate-x-0.5 group-hover/shine:-translate-y-0.5" />
-            </Button>
-          </Link>
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-[#32422c]/15 text-[#32422c] hover:text-[#c0a062] hover:border-[#c0a062]/30 hover:bg-[#c0a062]/5 rounded-xl font-bold"
+            onClick={() => window.location.href = "/search"}
+          >
+            Explorer tous les pros
+            <ArrowUpRight size={15} className="transition-transform group-hover/shine:translate-x-0.5 group-hover/shine:-translate-y-0.5" />
+          </Button>
         </motion.div>
 
         {/* Cards grid */}

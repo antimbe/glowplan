@@ -1,5 +1,5 @@
 import { Card, CardContent, Badge, Button, Link, Heading, Text, Box, Flex, Stack, MotionBox } from "@/components/ui";
-import { MapPin, Star, Heart, Calendar } from "lucide-react";
+import { MapPin, Star, Calendar } from "lucide-react";
 
 interface ProviderCardProps {
   id: string;
@@ -39,15 +39,6 @@ export default function ProviderCard({
         />
         <Box className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
         
-        {/* Wishlist Button */}
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="absolute top-4 right-4 p-2 rounded-full bg-white/90 backdrop-blur-md text-gray-900 hover:text-red-500 hover:bg-white transition-all shadow-sm h-10 w-10 min-w-0 z-10"
-        >
-          <Heart size={18} strokeWidth={2.5} />
-        </Button>
-
 
         {/* Quick Info Overlay */}
         <Box className="absolute bottom-4 left-4 right-4 z-10 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500">
@@ -78,7 +69,7 @@ export default function ProviderCard({
           <Flex align="center" gap={1.5}>
             <MapPin size={16} className="text-primary/40" />
             <Text variant="small" as="span" className="text-gray-500 font-semibold">{location}</Text>
-            {reviewCount && (
+            {reviewCount > 0 && (
               <Text variant="small" as="span" className="text-gray-400 font-medium ml-1">
                 • {reviewCount} avis
               </Text>
@@ -97,17 +88,16 @@ export default function ProviderCard({
               <Text variant="muted" className="text-[11px] font-semibold text-gray-400">Sur devis</Text>
             )}
           </Flex>
-          <Button
-            variant="primary"
-            size="md"
-            className="font-bold shadow-lg shadow-primary/20 group/btn"
-            asChild
-          >
-            <Link href={`/establishment/${id}`} className="flex items-center gap-2">
-              <Calendar size={18} className="group-hover/btn:scale-110 transition-transform" />
+          <Link href={`/establishment/${id}`}>
+            <Button
+              variant="primary"
+              size="md"
+              className="font-bold shadow-lg shadow-primary/20"
+            >
+              <Calendar size={18} />
               <Text variant="small" as="span" className="font-bold">Réserver</Text>
-            </Link>
-          </Button>
+            </Button>
+          </Link>
         </Flex>
       </CardContent>
     </Card>
