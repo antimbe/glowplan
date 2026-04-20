@@ -1,86 +1,153 @@
 "use client";
 
 import { Search, MapPin } from "lucide-react";
-import { Button } from "@/components/ui";
+import { ACTIVITY_SECTORS } from "@/lib/constants/sectors";
 
 interface SearchBarProps {
-    searchQuery: string;
-    setSearchQuery: (query: string) => void;
-    locationQuery: string;
-    setLocationQuery: (query: string) => void;
-    onSearch: () => void;
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
+  locationQuery: string;
+  setLocationQuery: (query: string) => void;
+  onSearch: () => void;
+  activeSector?: string;
+  onSectorClick?: (sectorId: string) => void;
 }
 
 export function SearchBar({
-    searchQuery,
-    setSearchQuery,
-    locationQuery,
-    setLocationQuery,
-    onSearch
+  searchQuery,
+  setSearchQuery,
+  locationQuery,
+  setLocationQuery,
+  onSearch,
+  activeSector = "",
+  onSectorClick,
 }: SearchBarProps) {
-    const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === "Enter") onSearch();
-    };
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") onSearch();
+  };
 
-    return (
-        <div className="bg-white border-b border-gray-100 pt-20 sm:pt-24">
-            <div className="max-w-6xl mx-auto px-4 py-4">
-                {/* Desktop Search Bar */}
-                <div className="hidden sm:flex items-center gap-2 bg-gray-50 rounded-full px-4 py-3 max-w-2xl mx-auto border border-gray-100 shadow-sm focus-within:border-primary/30 transition-all">
-                    <Search size={20} className="text-gray-400 flex-shrink-0" />
-                    <input
-                        type="text"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        placeholder="Prestation, établissement..."
-                        className="flex-1 bg-transparent outline-none min-w-0 text-gray-900 placeholder:text-gray-400"
-                    />
-                    <div className="self-stretch w-px bg-gray-200 flex-shrink-0" />
-                    <MapPin size={20} className="text-gray-400 flex-shrink-0" />
-                    <input
-                        type="text"
-                        value={locationQuery}
-                        onChange={(e) => setLocationQuery(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        placeholder="Ville"
-                        className="w-28 sm:w-40 bg-transparent outline-none text-gray-900 placeholder:text-gray-400"
-                    />
-                    <Button size="md" onClick={onSearch} className="rounded-full cursor-pointer flex-shrink-0 font-bold">
-                        Rechercher
-                    </Button>
-                </div>
+  const sectors = ACTIVITY_SECTORS.filter((s) => s.id !== "medical");
 
-                {/* Mobile Search Bar */}
-                <div className="sm:hidden space-y-3">
-                    <div className="flex items-center gap-2 bg-gray-50 rounded-xl px-4 py-3 border border-gray-100">
-                        <Search size={20} className="text-gray-400 flex-shrink-0" />
-                        <input
-                            type="text"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            onKeyDown={handleKeyDown}
-                            placeholder="Prestation, établissement..."
-                            className="flex-1 bg-transparent outline-none min-w-0"
-                        />
-                    </div>
-                    <div className="flex items-center gap-2 bg-gray-50 rounded-xl px-4 py-3 border border-gray-100">
-                        <MapPin size={20} className="text-gray-400 flex-shrink-0" />
-                        <input
-                            type="text"
-                            value={locationQuery}
-                            onChange={(e) => setLocationQuery(e.target.value)}
-                            onKeyDown={handleKeyDown}
-                            placeholder="Ville"
-                            className="flex-1 bg-transparent outline-none min-w-0"
-                        />
-                    </div>
-                    <Button size="md" onClick={onSearch} fullWidth className="rounded-xl cursor-pointer font-bold">
-                        <Search size={18} className="mr-2" />
-                        Rechercher
-                    </Button>
-                </div>
-            </div>
+  return (
+    <div className="relative bg-[#1e2b18] overflow-hidden pt-20">
+      {/* Ambient glows */}
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#c0a062]/6 rounded-full -mr-60 -mt-60 blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-80 h-80 bg-[#32422c]/60 rounded-full -ml-40 blur-[80px] pointer-events-none" />
+
+      <div className="relative max-w-6xl mx-auto px-4 pt-7 pb-5">
+
+        {/* ── Desktop unified search box ── */}
+        <div className="hidden sm:flex items-center bg-white rounded-2xl shadow-2xl shadow-black/30 overflow-hidden">
+          {/* Prestation input */}
+          <div className="flex items-center gap-3 flex-1 px-5 py-4 min-w-0">
+            <Search size={18} className="text-[#32422c]/40 flex-shrink-0" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Prestation, établissement..."
+              className="flex-1 bg-transparent outline-none text-gray-900 placeholder:text-gray-400 font-medium text-[15px] min-w-0"
+            />
+          </div>
+
+          <div className="self-stretch w-px bg-gray-100 flex-shrink-0" />
+
+          {/* Ville input */}
+          <div className="flex items-center gap-3 px-5 py-4">
+            <MapPin size={18} className="text-[#32422c]/40 flex-shrink-0" />
+            <input
+              type="text"
+              value={locationQuery}
+              onChange={(e) => setLocationQuery(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Ville"
+              className="w-36 bg-transparent outline-none text-gray-900 placeholder:text-gray-400 font-medium text-[15px]"
+            />
+          </div>
+
+          {/* CTA */}
+          <div className="p-2 flex-shrink-0">
+            <button
+              onClick={onSearch}
+              className="flex items-center gap-2 bg-[#32422c] hover:bg-[#3d5438] text-white font-bold text-sm px-6 py-3.5 rounded-xl transition-all duration-200 cursor-pointer hover:scale-[1.02] active:scale-[0.98] shadow-md shadow-[#32422c]/20"
+            >
+              <Search size={15} />
+              Rechercher
+            </button>
+          </div>
         </div>
-    );
+
+        {/* ── Mobile search ── */}
+        <div className="sm:hidden space-y-2">
+          <div className="flex items-center gap-3 bg-white rounded-xl px-4 py-3.5 shadow-lg shadow-black/20">
+            <Search size={18} className="text-[#32422c]/40 flex-shrink-0" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Prestation, établissement..."
+              className="flex-1 bg-transparent outline-none text-gray-900 placeholder:text-gray-400 font-medium"
+            />
+          </div>
+          <div className="flex items-center gap-3 bg-white rounded-xl px-4 py-3.5 shadow-lg shadow-black/20">
+            <MapPin size={18} className="text-[#32422c]/40 flex-shrink-0" />
+            <input
+              type="text"
+              value={locationQuery}
+              onChange={(e) => setLocationQuery(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Ville"
+              className="flex-1 bg-transparent outline-none text-gray-900 placeholder:text-gray-400 font-medium"
+            />
+          </div>
+          <button
+            onClick={onSearch}
+            className="w-full flex items-center justify-center gap-2 bg-[#32422c] hover:bg-[#3d5438] text-white font-bold py-3.5 rounded-xl cursor-pointer shadow-md transition-colors"
+          >
+            <Search size={18} />
+            Rechercher
+          </button>
+        </div>
+
+        {/* ── Category chips ── */}
+        {onSectorClick && (
+          <div className="mt-4 flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <button
+              onClick={() => onSectorClick("")}
+              className={[
+                "flex-shrink-0 px-4 py-2 rounded-full text-[11px] font-black tracking-wide uppercase transition-all duration-200 cursor-pointer border whitespace-nowrap",
+                !activeSector
+                  ? "bg-[#c0a062] border-[#c0a062] text-white shadow-md shadow-[#c0a062]/30"
+                  : "bg-white/10 border-white/20 text-white/60 hover:bg-white/20 hover:text-white",
+              ].join(" ")}
+            >
+              Tous
+            </button>
+            {sectors.map((s) => (
+              <button
+                key={s.id}
+                onClick={() => onSectorClick(s.id)}
+                className={[
+                  "flex-shrink-0 px-4 py-2 rounded-full text-[11px] font-black tracking-wide uppercase transition-all duration-200 cursor-pointer border whitespace-nowrap",
+                  activeSector === s.id
+                    ? "bg-[#c0a062] border-[#c0a062] text-white shadow-md shadow-[#c0a062]/30"
+                    : "bg-white/10 border-white/20 text-white/60 hover:bg-white/20 hover:text-white",
+                ].join(" ")}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Wave bottom */}
+      <div
+        className="h-8 bg-gray-50"
+        style={{ clipPath: "ellipse(60% 100% at 50% 100%)", marginTop: "-1px" }}
+      />
+    </div>
+  );
 }
