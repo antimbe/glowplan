@@ -33,37 +33,40 @@ export default function ShareAvailabilityModal({ isOpen, onClose, establishmentI
   const handleOpen = () => window.open(shareUrl, "_blank");
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
 
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+      <div className="relative bg-white rounded-3xl shadow-[0_32px_64px_-12px_rgba(0,0,0,0.25)] w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+
+        {/* Top accent */}
+        <div className="h-[2px] bg-gradient-to-r from-transparent via-[#c0a062]/60 to-transparent" />
 
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-100">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-              <Share2 className="w-5 h-5 text-primary" />
+        <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
+          <div className="flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-[#32422c]/8 border border-[#32422c]/12 flex items-center justify-center flex-shrink-0">
+              <Share2 size={18} className="text-[#32422c]" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-gray-900">Partager mes disponibilités</h2>
-              <p className="text-xs text-gray-500">Lien mis à jour en temps réel</p>
+              <h2 className="text-[16px] font-black text-gray-900 tracking-tight">Partager mes disponibilités</h2>
+              <p className="text-xs text-gray-400 font-medium mt-0.5">Lien mis à jour en temps réel</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-9 h-9 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-all cursor-pointer flex-shrink-0"
           >
-            <X size={18} className="text-gray-500" />
+            <X size={15} strokeWidth={2.5} />
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-5">
+        <div className="p-6 space-y-4">
 
           {/* Période */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              <Calendar size={14} className="inline mr-1.5 text-primary" />
+            <label className="flex items-center gap-1.5 text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+              <Calendar size={12} className="text-[#32422c]" />
               Période à afficher
             </label>
             <Select
@@ -75,63 +78,63 @@ export default function ShareAvailabilityModal({ isOpen, onClose, establishmentI
           </div>
 
           {/* Lien généré */}
-          <div className="bg-gray-50 rounded-2xl p-4 space-y-3">
-            <div className="flex items-center gap-2 mb-1">
-              <Link2 size={15} className="text-primary" />
-              <span className="text-sm font-semibold text-gray-800">Votre lien de disponibilités</span>
+          <div className="bg-gray-50 border border-gray-100 rounded-2xl p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <Link2 size={14} className="text-[#32422c]" />
+              <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">Votre lien</span>
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-xs text-gray-500 break-all select-all font-mono">
+            <div className="bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-[11px] text-gray-400 break-all select-all font-mono leading-relaxed">
               {shareUrl}
             </div>
 
             <div className="flex gap-2">
-              <Button
-                variant="primary"
-                size="sm"
+              <button
                 onClick={handleCopy}
-                className="flex-1"
+                className={[
+                  "flex-1 h-10 rounded-xl font-bold text-sm transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5",
+                  copied
+                    ? "bg-[#32422c] text-white shadow-lg shadow-[#32422c]/20"
+                    : "bg-[#32422c] hover:bg-[#3d5438] text-white shadow-md shadow-[#32422c]/15",
+                ].join(" ")}
               >
                 {copied
-                  ? <><Check size={15} className="mr-1.5" /> Copié !</>
-                  : <><Copy size={15} className="mr-1.5" /> Copier le lien</>
+                  ? <><Check size={14} /> Copié !</>
+                  : <><Copy size={14} /> Copier</>
                 }
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
+              </button>
+              <button
                 onClick={handleOpen}
-                className="flex-1"
+                className="flex-1 h-10 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 text-gray-600 font-bold text-sm transition-all duration-150 cursor-pointer flex items-center justify-center gap-1.5"
               >
-                <ExternalLink size={15} className="mr-1.5" />
+                <ExternalLink size={14} />
                 Aperçu
-              </Button>
+              </button>
             </div>
           </div>
 
           {/* Astuce Instagram */}
-          <div className="bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-100 rounded-2xl p-4">
+          <div className="bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-100/80 rounded-2xl p-4">
             <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
-                <Instagram size={15} className="text-white" />
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0 shadow-sm">
+                <Instagram size={14} className="text-white" />
               </div>
               <div>
-                <p className="text-sm font-bold text-gray-800 mb-1">Astuce Instagram</p>
-                <p className="text-xs text-gray-600 leading-relaxed">
-                  Copiez ce lien et ajoutez-le dans votre <span className="font-semibold">bio Instagram</span> ou dans une Story via le sticker "Lien". Vos clientes verront vos créneaux en temps réel et pourront réserver directement.
+                <p className="text-xs font-black text-gray-800 mb-1">Astuce Instagram</p>
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  Ajoutez ce lien dans votre <span className="font-semibold text-gray-700">bio</span> ou en Story via le sticker "Lien". Vos clientes voient vos créneaux en temps réel.
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Infos page */}
-          <div className="bg-primary/5 border border-primary/10 rounded-2xl p-4">
+          {/* Info */}
+          <div className="bg-[#32422c]/5 border border-[#32422c]/10 rounded-2xl p-4">
             <div className="flex items-start gap-3">
-              <Lightbulb size={17} className="text-primary flex-shrink-0 mt-0.5" />
-              <div className="text-xs text-gray-600 space-y-1 leading-relaxed">
-                <p>La page affiche <span className="font-semibold text-gray-800">vos créneaux réels disponibles</span> en tenant compte de vos horaires, rendez-vous et indisponibilités.</p>
-                <p>Elle se <span className="font-semibold text-gray-800">met à jour automatiquement</span> — pas besoin de la recréer à chaque fois.</p>
-              </div>
+              <Lightbulb size={15} className="text-[#32422c] flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-gray-500 leading-relaxed">
+                La page affiche vos <span className="font-semibold text-gray-700">créneaux réels</span> en tenant compte de vos horaires et rendez-vous — elle se met à jour automatiquement.
+              </p>
             </div>
           </div>
 

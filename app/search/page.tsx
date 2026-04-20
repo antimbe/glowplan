@@ -194,70 +194,70 @@ function SearchContent() {
 
       {/* ── Login prompt modal ── */}
       {showLoginPrompt && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl shadow-[0_32px_64px_-12px_rgba(0,0,0,0.25)] max-w-md w-full overflow-hidden animate-in fade-in zoom-in-95 duration-200">
 
-            {/* Close */}
-            <button
-              onClick={() => setShowLoginPrompt(false)}
-              className="absolute top-5 right-5 w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors cursor-pointer"
-              aria-label="Fermer"
-            >
-              <X size={14} className="text-gray-500" />
-            </button>
+            {/* Top accent */}
+            <div className="h-[2px] bg-gradient-to-r from-transparent via-red-400/60 to-transparent" />
 
-            <div className="flex items-center gap-4 mb-6">
-              <div className="w-14 h-14 rounded-2xl bg-red-50 flex items-center justify-center shadow-inner flex-shrink-0">
-                <Heart size={26} className="text-red-500 fill-red-500/20" />
+            {/* Header */}
+            <div className="flex items-start justify-between px-7 pt-7 pb-5">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-red-50 border border-red-100 flex items-center justify-center flex-shrink-0">
+                  <Heart size={22} className="text-red-500 fill-red-500/30" />
+                </div>
+                <div>
+                  <h2 className="text-[17px] font-black text-gray-900 tracking-tight">
+                    Ajouter aux favoris
+                  </h2>
+                  <p className="text-gray-400 text-xs font-medium mt-0.5">
+                    Ne perdez plus vos bonnes adresses
+                  </p>
+                </div>
               </div>
-              <div>
-                <h2 className="text-xl font-black text-gray-900 tracking-tight">
-                  Ajouter aux favoris
-                </h2>
-                <p className="text-gray-400 text-sm font-medium">
-                  Ne perdez plus vos bonnes adresses
-                </p>
-              </div>
-            </div>
-
-            <p className="text-gray-600 text-sm leading-relaxed mb-7">
-              Connectez-vous pour sauvegarder cet établissement et le retrouver
-              instantanément dans votre espace membre.
-            </p>
-
-            <div className="flex flex-col gap-2.5">
-              <NextLink
-                href={`/auth/client/login?redirect=${encodeURIComponent(
-                  window.location.pathname + window.location.search
-                )}`}
-              >
-                <Button
-                  variant="primary"
-                  className="w-full cursor-pointer h-12 text-sm font-bold rounded-xl shadow-lg shadow-primary/20"
-                >
-                  <LogIn size={18} className="mr-2" />
-                  Se connecter
-                </Button>
-              </NextLink>
-              <NextLink
-                href={`/auth/client/login?redirect=${encodeURIComponent(
-                  window.location.pathname + window.location.search
-                )}&signup=true`}
-              >
-                <Button
-                  variant="outline"
-                  className="w-full cursor-pointer h-12 text-sm font-bold rounded-xl border-2"
-                >
-                  <UserPlus size={18} className="mr-2" />
-                  Créer un compte
-                </Button>
-              </NextLink>
               <button
                 onClick={() => setShowLoginPrompt(false)}
-                className="text-gray-400 hover:text-gray-600 text-sm font-bold mt-1 py-2 transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-all cursor-pointer flex-shrink-0"
+                aria-label="Fermer"
               >
-                Plus tard
+                <X size={15} strokeWidth={2.5} />
               </button>
+            </div>
+
+            <div className="px-7 pb-7 space-y-5">
+              <p className="text-gray-500 text-sm leading-relaxed">
+                Connectez-vous pour sauvegarder cet établissement et le retrouver
+                instantanément dans votre espace membre.
+              </p>
+
+              <div className="flex flex-col gap-2.5">
+                <NextLink
+                  href={`/auth/client/login?redirect=${encodeURIComponent(
+                    window.location.pathname + window.location.search
+                  )}`}
+                >
+                  <button className="w-full h-12 rounded-xl bg-[#32422c] hover:bg-[#3d5438] text-white font-bold text-sm transition-all duration-150 cursor-pointer shadow-lg shadow-[#32422c]/20 flex items-center justify-center gap-2">
+                    <LogIn size={17} />
+                    Se connecter
+                  </button>
+                </NextLink>
+                <NextLink
+                  href={`/auth/client/login?redirect=${encodeURIComponent(
+                    window.location.pathname + window.location.search
+                  )}&signup=true`}
+                >
+                  <button className="w-full h-12 rounded-xl border-2 border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 text-gray-700 font-bold text-sm transition-all duration-150 cursor-pointer flex items-center justify-center gap-2">
+                    <UserPlus size={17} />
+                    Créer un compte
+                  </button>
+                </NextLink>
+                <button
+                  onClick={() => setShowLoginPrompt(false)}
+                  className="text-gray-400 hover:text-gray-600 text-sm font-bold py-2 transition-colors cursor-pointer text-center"
+                >
+                  Plus tard
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Calendar, Clock, Loader2 } from "lucide-react";
+import { X, Calendar, Clock, AlertTriangle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui";
 import { Appointment } from "./types";
 
@@ -26,61 +26,95 @@ export function CancelModal({
     formatTime
 }: CancelModalProps) {
     return (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl max-w-md w-full p-6">
-                <h3 className="text-xl font-bold text-gray-900 mb-2">Annuler la réservation</h3>
-                <p className="text-gray-600 mb-4">
-                    Êtes-vous sûr de vouloir annuler votre rendez-vous chez <strong>{appointment.establishments?.name}</strong> ?
-                </p>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-3xl shadow-[0_32px_64px_-12px_rgba(0,0,0,0.25)] max-w-md w-full overflow-hidden animate-in fade-in zoom-in-95 duration-200">
 
-                <div className="bg-gray-50 rounded-xl p-4 mb-4">
-                    <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
-                        <Calendar size={14} />
-                        <span>{formatDate(appointment.start_time)}</span>
+                {/* Top accent */}
+                <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-red-400/60 to-transparent" />
+
+                {/* Header */}
+                <div className="flex items-start justify-between px-6 pt-7 pb-5">
+                    <div className="flex items-center gap-3.5">
+                        <div className="w-11 h-11 rounded-2xl bg-red-50 border border-red-100 flex items-center justify-center flex-shrink-0">
+                            <AlertTriangle size={20} className="text-red-500" strokeWidth={2} />
+                        </div>
+                        <div>
+                            <h3 className="text-[17px] font-black text-gray-900 tracking-tight">Annuler la réservation</h3>
+                            <p className="text-gray-400 text-xs font-medium mt-0.5">Cette action est irréversible</p>
+                        </div>
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <Clock size={14} />
-                        <span>{formatTime(appointment.start_time)}</span>
-                    </div>
-                    <p className="text-sm font-medium text-gray-900 mt-2">{appointment.services?.name}</p>
-                </div>
-
-                <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Motif de l&apos;annulation <span className="text-gray-400">(optionnel)</span>
-                    </label>
-                    <textarea
-                        value={reason}
-                        onChange={(e) => setReason(e.target.value)}
-                        placeholder="Indiquez la raison de votre annulation..."
-                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
-                        rows={3}
-                    />
-                </div>
-
-                <div className="flex gap-3">
-                    <Button
-                        variant="outline"
+                    <button
                         onClick={onClose}
-                        className="flex-1"
+                        className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-all cursor-pointer flex-shrink-0 mt-0.5"
                     >
-                        Retour
-                    </Button>
-                    <Button
-                        variant="danger"
-                        onClick={onConfirm}
-                        disabled={cancelling}
-                        className="flex-1"
-                    >
-                        {cancelling ? (
-                            <span className="flex items-center gap-2">
-                                <Loader2 className="animate-spin" size={18} />
-                                Annulation...
-                            </span>
-                        ) : (
-                            "Confirmer l'annulation"
-                        )}
-                    </Button>
+                        <X size={15} strokeWidth={2.5} />
+                    </button>
+                </div>
+
+                <div className="px-6 pb-6 space-y-4">
+                    {/* Confirmation text */}
+                    <p className="text-gray-600 text-sm leading-relaxed">
+                        Êtes-vous sûr de vouloir annuler votre rendez-vous chez{" "}
+                        <span className="font-bold text-gray-900">{appointment.establishments?.name}</span> ?
+                    </p>
+
+                    {/* Appointment details card */}
+                    <div className="bg-gray-50 border border-gray-100 rounded-2xl p-4 space-y-2.5">
+                        <div className="flex items-center gap-2.5 text-sm text-gray-700">
+                            <div className="w-7 h-7 rounded-lg bg-white border border-gray-200 flex items-center justify-center flex-shrink-0">
+                                <Calendar size={13} className="text-[#32422c]" />
+                            </div>
+                            <span className="font-semibold">{formatDate(appointment.start_time)}</span>
+                        </div>
+                        <div className="flex items-center gap-2.5 text-sm text-gray-700">
+                            <div className="w-7 h-7 rounded-lg bg-white border border-gray-200 flex items-center justify-center flex-shrink-0">
+                                <Clock size={13} className="text-[#32422c]" />
+                            </div>
+                            <span className="font-semibold">{formatTime(appointment.start_time)}</span>
+                        </div>
+                        <div className="pt-1 border-t border-gray-100">
+                            <p className="text-sm font-black text-gray-900">{appointment.services?.name}</p>
+                        </div>
+                    </div>
+
+                    {/* Reason textarea */}
+                    <div>
+                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                            Motif <span className="normal-case font-medium text-gray-400">(optionnel)</span>
+                        </label>
+                        <textarea
+                            value={reason}
+                            onChange={(e) => setReason(e.target.value)}
+                            placeholder="Indiquez la raison de votre annulation..."
+                            className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#32422c]/20 focus:border-[#32422c]/40 transition-all resize-none placeholder:text-gray-300 text-gray-700"
+                            rows={3}
+                        />
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex gap-3 pt-1">
+                        <Button
+                            variant="outline"
+                            onClick={onClose}
+                            className="flex-1 rounded-xl font-bold"
+                        >
+                            Retour
+                        </Button>
+                        <button
+                            onClick={onConfirm}
+                            disabled={cancelling}
+                            className="flex-1 h-11 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold text-sm transition-all duration-150 cursor-pointer shadow-lg shadow-red-500/20 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        >
+                            {cancelling ? (
+                                <>
+                                    <Loader2 size={16} className="animate-spin" />
+                                    Annulation...
+                                </>
+                            ) : (
+                                "Confirmer l'annulation"
+                            )}
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

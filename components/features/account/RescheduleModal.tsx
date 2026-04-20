@@ -104,7 +104,6 @@ export function RescheduleModal({ appointment, onClose, onSuccess }: RescheduleM
     }
   };
 
-  // Build calendar days
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const maxDate = new Date(today);
@@ -128,45 +127,49 @@ export function RescheduleModal({ appointment, onClose, onSuccess }: RescheduleM
     date.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-3xl max-w-md w-full shadow-[0_32px_64px_-12px_rgba(0,0,0,0.25)] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+
+        {/* Top accent */}
+        <div className="h-[2px] bg-gradient-to-r from-transparent via-[#c0a062]/60 to-transparent" />
+
         {/* Header */}
-        <div className="bg-primary px-6 py-5 flex items-center justify-between">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
           <div className="flex items-center gap-3">
             {step === "slot" && (
               <button
                 onClick={() => setStep("date")}
-                className="text-white/70 hover:text-white transition-colors"
+                className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-700 transition-all cursor-pointer"
               >
-                <ChevronLeft size={20} />
+                <ChevronLeft size={18} />
               </button>
             )}
             <div>
-              <p className="text-white/60 text-xs font-bold uppercase tracking-widest">
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#c0a062] mb-0.5">
                 {step === "date" ? "Étape 1 / 2" : "Étape 2 / 2"}
               </p>
-              <h3 className="text-white font-black text-lg">
+              <h3 className="text-[16px] font-black text-gray-900 tracking-tight">
                 {step === "date" ? "Choisir une date" : "Choisir un horaire"}
               </h3>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-white/60 hover:text-white transition-colors p-1 rounded-lg hover:bg-white/10"
+            className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-all cursor-pointer"
           >
-            <X size={20} />
+            <X size={15} strokeWidth={2.5} />
           </button>
         </div>
 
         {/* Current appointment reminder */}
         <div className="px-6 pt-4 pb-2">
-          <div className="bg-primary/5 border border-primary/10 rounded-2xl px-4 py-3 flex items-center gap-3">
-            <div className="w-8 h-8 bg-primary/10 rounded-xl flex items-center justify-center flex-shrink-0">
-              <Calendar size={16} className="text-primary" />
+          <div className="bg-[#32422c]/5 border border-[#32422c]/10 rounded-2xl px-4 py-3 flex items-center gap-3">
+            <div className="w-8 h-8 bg-[#32422c]/10 rounded-xl flex items-center justify-center flex-shrink-0">
+              <Calendar size={15} className="text-[#32422c]" />
             </div>
             <div>
-              <p className="text-xs text-primary/60 font-bold uppercase tracking-wider">Créneau actuel</p>
-              <p className="text-sm font-black text-primary">
+              <p className="text-[10px] text-[#32422c]/50 font-black uppercase tracking-wider">Créneau actuel</p>
+              <p className="text-sm font-black text-[#32422c]">
                 {new Date(appointment.start_time).toLocaleDateString("fr-FR", {
                   weekday: "short", day: "numeric", month: "short",
                 })}{" "}
@@ -181,30 +184,30 @@ export function RescheduleModal({ appointment, onClose, onSuccess }: RescheduleM
 
         {/* Step: Date picker */}
         {step === "date" && (
-          <div className="px-6 pb-6 pt-2">
+          <div className="px-6 pb-6 pt-3">
             {/* Month navigation */}
             <div className="flex items-center justify-between mb-4">
               <button
                 onClick={prevMonth}
-                className="w-9 h-9 rounded-xl hover:bg-gray-100 flex items-center justify-center transition-colors"
+                className="w-9 h-9 rounded-xl hover:bg-gray-100 flex items-center justify-center transition-colors cursor-pointer"
               >
-                <ChevronLeft size={18} className="text-gray-600" />
+                <ChevronLeft size={18} className="text-gray-500" />
               </button>
-              <p className="font-black text-gray-900 text-base capitalize">
+              <p className="font-black text-gray-900 text-sm capitalize">
                 {MONTHS[month]} {year}
               </p>
               <button
                 onClick={nextMonth}
-                className="w-9 h-9 rounded-xl hover:bg-gray-100 flex items-center justify-center transition-colors"
+                className="w-9 h-9 rounded-xl hover:bg-gray-100 flex items-center justify-center transition-colors cursor-pointer"
               >
-                <ChevronRight size={18} className="text-gray-600" />
+                <ChevronRight size={18} className="text-gray-500" />
               </button>
             </div>
 
             {/* Day names */}
             <div className="grid grid-cols-7 mb-2">
               {DAYS_SHORT.map((d) => (
-                <div key={d} className="text-center text-xs font-black text-gray-300 uppercase tracking-widest py-1">
+                <div key={d} className="text-center text-[10px] font-black text-gray-300 uppercase tracking-widest py-1">
                   {d}
                 </div>
               ))}
@@ -220,8 +223,7 @@ export function RescheduleModal({ appointment, onClose, onSuccess }: RescheduleM
                 const date = new Date(year, month, dayNum);
                 const isPast = date < today;
                 const isTooFar = date > maxDate;
-                const isSelected =
-                  selectedDate?.toDateString() === date.toDateString();
+                const isSelected = selectedDate?.toDateString() === date.toDateString();
                 const isToday = date.toDateString() === today.toDateString();
                 const disabled = isPast || isTooFar;
 
@@ -230,13 +232,13 @@ export function RescheduleModal({ appointment, onClose, onSuccess }: RescheduleM
                     key={i}
                     onClick={() => !disabled && handleDateSelect(date)}
                     disabled={disabled}
-                    className={`
-                      aspect-square rounded-xl text-sm font-bold flex items-center justify-center transition-all
-                      ${isSelected ? "bg-primary text-white shadow-lg shadow-primary/30 scale-105" : ""}
-                      ${isToday && !isSelected ? "border-2 border-primary text-primary" : ""}
-                      ${disabled ? "text-gray-200 cursor-not-allowed" : ""}
-                      ${!disabled && !isSelected ? "hover:bg-primary/10 hover:text-primary text-gray-700" : ""}
-                    `}
+                    className={[
+                      "aspect-square rounded-xl text-sm font-bold flex items-center justify-center transition-all duration-150 cursor-pointer",
+                      isSelected ? "bg-[#32422c] text-white shadow-lg shadow-[#32422c]/25 scale-105" : "",
+                      isToday && !isSelected ? "border-2 border-[#c0a062] text-[#32422c]" : "",
+                      disabled ? "text-gray-200 cursor-not-allowed" : "",
+                      !disabled && !isSelected ? "hover:bg-[#32422c]/8 hover:text-[#32422c] text-gray-700" : "",
+                    ].join(" ")}
                   >
                     {dayNum}
                   </button>
@@ -248,24 +250,26 @@ export function RescheduleModal({ appointment, onClose, onSuccess }: RescheduleM
 
         {/* Step: Slot picker */}
         {step === "slot" && selectedDate && (
-          <div className="px-6 pb-6 pt-2">
-            <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3 capitalize">
+          <div className="px-6 pb-6 pt-3">
+            <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3 capitalize">
               {formatSelectedDate(selectedDate)}
             </p>
 
             {loadingSlots ? (
               <div className="flex flex-col items-center justify-center py-10 gap-3">
-                <Loader2 className="animate-spin text-primary" size={28} />
+                <Loader2 className="animate-spin text-[#32422c]" size={26} />
                 <p className="text-sm text-gray-400 font-medium">Chargement des créneaux...</p>
               </div>
             ) : slots.length === 0 ? (
               <div className="text-center py-10">
-                <Clock size={40} className="mx-auto text-gray-200 mb-3" />
-                <p className="text-sm font-bold text-gray-500">Aucun créneau disponible</p>
-                <p className="text-xs text-gray-400 mt-1">Essayez une autre date</p>
+                <div className="w-14 h-14 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center mx-auto mb-3">
+                  <Clock size={24} className="text-gray-300" />
+                </div>
+                <p className="text-sm font-bold text-gray-700">Aucun créneau disponible</p>
+                <p className="text-xs text-gray-400 mt-1 mb-4">Essayez une autre date</p>
                 <Button
                   variant="outline"
-                  className="mt-4 rounded-xl"
+                  className="rounded-xl text-sm font-bold"
                   onClick={() => setStep("date")}
                 >
                   Changer de date
@@ -278,13 +282,12 @@ export function RescheduleModal({ appointment, onClose, onSuccess }: RescheduleM
                     <button
                       key={slot.startTime}
                       onClick={() => setSelectedSlot(slot)}
-                      className={`
-                        py-3 rounded-2xl text-sm font-black transition-all border-2
-                        ${selectedSlot?.startTime === slot.startTime
-                          ? "bg-primary text-white border-primary shadow-lg shadow-primary/30 scale-105"
-                          : "border-gray-100 text-gray-700 hover:border-primary hover:text-primary hover:bg-primary/5"
-                        }
-                      `}
+                      className={[
+                        "py-3 rounded-xl text-sm font-black transition-all duration-150 border-2 cursor-pointer",
+                        selectedSlot?.startTime === slot.startTime
+                          ? "bg-[#32422c] text-white border-[#32422c] shadow-lg shadow-[#32422c]/25 scale-[1.03]"
+                          : "border-gray-100 text-gray-600 hover:border-[#32422c]/30 hover:text-[#32422c] hover:bg-[#32422c]/5",
+                      ].join(" ")}
                     >
                       {slot.label}
                     </button>
@@ -292,10 +295,9 @@ export function RescheduleModal({ appointment, onClose, onSuccess }: RescheduleM
                 </div>
 
                 {selectedSlot && (
-                  <div className="mt-4 bg-green-50 border border-green-100 rounded-2xl px-4 py-3 flex items-center gap-3">
-                    <CheckCircle2 size={18} className="text-green-600 flex-shrink-0" />
-                    <p className="text-sm font-bold text-green-800">
-                      Nouveau créneau :{" "}
+                  <div className="mt-4 bg-[#32422c]/5 border border-[#32422c]/15 rounded-2xl px-4 py-3 flex items-center gap-3 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                    <CheckCircle2 size={17} className="text-[#32422c] flex-shrink-0" />
+                    <p className="text-sm font-bold text-[#32422c]">
                       {formatSelectedDate(selectedDate)} à {selectedSlot.label}
                     </p>
                   </div>
@@ -305,21 +307,20 @@ export function RescheduleModal({ appointment, onClose, onSuccess }: RescheduleM
                   <p className="text-sm text-red-500 font-medium mt-3 text-center">{error}</p>
                 )}
 
-                <Button
-                  variant="primary"
-                  className="w-full mt-4 rounded-2xl h-13 font-black"
+                <button
                   disabled={!selectedSlot || submitting}
                   onClick={handleConfirm}
+                  className="w-full mt-4 h-12 rounded-xl bg-[#32422c] hover:bg-[#3d5438] text-white font-bold text-sm transition-all duration-150 cursor-pointer shadow-lg shadow-[#32422c]/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {submitting ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <Loader2 className="animate-spin" size={18} />
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
                       Modification en cours...
-                    </span>
+                    </>
                   ) : (
                     "Confirmer le nouveau créneau"
                   )}
-                </Button>
+                </button>
               </>
             )}
           </div>
