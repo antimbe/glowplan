@@ -7,15 +7,6 @@ import {
   User,
   Star,
   Loader2,
-  Mail,
-  Phone,
-  Instagram,
-  LogOut,
-  Trash2,
-  Clock,
-  Check,
-  X,
-  MapPin
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import Header from "@/components/features/Header";
@@ -29,6 +20,14 @@ import { ReviewsTab } from "@/components/features/account/ReviewsTab";
 import { ProfileTab } from "@/components/features/account/ProfileTab";
 import { ReviewModal } from "@/components/features/account/ReviewModal";
 import { CancelModal } from "@/components/features/account/CancelModal";
+import { motion, AnimatePresence } from "framer-motion";
+
+const TABS: { key: AccountTab; label: string; icon: React.ElementType }[] = [
+  { key: "reservations", label: "Réservations", icon: Calendar },
+  { key: "favorites",    label: "Favoris",       icon: Heart },
+  { key: "reviews",      label: "Avis",           icon: Star },
+  { key: "profile",      label: "Profil",         icon: User },
+];
 
 export default function AccountPage() {
   const {
@@ -52,7 +51,6 @@ export default function AccountPage() {
     deletingReview,
   } = useAccountData();
 
-  // Local state for forms and modals
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
@@ -117,97 +115,141 @@ export default function AccountPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Loader2 className="animate-spin text-primary" size={32} />
+      <div className="min-h-screen bg-gradient-to-br from-[#f4f3ef] to-[#edf0ea] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="animate-spin text-primary" size={32} />
+          <p className="text-primary/40 text-sm font-bold tracking-wider uppercase">Chargement...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-[#f4f3ef] via-[#f0eeea] to-[#edf0ea]">
+      {/* Decorative background blobs */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <div className="absolute top-0 right-0 w-[600px] h-[600px] rounded-full bg-[#c0a062]/[0.03] blur-3xl -translate-y-1/2 translate-x-1/4" />
+        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full bg-primary/[0.04] blur-3xl translate-y-1/3 -translate-x-1/4" />
+      </div>
+
       <Header />
 
-      <div className="pt-24 pb-12">
-        <div className="max-w-4xl mx-auto px-4">
+      <div className="relative z-10 pt-24 pb-16">
+        <div className="max-w-3xl mx-auto px-4">
+
+          {/* Account Header */}
           <AccountHeader
             firstName={profile?.first_name || ""}
             lastName={profile?.last_name || ""}
             email={user?.email}
             onSignOut={signOut}
+            appointmentsCount={appointments.length}
+            favoritesCount={favorites.length}
+            reviewsCount={reviews.length}
           />
 
-          <div className="bg-white rounded-2xl border border-gray-100 mb-6 shadow-sm overflow-hidden">
-            <div className="flex border-b border-gray-100 bg-gray-50/30">
-              {[
-                { key: "reservations", label: "Mes réservations", icon: Calendar },
-                { key: "favorites", label: "Mes favoris", icon: Heart },
-                { key: "reviews", label: "Mes avis", icon: Star },
-                { key: "profile", label: "Mon profil", icon: User },
-              ].map((tab) => (
-                <button
-                  key={tab.key}
-                  onClick={() => setActiveTab(tab.key as AccountTab)}
-                  className={cn(
-                    "flex-1 flex items-center justify-center gap-2 py-4 text-sm font-bold transition-all cursor-pointer border-b-2",
-                    activeTab === tab.key
-                      ? "text-primary border-primary bg-white shadow-[0_-4px_0_inset_currentColor]"
-                      : "text-gray-400 border-transparent hover:text-gray-600 hover:bg-gray-50/50"
-                  )}
-                >
-                  <tab.icon size={18} />
-                  <span className="hidden sm:inline">{tab.label}</span>
-                </button>
-              ))}
+          {/* Tab Navigation */}
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15, duration: 0.4 }}
+            className="bg-white rounded-2xl shadow-sm border border-gray-100/80 mb-4 p-1.5 overflow-x-auto"
+          >
+            <div className="flex gap-1 min-w-max sm:min-w-0">
+              {TABS.map((tab) => {
+                const isActive = activeTab === tab.key;
+                return (
+                  <button
+                    key={tab.key}
+                    onClick={() => setActiveTab(tab.key)}
+                    className={cn(
+                      "relative flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 cursor-pointer flex-1 whitespace-nowrap",
+                      isActive
+                        ? "text-white shadow-md"
+                        : "text-gray-400 hover:text-gray-700 hover:bg-gray-50"
+                    )}
+                  >
+                    {isActive && (
+                      <motion.div
+                        layoutId="activeTabBg"
+                        className="absolute inset-0 bg-gradient-to-br from-[#2a3820] to-[#32422c] rounded-xl"
+                        transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
+                      />
+                    )}
+                    <span className="relative z-10 flex items-center gap-1.5">
+                      <tab.icon size={15} className={isActive ? "text-[#c0a062]" : ""} />
+                      <span className="hidden sm:inline">{tab.label}</span>
+                    </span>
+                  </button>
+                );
+              })}
             </div>
+          </motion.div>
 
-            <div className="p-6">
-              {activeTab === "reservations" && (
-                <AppointmentsTab
-                  appointments={appointments}
-                  onCancelClick={setCancelModal}
-                  onReviewClick={(apt) => {
-                    setReviewModal(apt);
-                    setReviewRating(5);
-                    setReviewComment("");
-                  }}
-                  formatDate={formatDate}
-                  formatTime={formatTime}
-                />
-              )}
+          {/* Tab Content */}
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.4 }}
+            className="bg-white rounded-2xl shadow-sm border border-gray-100/80 p-5 md:p-6"
+          >
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeTab}
+                initial={{ opacity: 0, x: 6 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -6 }}
+                transition={{ duration: 0.2 }}
+              >
+                {activeTab === "reservations" && (
+                  <AppointmentsTab
+                    appointments={appointments}
+                    onCancelClick={setCancelModal}
+                    onReviewClick={(apt) => {
+                      setReviewModal(apt);
+                      setReviewRating(5);
+                      setReviewComment("");
+                    }}
+                    formatDate={formatDate}
+                    formatTime={formatTime}
+                  />
+                )}
 
-              {activeTab === "favorites" && (
-                <FavoritesTab
-                  favorites={favorites}
-                  onRemove={removeFavorite}
-                />
-              )}
+                {activeTab === "favorites" && (
+                  <FavoritesTab
+                    favorites={favorites}
+                    onRemove={removeFavorite}
+                  />
+                )}
 
-              {activeTab === "reviews" && (
-                <ReviewsTab
-                  reviews={reviews}
-                  onDelete={deleteReview}
-                  deletingId={deletingReview}
-                  formatDate={formatDate}
-                />
-              )}
+                {activeTab === "reviews" && (
+                  <ReviewsTab
+                    reviews={reviews}
+                    onDelete={deleteReview}
+                    deletingId={deletingReview}
+                    formatDate={formatDate}
+                  />
+                )}
 
-              {activeTab === "profile" && (
-                <ProfileTab
-                  email={user?.email}
-                  firstName={firstName}
-                  setFirstName={setFirstName}
-                  lastName={lastName}
-                  setLastName={setLastName}
-                  phone={phone}
-                  setPhone={setPhone}
-                  instagram={instagram}
-                  setInstagram={setInstagram}
-                  onSave={handleUpdateProfile}
-                  saving={saving}
-                />
-              )}
-            </div>
-          </div>
+                {activeTab === "profile" && (
+                  <ProfileTab
+                    email={user?.email}
+                    firstName={firstName}
+                    setFirstName={setFirstName}
+                    lastName={lastName}
+                    setLastName={setLastName}
+                    phone={phone}
+                    setPhone={setPhone}
+                    instagram={instagram}
+                    setInstagram={setInstagram}
+                    onSave={handleUpdateProfile}
+                    saving={saving}
+                  />
+                )}
+              </motion.div>
+            </AnimatePresence>
+          </motion.div>
+
         </div>
       </div>
 

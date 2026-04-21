@@ -20,6 +20,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { Button, Input, Card, Badge, Heading, Text, Switch } from "@/components/ui";
 import { useDashboardTheme, applyThemeColor } from "@/contexts/DashboardThemeContext";
+import { useModal } from "@/contexts/ModalContext";
 
 type SettingsTab = "account" | "notifications" | "security" | "appearance";
 
@@ -71,16 +72,28 @@ export default function SettingsPage() {
 
   const supabase = createClient();
   const { setTheme: setGlobalTheme } = useDashboardTheme();
+  const { showError } = useModal();
 
   const handleDeleteAccount = async () => {
     if (deleteConfirmText.toLowerCase() !== "supprimer") return;
     setIsDeleting(true);
     try {
-      // Logic for actual account deletion should go here
-      alert("Demande de suppression prise en compte.");
-      setShowDeleteModal(false);
-      setDeleteConfirmText("");
-    } finally {
+      const res = await fetch("/api/account/delete", { method: "DELETE" });
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Erreur lors de la suppression");
+      }
+
+      // Déconnecter et rediriger vers l'accueil
+      await supabase.auth.signOut();
+      window.location.href = "/";
+    } catch (err: any) {
+      console.error("Erreur suppression compte:", err);
+      showError(
+        "Erreur de suppression",
+        err.message || "Une erreur est survenue. Veuillez réessayer."
+      );
       setIsDeleting(false);
     }
   };
