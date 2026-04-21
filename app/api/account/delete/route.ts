@@ -4,7 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function DELETE() {
   try {
-    // 1. Vérifier que l'utilisateur est connecté
+    // 1. Vérifier l'authentification
     const supabase = await createClient();
     const { data: { user }, error: userError } = await supabase.auth.getUser();
 
@@ -15,91 +15,69 @@ export async function DELETE() {
     const admin = createAdminClient();
     const userId = user.id;
 
-    // 2. Récupérer l'établissement (si pro)
-    const { data: establishment } = await admin
-      .from("establishments")
-      .select("id")
-      .eq("user_id", userId)
-      .maybeSingle();
+    // 2. Récupérer l'établissement (pro) et le profil client
+    const [{ data: establishment }, { data: clientProfile }] = await Promise.all([
+      admin.from("establishments").select("id").eq("user_id", userId).maybeSingle(),
+      admin.from("client_profiles").select("id").eq("user_id", userId).maybeSingle(),
+    ]);
 
     const establishmentId = establishment?.id ?? null;
-
-    // 3. Récupérer le profil client (si client)
-    const { data: clientProfile } = await admin
-      .from("client_profiles")
-      .select("id")
-      .eq("user_id", userId)
-      .maybeSingle();
-
     const clientProfileId = clientProfile?.id ?? null;
 
-    // ─── Suppression en cascade (ordre important) ───────────────
-
+    // ─── Suppression PRO (tout ce qui dépend de l'établissement) ────────────
     if (establishmentId) {
-      // Annuler les rendez-vous à venir de l'établissement
-      await admin
-        .from("appointments")
-        .delete()
-        .eq("establishment_id", establishmentId);
+      // Niveau 1 : dépend de appointments (doit passer avant appointments)
+      await admin.from("appointment_reminders").delete().eq("establishment_id", establishmentId);
 
-      // Supprimer les services
-      await admin
-        .from("services")
-        .delete()
-        .eq("establishment_id", establishmentId);
+      // Niveau 1 : dépend de appointments + establishments
+      await admin.from("reviews").delete().eq("establishment_id", establishmentId);
 
-      // Supprimer les horaires d'ouverture
-      await admin
-        .from("opening_hours")
-        .delete()
-        .eq("establishment_id", establishmentId);
+      // Niveau 1 : dépend directement de establishments
+      await admin.from("booking_audit_logs").delete().eq("establishment_id", establishmentId);
+      await admin.from("notifications").delete().eq("establishment_id", establishmentId);
+      await admin.from("blocked_clients").delete().eq("establishment_id", establishmentId);
+      await admin.from("favorites").delete().eq("establishment_id", establishmentId);
+      await admin.from("establishment_photos").delete().eq("establishment_id", establishmentId);
 
-      // Supprimer les indisponibilités
-      await admin
-        .from("unavailabilities")
-        .delete()
-        .eq("establishment_id", establishmentId);
+      // Niveau 2 : appointments dépend de services → supprimer appointments avant services
+      await admin.from("appointments").delete().eq("establishment_id", establishmentId);
 
-      // Supprimer les avis liés à l'établissement
-      await admin
-        .from("reviews")
-        .delete()
-        .eq("establishment_id", establishmentId);
+      // Niveau 2 : dépendent de establishments uniquement
+      await admin.from("services").delete().eq("establishment_id", establishmentId);
+      await admin.from("opening_hours").delete().eq("establishment_id", establishmentId);
+      await admin.from("unavailabilities").delete().eq("establishment_id", establishmentId);
 
-      // Supprimer l'établissement
-      await admin
-        .from("establishments")
-        .delete()
-        .eq("id", establishmentId);
+      // Niveau 3 : l'établissement lui-même
+      await admin.from("establishments").delete().eq("id", establishmentId);
     }
 
+    // ─── Suppression CLIENT (tout ce qui dépend du profil client) ───────────
     if (clientProfileId) {
-      // Supprimer les rendez-vous du client
-      await admin
+      // Récupérer les IDs des rendez-vous du client pour supprimer les reminders
+      const { data: clientAppointments } = await admin
         .from("appointments")
-        .delete()
+        .select("id")
         .eq("client_profile_id", clientProfileId);
 
-      // Supprimer les avis du client
-      await admin
-        .from("reviews")
-        .delete()
-        .eq("client_profile_id", clientProfileId);
+      const appointmentIds = (clientAppointments ?? []).map((a) => a.id);
 
-      // Supprimer le profil client
-      await admin
-        .from("client_profiles")
-        .delete()
-        .eq("id", clientProfileId);
+      if (appointmentIds.length > 0) {
+        await admin.from("appointment_reminders").delete().in("appointment_id", appointmentIds);
+      }
+
+      await admin.from("reviews").delete().eq("client_profile_id", clientProfileId);
+      await admin.from("favorites").delete().eq("client_id", clientProfileId);
+      await admin.from("blocked_clients").delete().eq("client_profile_id", clientProfileId);
+      await admin.from("appointments").delete().eq("client_profile_id", clientProfileId);
+
+      // Profil client
+      await admin.from("client_profiles").delete().eq("id", clientProfileId);
     }
 
-    // Supprimer les préférences de notification
-    await admin
-      .from("notification_preferences")
-      .delete()
-      .eq("user_id", userId);
+    // ─── Préférences de notification ────────────────────────────────────────
+    await admin.from("notification_preferences").delete().eq("user_id", userId);
 
-    // 4. Supprimer le compte auth — déclenche les cascades Supabase restantes
+    // ─── Suppression du compte auth ─────────────────────────────────────────
     const { error: deleteAuthError } = await admin.auth.admin.deleteUser(userId);
 
     if (deleteAuthError) {
