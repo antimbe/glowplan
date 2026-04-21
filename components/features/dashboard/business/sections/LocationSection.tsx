@@ -3,6 +3,7 @@
 import { MapPin, EyeOff } from "lucide-react";
 import SectionCard from "../SectionCard";
 import FormInput from "../FormInput";
+import CityAutocomplete from "../CityAutocomplete";
 import { TabProps } from "../types";
 import { Switch } from "@/components/ui";
 
@@ -23,23 +24,12 @@ export default function LocationSection({ formData, updateField }: TabProps) {
           required
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          <div className="md:col-span-2">
-            <FormInput
-              label="Ville"
-              placeholder="Lille"
-              value={formData.city}
-              onChange={(value) => updateField("city", value)}
-              required
-            />
-          </div>
-          <FormInput
-            label="Code postal"
-            placeholder="59000"
-            value={formData.postal_code}
-            onChange={(value) => updateField("postal_code", value)}
-          />
-        </div>
+        <CityAutocomplete
+          cityValue={formData.city}
+          postalValue={formData.postal_code}
+          onCityChange={(value) => updateField("city", value)}
+          onPostalChange={(value) => updateField("postal_code", value)}
+        />
 
         <FormInput
           label="Complément d'adresse"
