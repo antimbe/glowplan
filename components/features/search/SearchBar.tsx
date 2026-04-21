@@ -34,7 +34,7 @@ export function SearchBar({
     if (e.key === "Enter") onSearch();
   };
 
-  const sectors = ACTIVITY_SECTORS.filter((s) => s.id !== "medical" && s.id !== "protheses");
+  const sectors = ACTIVITY_SECTORS;
 
   return (
     <>
