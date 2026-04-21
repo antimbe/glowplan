@@ -278,18 +278,18 @@ function ClientAuthForm() {
                 <p className="text-amber-600 text-xs leading-relaxed">
                   L'adresse <span className="font-bold">{email}</span> n'a pas encore été confirmée. Vérifiez vos spams ou renvoyez un email.
                 </p>
-                <button
+                <Button
                   type="button"
                   onClick={handleResendConfirmation}
                   disabled={resendLoading}
-                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs transition-all cursor-pointer disabled:opacity-60 shadow-md shadow-amber-500/25"
+                  className="bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-xl px-5 shadow-md shadow-amber-500/25 cursor-pointer"
                 >
                   {resendLoading ? (
                     <><Loader2 size={13} className="animate-spin" /> Envoi en cours...</>
                   ) : (
                     <><Send size={13} /> Renvoyer l'email de confirmation</>
                   )}
-                </button>
+                </Button>
               </div>
             )}
 
