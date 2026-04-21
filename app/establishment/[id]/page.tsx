@@ -315,7 +315,7 @@ export default function EstablishmentPage() {
                       </span>
                     ))}
                   </div>
-                  <h1 className="text-3xl sm:text-4xl font-black tracking-[-0.02em] drop-shadow-sm mb-3">
+                  <h1 className="text-3xl sm:text-4xl font-black tracking-[-0.02em] text-white drop-shadow-sm mb-3">
                     {establishment.name}
                   </h1>
                   <div className="flex flex-wrap items-center gap-3">
