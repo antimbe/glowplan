@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Container, Section, Heading, Text, Box, Stack, Flex, MotionBox, Button, Card, Logo, Input } from "@/components/ui";
-import { ArrowLeft, Briefcase, Loader2 } from "lucide-react";
+import { ArrowLeft, Briefcase, Loader2, MailWarning, Send } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useModal } from "@/contexts/ModalContext";
@@ -15,6 +15,8 @@ function ProAuthForm() {
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showResend, setShowResend] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -22,6 +24,23 @@ function ProAuthForm() {
 
   const supabase = createClient();
   const { showSuccess } = useModal();
+
+  const handleResendConfirmation = async () => {
+    setResendLoading(true);
+    try {
+      const { error } = await supabase.auth.resend({ type: "signup", email });
+      if (error) throw error;
+      showSuccess(
+        "Email renvoyé ✉️",
+        `Un nouvel email de confirmation a été envoyé à ${email}. Cliquez sur le lien pour activer votre compte.`
+      );
+      setShowResend(false);
+    } catch (err: any) {
+      setError(err.message || "Erreur lors de l'envoi");
+    } finally {
+      setResendLoading(false);
+    }
+  };
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -103,7 +122,12 @@ function ProAuthForm() {
         setIsLogin(true);
       }
     } catch (err: any) {
-      setError(err.message || "Une erreur est survenue");
+      if (err.message === "Email not confirmed") {
+        setShowResend(true);
+        setError(null);
+      } else {
+        setError(err.message || "Une erreur est survenue");
+      }
     } finally {
       setLoading(false);
     }
@@ -174,6 +198,31 @@ function ProAuthForm() {
 
             {error && (
               <Text className="text-red-500 text-sm font-medium text-center">{error}</Text>
+            )}
+
+            {/* Email non confirmé */}
+            {showResend && (
+              <div className="w-full rounded-2xl bg-amber-50 border border-amber-200 p-4 space-y-3 text-center animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="flex items-center justify-center gap-2">
+                  <MailWarning size={17} className="text-amber-500 flex-shrink-0" />
+                  <p className="text-amber-700 text-sm font-black">Email non confirmé</p>
+                </div>
+                <p className="text-amber-600 text-xs leading-relaxed">
+                  L'adresse <span className="font-bold">{email}</span> n'a pas encore été confirmée. Vérifiez vos spams ou renvoyez un email.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleResendConfirmation}
+                  disabled={resendLoading}
+                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs transition-all cursor-pointer disabled:opacity-60 shadow-md shadow-amber-500/25"
+                >
+                  {resendLoading ? (
+                    <><Loader2 size={13} className="animate-spin" /> Envoi en cours...</>
+                  ) : (
+                    <><Send size={13} /> Renvoyer l'email de confirmation</>
+                  )}
+                </button>
+              </div>
             )}
 
             {isLogin && (
