@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Search, MapPin, Sparkles, Star, Users, ArrowRight, TrendingUp } from "lucide-react";
 import { Container, Button, Box } from "@/components/ui";
+import { CityAutocompleteSearch } from "@/components/features/search/CityAutocompleteSearch";
 
 /* ─── animation variants ─────────────────────────────────────── */
 const ease = [0.16, 1, 0.3, 1] as const;
@@ -158,13 +159,12 @@ export default function Hero() {
                   <label className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#c0a062] italic mb-0.5">
                     Localisation
                   </label>
-                  <input
-                    type="text"
-                    placeholder="Ville ou code postal"
+                  <CityAutocompleteSearch
                     value={locationQuery}
-                    onChange={(e) => setLocationQuery(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                    className="bg-transparent text-white placeholder:text-white/30 text-[13px] md:text-sm font-semibold outline-none w-full italic"
+                    onChange={setLocationQuery}
+                    onSearch={handleSearch}
+                    placeholder="Ville ou code postal"
+                    inputClassName="bg-transparent text-white placeholder:text-white/30 text-[13px] md:text-sm font-semibold outline-none w-full italic"
                   />
                 </div>
               </div>

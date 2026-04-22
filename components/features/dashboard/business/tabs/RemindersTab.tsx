@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useModal } from "@/contexts/ModalContext";
-import { Calendar, Clock, Send, Loader2, CheckCircle2, History, Settings2, ChevronDown, ChevronUp, Info } from "lucide-react";
+import { Calendar, Clock, Phone, Send, Loader2, CheckCircle2, History, Settings2, ChevronDown, ChevronUp, Info } from "lucide-react";
 import { Button } from "@/components/ui";
 import { cn } from "@/lib/utils/cn";
 import { MONTHS_LOWER } from "@/lib/utils/formatters";
