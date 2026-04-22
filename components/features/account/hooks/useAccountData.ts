@@ -8,6 +8,7 @@ import { AccountTab, Appointment, Favorite, Review, ClientProfile } from "../typ
 
 export interface UseAccountDataReturn {
   loading: boolean;
+  error: string | null;
   user: User | null;
   profile: ClientProfile | null;
   appointments: Appointment[];
@@ -37,6 +38,7 @@ export function useAccountData(): UseAccountDataReturn {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [activeTab, setActiveTab] = useState<AccountTab>("reservations");
 
+  const [error, setError] = useState<string | null>(null);
   const [cancelling, setCancelling] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [submittingReview, setSubmittingReview] = useState(false);
@@ -48,66 +50,77 @@ export function useAccountData(): UseAccountDataReturn {
 
   const loadData = useCallback(async () => {
     const requestId = ++lastLoadId.current;
+    setError(null);
 
-    const { data: { user: authUser } } = await supabase.auth.getUser();
-    if (!authUser) {
-      if (requestId === lastLoadId.current) {
-        setUser(null);
-        setLoading(false);
-      }
-      return;
-    }
+    try {
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+      if (authError) throw authError;
 
-    if (requestId === lastLoadId.current) {
-      setUser(authUser);
-    }
-
-    const profileRes = await supabase.from("client_profiles").select("*").eq("user_id", authUser.id).single();
-
-    if (requestId !== lastLoadId.current) return;
-
-    if (profileRes.data) {
-      if (profileRes.data.user_type === "professional") {
-        router.push("/dashboard");
+      if (!authUser) {
+        if (requestId === lastLoadId.current) setUser(null);
         return;
       }
 
-      setProfile(profileRes.data);
+      if (requestId === lastLoadId.current) setUser(authUser);
 
-      const [appointmentsRes, favoritesRes, reviewsRes] = await Promise.all([
-        supabase.from("appointments")
-          .select(`
-            *,
-            establishments(name, city),
-            services(name, price, duration)
-          `)
-          .eq("client_profile_id", profileRes.data.id)
-          .order("start_time", { ascending: false }),
-        supabase.from("favorites")
-          .select("*, establishments(name, city, main_photo_url)")
-          .eq("client_id", profileRes.data.id),
-        supabase.from("reviews")
-          .select("*, establishments(name, city)")
-          .eq("client_profile_id", profileRes.data.id)
-          .order("created_at", { ascending: false })
-      ]);
+      const profileRes = await supabase
+        .from("client_profiles")
+        .select("*")
+        .eq("user_id", authUser.id)
+        .single();
 
-      if (requestId === lastLoadId.current) {
-        const reviewsData = reviewsRes.data || [];
-        const appointmentsData = (appointmentsRes.data || []).map(apt => ({
-          ...apt,
-          has_review: reviewsData.some(r => r.appointment_id === apt.id)
-        }));
+      if (profileRes.error) throw profileRes.error;
+      if (requestId !== lastLoadId.current) return;
 
-        setAppointments(appointmentsData);
-        setFavorites(favoritesRes.data || []);
-        setReviews(reviewsData);
-        setLoading(false);
+      if (profileRes.data) {
+        if (profileRes.data.user_type === "professional") {
+          router.push("/dashboard");
+          return;
+        }
+
+        setProfile(profileRes.data);
+
+        const [appointmentsRes, favoritesRes, reviewsRes] = await Promise.all([
+          supabase.from("appointments")
+            .select(`
+              *,
+              establishments(name, city),
+              services(name, price, duration)
+            `)
+            .eq("client_profile_id", profileRes.data.id)
+            .order("start_time", { ascending: false }),
+          supabase.from("favorites")
+            .select("*, establishments(name, city, main_photo_url)")
+            .eq("client_id", profileRes.data.id),
+          supabase.from("reviews")
+            .select("*, establishments(name, city)")
+            .eq("client_profile_id", profileRes.data.id)
+            .order("created_at", { ascending: false }),
+        ]);
+
+        if (appointmentsRes.error) throw appointmentsRes.error;
+        if (favoritesRes.error) throw favoritesRes.error;
+        if (reviewsRes.error) throw reviewsRes.error;
+
+        if (requestId === lastLoadId.current) {
+          const reviewsData = reviewsRes.data || [];
+          const appointmentsData = (appointmentsRes.data || []).map(apt => ({
+            ...apt,
+            has_review: reviewsData.some(r => r.appointment_id === apt.id),
+          }));
+
+          setAppointments(appointmentsData);
+          setFavorites(favoritesRes.data || []);
+          setReviews(reviewsData);
+        }
       }
-    } else {
+    } catch (err: any) {
       if (requestId === lastLoadId.current) {
-        setLoading(false);
+        setError(err.message || "Une erreur est survenue lors du chargement de vos données.");
+        console.error("[useAccountData] loadData error:", err);
       }
+    } finally {
+      if (requestId === lastLoadId.current) setLoading(false);
     }
   }, [supabase]);
 
@@ -226,6 +239,7 @@ export function useAccountData(): UseAccountDataReturn {
 
   return {
     loading,
+    error,
     user,
     profile,
     appointments,

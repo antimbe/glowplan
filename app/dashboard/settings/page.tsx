@@ -36,7 +36,7 @@ export default function SettingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  // Notification Preferences State (Local for UI demo)
+  // Notification Preferences State
   const [notifPreferences, setNotifPreferences] = useState({
     email_new_booking: true,
     email_cancellation: true,
@@ -48,6 +48,7 @@ export default function SettingsPage() {
   });
   const [loadingNotif, setLoadingNotif] = useState(false);
   const [successNotif, setSuccessNotif] = useState(false);
+  const [errorNotif, setErrorNotif] = useState<string | null>(null);
 
   // Appearance State
   const [dashboardColor, setDashboardColorState] = useState("#32422c");
@@ -178,25 +179,25 @@ export default function SettingsPage() {
 
   const handleSaveNotifications = async () => {
     setLoadingNotif(true);
-    
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
+    setErrorNotif(null);
+
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) throw new Error("Non authentifié. Veuillez vous reconnecter.");
+
       const { error } = await supabase
         .from("notification_preferences")
-        .upsert({
-          user_id: user.id,
-          ...notifPreferences
-        });
-        
-      if (!error) {
-        setSuccessNotif(true);
-        setTimeout(() => setSuccessNotif(false), 3000);
-      } else {
-        console.error("Failed to save preferences:", error);
-      }
+        .upsert({ user_id: user.id, ...notifPreferences });
+
+      if (error) throw error;
+
+      setSuccessNotif(true);
+      setTimeout(() => setSuccessNotif(false), 3000);
+    } catch (err: any) {
+      setErrorNotif(err.message || "Impossible d'enregistrer les préférences. Réessayez.");
+    } finally {
+      setLoadingNotif(false);
     }
-    
-    setLoadingNotif(false);
   };
 
   const handleSaveAppearance = async () => {
@@ -556,13 +557,19 @@ export default function SettingsPage() {
                   </Card>
                 </div>
 
-                <div className="pt-4 flex items-center justify-end gap-4 mt-8 lg:mt-10">
+                <div className="pt-4 flex flex-col items-end gap-3 mt-8 lg:mt-10">
+                  {errorNotif && (
+                    <div className="w-full p-3 bg-red-50 border border-red-100 rounded-xl text-sm text-red-600 font-medium">
+                      {errorNotif}
+                    </div>
+                  )}
+                  <div className="flex items-center gap-4">
                   {successNotif && (
                     <span className="text-sm font-semibold text-green-600 flex items-center gap-1.5 animate-in fade-in slide-in-from-right-4">
                       <CheckCircle2 size={18} /> Modifications enregistrées
                     </span>
                   )}
-                  <Button 
+                  <Button
                     variant="primary"
                     onClick={handleSaveNotifications}
                     disabled={loadingNotif}
@@ -576,6 +583,7 @@ export default function SettingsPage() {
                       "Enregistrer les préférences"
                     )}
                   </Button>
+                  </div>
                 </div>
               </section>
             </div>

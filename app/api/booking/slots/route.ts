@@ -30,7 +30,9 @@ export async function GET(request: NextRequest) {
 
     if (ohError) throw ohError;
 
-    const targetDate = new Date(date);
+    // Fix A — parse as local date (not UTC midnight) to avoid timezone shift
+    const [dateY, dateM, dateD] = date.split("-").map(Number);
+    const targetDate = new Date(dateY, dateM - 1, dateD);
     const dbDayOfWeek = jsDayToDbDay(targetDate.getDay());
     const dayHours = openingHours?.find((h) => h.day_of_week === dbDayOfWeek);
 
@@ -83,7 +85,9 @@ export async function GET(request: NextRequest) {
 
     const calculatedSlots = getAvailableSlots(dayStart, dayEnd, duration, occupied as any);
 
-    const now = new Date();
+    // Fix B — use client's local time (epoch ms) to avoid server UTC vs client local mismatch
+    const clientNowParam = searchParams.get("clientNow");
+    const now = clientNowParam ? new Date(parseInt(clientNowParam, 10)) : new Date();
     const slots = calculatedSlots
       .filter((s) => s.start > now) // only future slots
       .map((s) => ({

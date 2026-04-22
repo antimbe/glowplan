@@ -58,21 +58,15 @@ export async function POST(request: NextRequest) {
     if (appointment.status === "pending_deposit") {
       // Get deposit info from establishment
       const depositAmount = establishment.deposit_amount || "À définir";
-      console.log("DEBUG - raw establishmentId:", establishmentId);
-      console.log("DEBUG - raw payment_links:", establishment.payment_links);
-      
-      let paymentLink = establishment.payment_links && establishment.payment_links.length > 0 
-        ? (establishment.payment_links[0].url || establishment.payment_links[0]) 
+
+      let paymentLink = establishment.payment_links && establishment.payment_links.length > 0
+        ? (establishment.payment_links[0].url || establishment.payment_links[0])
         : `${baseUrl}/establishment/${establishmentId}?booking=${appointmentId}`;
-      
-      console.log("DEBUG - intermediate paymentLink:", paymentLink);
-      
+
       // Ensure paymentLink is absolute
       if (typeof paymentLink === 'string' && !paymentLink.startsWith('http')) {
         paymentLink = paymentLink.startsWith('/') ? `${baseUrl}${paymentLink}` : `${baseUrl}/${paymentLink}`;
       }
-      
-      console.log("Final payment link being sent:", paymentLink);
       
       // Deadline: 2 hours after the booking request by default, or 24h before the appointment
       const deadlineDate = new Date();

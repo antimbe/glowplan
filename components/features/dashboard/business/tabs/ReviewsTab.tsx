@@ -89,13 +89,11 @@ export default function ReviewsTab({ establishmentId }: ReviewsTabProps) {
     if (!establishmentId) return;
 
     try {
-      console.log("Loading favorites for establishment:", establishmentId);
-      const { count, error, data } = await supabase
+      const { count, error } = await supabase
         .from("favorites")
         .select("*", { count: "exact" })
         .eq("establishment_id", establishmentId);
 
-      console.log("Favorites result:", { count, error, data });
       if (error) throw error;
       setFavoritesCount(count || 0);
     } catch (error) {

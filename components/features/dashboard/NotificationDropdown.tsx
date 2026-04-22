@@ -1,19 +1,29 @@
 "use client";
 
 import { Bell, Calendar, Star, X, Check, CreditCard, ChevronRight } from "lucide-react";
-import { useNotifications, Notification } from "./hooks/useNotifications";
+import { Notification } from "./hooks/useNotifications";
 import { cn } from "@/lib/utils/cn";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 import Link from "next/link";
 
 interface NotificationDropdownProps {
-  establishmentId: string | null;
+  notifications: Notification[];
+  unreadCount: number;
+  loading: boolean;
+  markAsRead: (id: string) => Promise<void>;
+  markAllAsRead: () => Promise<void>;
   onClose: () => void;
 }
 
-export default function NotificationDropdown({ establishmentId, onClose }: NotificationDropdownProps) {
-  const { notifications, unreadCount, markAsRead, markAllAsRead, loading } = useNotifications(establishmentId);
+export default function NotificationDropdown({
+  notifications,
+  unreadCount,
+  loading,
+  markAsRead,
+  markAllAsRead,
+  onClose,
+}: NotificationDropdownProps) {
 
   const getIcon = (type: Notification['type']) => {
     switch (type) {

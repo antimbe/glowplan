@@ -1,9 +1,8 @@
 "use client";
 
 import { Menu, Search, Bell } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils/cn";
-import Link from "next/link";
 import NotificationDropdown from "./NotificationDropdown";
 import { useNotifications } from "./hooks/useNotifications";
 
@@ -15,21 +14,51 @@ interface DashboardHeaderProps {
 
 export default function DashboardHeader({ userEmail, onMenuClick, establishmentId }: DashboardHeaderProps) {
   const [showNotifications, setShowNotifications] = useState(false);
-  const { unreadCount } = useNotifications(establishmentId || null);
+
+  // ── Une seule instance du hook partagée entre le badge ET le dropdown ──
+  const {
+    notifications,
+    unreadCount,
+    loading,
+    markAsRead,
+    markAllAsRead,
+  } = useNotifications(establishmentId || null);
+
+  // Auto-mark all as read quand le panel s'ouvre
+  const prevShowRef = useRef(false);
+  useEffect(() => {
+    if (showNotifications && !prevShowRef.current && unreadCount > 0) {
+      // Petit délai pour que l'animation d'ouverture soit visible avant de vider le badge
+      const t = setTimeout(() => markAllAsRead(), 800);
+      return () => clearTimeout(t);
+    }
+    prevShowRef.current = showNotifications;
+  }, [showNotifications, unreadCount, markAllAsRead]);
+
+  // Fermer le dropdown en cliquant en dehors
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setShowNotifications(false);
+      }
+    };
+    if (showNotifications) document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showNotifications]);
+
   return (
     <div className="h-14 lg:h-16 bg-primary sticky top-0 z-30">
       <div className="flex items-center justify-between h-full px-4 lg:px-8">
         {/* Left: Menu button (mobile) + Search */}
         <div className="flex items-center gap-3">
-          {/* Menu hamburger - mobile only */}
-          <button 
+          <button
             onClick={onMenuClick}
             className="lg:hidden w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
           >
             <Menu size={20} className="text-white" />
           </button>
 
-          {/* Search Bar - hidden on mobile, visible on tablet+ */}
           <div className="relative hidden sm:block w-64 md:w-80 lg:w-96">
             <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" />
             <input
@@ -42,15 +71,14 @@ export default function DashboardHeader({ userEmail, onMenuClick, establishmentI
 
         {/* Right Actions */}
         <div className="flex items-center gap-2 lg:gap-3">
-          {/* Search button - mobile only */}
           <button className="sm:hidden w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors">
             <Search size={20} className="text-white/70" />
           </button>
 
           {/* Notifications */}
-          <div className="relative">
-            <button 
-              onClick={() => setShowNotifications(!showNotifications)}
+          <div className="relative" ref={dropdownRef}>
+            <button
+              onClick={() => setShowNotifications(v => !v)}
               className={cn(
                 "relative w-10 h-10 rounded-xl flex items-center justify-center transition-colors cursor-pointer",
                 showNotifications ? "bg-white/20" : "bg-white/10 hover:bg-white/20"
@@ -59,20 +87,24 @@ export default function DashboardHeader({ userEmail, onMenuClick, establishmentI
               <Bell size={20} className={showNotifications ? "text-white" : "text-white/70"} />
               {unreadCount > 0 && (
                 <div className="absolute top-2 right-2 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center border-2 border-primary">
-                   <span className="text-[10px] text-white font-bold leading-none">{unreadCount > 9 ? '9+' : unreadCount}</span>
+                  <span className="text-[10px] text-white font-bold leading-none">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
                 </div>
               )}
             </button>
 
             {showNotifications && (
-              <NotificationDropdown 
-                establishmentId={establishmentId || null} 
-                onClose={() => setShowNotifications(false)} 
+              <NotificationDropdown
+                notifications={notifications}
+                unreadCount={unreadCount}
+                loading={loading}
+                markAsRead={markAsRead}
+                markAllAsRead={markAllAsRead}
+                onClose={() => setShowNotifications(false)}
               />
             )}
           </div>
-
-
 
           {/* User Profile */}
           <div className="flex items-center gap-3 pl-3 lg:pl-4 border-l border-white/10">

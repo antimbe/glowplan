@@ -32,6 +32,7 @@ const TABS: { key: AccountTab; label: string; icon: React.ElementType }[] = [
 export default function AccountPage() {
   const {
     loading,
+    error,
     user,
     profile,
     appointments,
@@ -119,6 +120,26 @@ export default function AccountPage() {
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="animate-spin text-primary" size={32} />
           <p className="text-primary/40 text-sm font-bold tracking-wider uppercase">Chargement...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#f4f3ef] to-[#edf0ea] flex items-center justify-center p-4">
+        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 max-w-sm w-full text-center">
+          <div className="w-14 h-14 rounded-2xl bg-red-50 flex items-center justify-center mx-auto mb-4">
+            <span className="text-2xl">⚠️</span>
+          </div>
+          <h2 className="text-gray-900 font-bold text-lg mb-2">Erreur de chargement</h2>
+          <p className="text-gray-500 text-sm mb-6">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="w-full h-11 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/90 transition-colors cursor-pointer"
+          >
+            Réessayer
+          </button>
         </div>
       </div>
     );

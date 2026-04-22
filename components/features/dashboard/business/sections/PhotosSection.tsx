@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect, useCallback } from "react";
-import { Image as ImageIcon, Camera, Plus, X, Check, Loader2 } from "lucide-react";
+import { Image as ImageIcon, Camera, Plus, X, Check, Loader2, GripVertical } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { TabProps } from "../types";
 import { useModal } from "@/contexts/ModalContext";
@@ -28,6 +28,11 @@ export default function PhotosSection({ formData, updateField, establishmentId }
   const [uploadingSlot, setUploadingSlot] = useState<number | null>(null);
   const [galleryPhotos, setGalleryPhotos] = useState<GalleryPhoto[]>([]);
   const [loadingGallery, setLoadingGallery] = useState(false);
+
+  // ─── Drag & drop state ────────────────────────────────────────────────────
+  const [draggedId, setDraggedId] = useState<string | null>(null);
+  const [dragOverPosition, setDragOverPosition] = useState<number | null>(null);
+  const [reorderSaving, setReorderSaving] = useState(false);
 
   // ─── Load existing gallery photos ────────────────────────────────────────
   const loadGalleryPhotos = useCallback(async () => {
@@ -188,6 +193,64 @@ export default function PhotosSection({ formData, updateField, establishmentId }
     }
   };
 
+  // ─── Drag & drop handlers ─────────────────────────────────────────────────
+  const handleDragStart = (e: React.DragEvent, photo: GalleryPhoto) => {
+    setDraggedId(photo.id);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragOver = (e: React.DragEvent, position: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setDragOverPosition(position);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedId(null);
+    setDragOverPosition(null);
+  };
+
+  const handleDrop = async (e: React.DragEvent, targetPosition: number) => {
+    e.preventDefault();
+    setDragOverPosition(null);
+
+    if (!draggedId) return;
+    const dragged = galleryPhotos.find(p => p.id === draggedId);
+    const target = galleryPhotos.find(p => p.position === targetPosition);
+
+    if (!dragged || !target || dragged.id === target.id) {
+      setDraggedId(null);
+      return;
+    }
+
+    // Swap positions optimistically in UI
+    const draggedPos = dragged.position;
+    const targetPos = target.position;
+    setGalleryPhotos(prev =>
+      prev.map(p => {
+        if (p.id === dragged.id) return { ...p, position: targetPos };
+        if (p.id === target.id) return { ...p, position: draggedPos };
+        return p;
+      }).sort((a, b) => a.position - b.position)
+    );
+    setDraggedId(null);
+
+    // Persist to DB
+    setReorderSaving(true);
+    try {
+      await Promise.all([
+        supabase.from("establishment_photos").update({ position: targetPos }).eq("id", dragged.id),
+        supabase.from("establishment_photos").update({ position: draggedPos }).eq("id", target.id),
+      ]);
+    } catch (err) {
+      console.error("Erreur réordonnancement:", err);
+      // Revert on failure
+      await loadGalleryPhotos();
+    } finally {
+      setReorderSaving(false);
+    }
+  };
+
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
     <div className="w-full bg-white rounded-2xl p-4 lg:p-6 border border-gray-200 shadow-sm">
@@ -195,10 +258,16 @@ export default function PhotosSection({ formData, updateField, establishmentId }
         <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-xl bg-primary flex items-center justify-center shadow-lg flex-shrink-0">
           <ImageIcon size={20} className="text-white" />
         </div>
-        <div>
+        <div className="flex-1">
           <h2 className="text-primary text-base lg:text-lg font-bold">Photos &amp; Visuels</h2>
-          <p className="text-gray-500 text-[10px] lg:text-xs">Ajoutez jusqu'à 8 photos pour votre vitrine</p>
+          <p className="text-gray-500 text-[10px] lg:text-xs">Ajoutez jusqu'à 8 photos — glissez-déposez pour réordonner</p>
         </div>
+        {reorderSaving && (
+          <div className="flex items-center gap-1.5 text-xs text-gray-400">
+            <Loader2 size={12} className="animate-spin" />
+            Ordre sauvegardé…
+          </div>
+        )}
       </div>
 
       <div className="flex flex-col gap-4 lg:gap-6">
@@ -256,12 +325,21 @@ export default function PhotosSection({ formData, updateField, establishmentId }
           {[...Array(MAX_PHOTOS - 1)].map((_, i) => {
             const slot = i + 1;
             const photo = galleryPhotos.find(p => p.position === slot) ?? null;
+            const isDragging = photo ? draggedId === photo.id : false;
+            const isDragOver = dragOverPosition === slot && draggedId !== null && !isDragging;
             return (
               <PhotoSlot
                 key={slot}
                 label={`Photo ${slot + 1}`}
                 photoUrl={photo?.url ?? null}
                 uploading={uploadingSlot === slot || loadingGallery}
+                isDragging={isDragging}
+                isDragOver={isDragOver}
+                draggable={!!photo}
+                onDragStart={photo ? (e) => handleDragStart(e, photo) : undefined}
+                onDragOver={(e) => handleDragOver(e, slot)}
+                onDragEnd={handleDragEnd}
+                onDrop={(e) => handleDrop(e, slot)}
                 onClickEmpty={() => {
                   if (!establishmentId) {
                     showError("Profil requis", "Enregistrez d'abord vos informations générales avant d'ajouter des photos supplémentaires.");
@@ -292,25 +370,42 @@ interface PhotoSlotProps {
   label: string;
   photoUrl: string | null;
   uploading: boolean;
+  isDragging?: boolean;
+  isDragOver?: boolean;
+  draggable?: boolean;
+  onDragStart?: (e: React.DragEvent) => void;
+  onDragOver?: (e: React.DragEvent) => void;
+  onDragEnd?: () => void;
+  onDrop?: (e: React.DragEvent) => void;
   onClickEmpty: () => void;
   onClickReplace: () => void;
   onRemove?: () => void;
 }
 
-function PhotoSlot({ label, photoUrl, uploading, onClickEmpty, onClickReplace, onRemove }: PhotoSlotProps) {
+function PhotoSlot({
+  label, photoUrl, uploading,
+  isDragging, isDragOver, draggable,
+  onDragStart, onDragOver, onDragEnd, onDrop,
+  onClickEmpty, onClickReplace, onRemove,
+}: PhotoSlotProps) {
   const hasPhoto = !!photoUrl;
 
   return (
     <div
+      draggable={draggable && !uploading}
+      onDragStart={onDragStart}
+      onDragOver={onDragOver}
+      onDragEnd={onDragEnd}
+      onDrop={onDrop}
       onClick={!hasPhoto && !uploading ? onClickEmpty : undefined}
-      className={`
-        aspect-square rounded-xl lg:rounded-2xl border-2 border-dashed flex flex-col items-center justify-center transition-all relative overflow-hidden
-        ${hasPhoto
-          ? "border-primary bg-primary/5"
-          : "border-gray-200 bg-gray-50 cursor-pointer hover:bg-white hover:border-primary/30"
-        }
-        ${uploading ? "pointer-events-none opacity-70" : ""}
-      `}
+      className={[
+        "aspect-square rounded-xl lg:rounded-2xl border-2 border-dashed flex flex-col items-center justify-center transition-all relative overflow-hidden",
+        hasPhoto ? "border-primary bg-primary/5" : "border-gray-200 bg-gray-50 cursor-pointer hover:bg-white hover:border-primary/30",
+        uploading ? "pointer-events-none opacity-70" : "",
+        isDragging ? "opacity-40 scale-95" : "",
+        isDragOver ? "border-[#c0a062] bg-[#c0a062]/5 scale-[1.03] shadow-lg shadow-[#c0a062]/20" : "",
+        draggable && hasPhoto ? "cursor-grab active:cursor-grabbing" : "",
+      ].filter(Boolean).join(" ")}
     >
       {uploading ? (
         <Loader2 size={24} className="text-primary animate-spin" />
@@ -321,8 +416,11 @@ function PhotoSlot({ label, photoUrl, uploading, onClickEmpty, onClickReplace, o
             alt={label}
             className="absolute inset-0 w-full h-full object-cover"
           />
+          {/* Drag handle */}
+          <div className="absolute top-1 left-1 w-5 h-5 rounded-md bg-black/30 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+            <GripVertical size={10} className="text-white" />
+          </div>
           <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-            {/* Replace */}
             <button
               onClick={(e) => { e.stopPropagation(); onClickReplace(); }}
               className="w-8 h-8 rounded-full bg-white/90 flex items-center justify-center text-primary cursor-pointer"
@@ -330,7 +428,6 @@ function PhotoSlot({ label, photoUrl, uploading, onClickEmpty, onClickReplace, o
             >
               <Camera size={14} />
             </button>
-            {/* Delete */}
             {onRemove && (
               <button
                 onClick={(e) => { e.stopPropagation(); onRemove(); }}

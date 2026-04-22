@@ -13,6 +13,12 @@ import {
   BarChart3,
   Clock,
   Info,
+  Users,
+  XCircle,
+  TrendingDown,
+  ArrowUpRight,
+  ArrowDownRight,
+  Minus,
 } from "lucide-react";
 import { useStatistics, TimeFilter } from "@/components/features/dashboard/statistics/useStatistics";
 import {
@@ -60,6 +66,23 @@ export default function StatisticsPage() {
     ? Math.round((data.completedBookings / data.totalBookings) * 100)
     : 0;
 
+  // Helper badge croissance
+  const GrowthBadge = ({ value }: { value: number | null }) => {
+    if (value === null) return null;
+    if (value === 0) return (
+      <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-gray-50 text-gray-400 px-2 py-1 rounded-lg">
+        <Minus size={10} /> Stable
+      </span>
+    );
+    const positive = value > 0;
+    return (
+      <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg ${positive ? "bg-green-50 text-green-600" : "bg-red-50 text-red-500"}`}>
+        {positive ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}
+        {positive ? "+" : ""}{value}% vs période préc.
+      </span>
+    );
+  };
+
   return (
     <div className="w-full max-w-7xl mx-auto space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-top-4 duration-500 pb-20 p-4 sm:p-6 lg:p-0">
 
@@ -102,7 +125,7 @@ export default function StatisticsPage() {
         </div>
       </div>
 
-      {/* KPI Cards */}
+      {/* KPI Cards — ligne 1 : 3 cartes principales */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
 
         {/* Réservations prises */}
@@ -112,6 +135,7 @@ export default function StatisticsPage() {
             <div className="p-2 sm:p-3 bg-blue-100 text-blue-600 rounded-lg sm:rounded-xl">
               <Calendar size={18} className="sm:w-5 sm:h-5" />
             </div>
+            <GrowthBadge value={data.bookingsGrowth} />
           </div>
           <div className="relative z-10">
             <p className="text-[10px] sm:text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Réservations prises</p>
@@ -161,6 +185,12 @@ export default function StatisticsPage() {
             <div className="p-2 sm:p-3 bg-white/20 text-white rounded-lg sm:rounded-xl backdrop-blur-md">
               <CreditCard size={18} className="sm:w-5 sm:h-5" />
             </div>
+            {data.revenueGrowth !== null && (
+              <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg ${data.revenueGrowth >= 0 ? "bg-white/20 text-white" : "bg-red-400/30 text-white"}`}>
+                {data.revenueGrowth >= 0 ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}
+                {data.revenueGrowth >= 0 ? "+" : ""}{data.revenueGrowth}%
+              </span>
+            )}
           </div>
           <div className="relative z-10">
             <p className="text-[10px] sm:text-xs font-bold text-primary-light uppercase tracking-widest mb-1">Chiffre d'affaires</p>
@@ -173,6 +203,50 @@ export default function StatisticsPage() {
                 </p>
               </div>
             )}
+          </div>
+        </div>
+      </div>
+
+      {/* KPI Cards — ligne 2 : clients uniques + taux annulation + no-show */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+
+        {/* Clients uniques */}
+        <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex items-center gap-4">
+          <div className="w-11 h-11 rounded-xl bg-violet-50 flex items-center justify-center flex-shrink-0">
+            <Users size={20} className="text-violet-500" />
+          </div>
+          <div>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Clients uniques</p>
+            <p className="text-2xl font-black text-gray-900">{data.uniqueClients}</p>
+            <p className="text-[10px] text-gray-400">clients distincts sur la période</p>
+          </div>
+        </div>
+
+        {/* Taux annulation */}
+        <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex items-center gap-4">
+          <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${data.cancellationRate > 20 ? "bg-red-50" : "bg-gray-50"}`}>
+            <XCircle size={20} className={data.cancellationRate > 20 ? "text-red-400" : "text-gray-400"} />
+          </div>
+          <div>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Taux d'annulation</p>
+            <p className={`text-2xl font-black ${data.cancellationRate > 20 ? "text-red-500" : "text-gray-900"}`}>
+              {data.cancellationRate}%
+            </p>
+            <p className="text-[10px] text-gray-400">{data.cancelledBookings} annulation{data.cancelledBookings > 1 ? "s" : ""}</p>
+          </div>
+        </div>
+
+        {/* Taux absent */}
+        <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex items-center gap-4">
+          <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${data.noShowRate > 10 ? "bg-orange-50" : "bg-gray-50"}`}>
+            <TrendingDown size={20} className={data.noShowRate > 10 ? "text-orange-400" : "text-gray-400"} />
+          </div>
+          <div>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Taux absent (lapin)</p>
+            <p className={`text-2xl font-black ${data.noShowRate > 10 ? "text-orange-500" : "text-gray-900"}`}>
+              {data.noShowRate}%
+            </p>
+            <p className="text-[10px] text-gray-400">{data.noShowBookings} RDV non honoré{data.noShowBookings > 1 ? "s" : ""}</p>
           </div>
         </div>
       </div>

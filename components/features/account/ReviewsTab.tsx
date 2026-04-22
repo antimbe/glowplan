@@ -1,6 +1,6 @@
 "use client";
 
-import { Star, MapPin, Trash2, Loader2, Sparkles } from "lucide-react";
+import { Star, MapPin, Trash2, Loader2, Sparkles, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -90,6 +90,32 @@ export function ReviewsTab({ reviews, onDelete, deletingId, formatDate }: Review
                         <div className="relative bg-gray-50/80 rounded-xl px-4 py-3 mb-3">
                             <div className="absolute top-2 left-3 text-3xl text-[#c0a062]/20 font-serif leading-none select-none">"</div>
                             <p className="text-gray-600 text-sm leading-relaxed pl-4">{review.comment}</p>
+                        </div>
+                    )}
+
+                    {/* Provider reply */}
+                    {review.provider_reply && (
+                        <div className="flex gap-3 mb-3 pl-2">
+                            {/* Vertical connector */}
+                            <div className="flex flex-col items-center gap-0 flex-shrink-0">
+                                <div className="w-px h-3 bg-[#32422c]/20" />
+                                <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-[#32422c] to-[#4a5e3a] flex items-center justify-center shadow-sm flex-shrink-0">
+                                    <MessageSquare size={13} className="text-white" />
+                                </div>
+                            </div>
+                            <div className="flex-1 bg-gradient-to-br from-[#f4f6f2] to-[#eef2eb] border border-[#32422c]/10 rounded-xl px-4 py-3">
+                                <div className="flex items-center justify-between mb-1.5">
+                                    <span className="text-[10px] font-black text-[#32422c] uppercase tracking-widest">
+                                        Réponse de l'établissement
+                                    </span>
+                                    {review.replied_at && (
+                                        <span className="text-[10px] text-gray-400 font-medium">
+                                            {formatDate(review.replied_at)}
+                                        </span>
+                                    )}
+                                </div>
+                                <p className="text-sm text-[#32422c]/80 leading-relaxed">{review.provider_reply}</p>
+                            </div>
                         </div>
                     )}
 

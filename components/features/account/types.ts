@@ -37,6 +37,8 @@ export interface Review {
   comment: string | null;
   created_at: string;
   establishment_id: string;
+  provider_reply: string | null;
+  replied_at: string | null;
   establishments?: {
     name: string;
     city: string;
