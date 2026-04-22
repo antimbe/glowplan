@@ -84,7 +84,7 @@ export function useEstablishment() {
             // most recent one.
             const { data, error } = await supabase
                 .from("establishments")
-                .select("*, services(id)")
+                .select("*, services(id), opening_hours(id, is_open)")
                 .eq("user_id", user.id)
                 .order("created_at", { ascending: false })
                 .limit(1)
@@ -138,9 +138,14 @@ export function useEstablishment() {
             const missing = getMissingFields(currentFormData);
             const serviceExists = data.services && data.services.length > 0;
             setHasServices(serviceExists);
-            
+
             if (!serviceExists) {
                 missing.push("Au moins une prestation (onglet Offres)");
+            }
+
+            const hoursConfigured = data.opening_hours && (data.opening_hours as { id: string; is_open: boolean }[]).some(h => h.is_open);
+            if (!hoursConfigured) {
+                missing.push("Horaires d'ouverture (onglet Horaires)");
             }
 
             const profileComplete = missing.length === 0;
@@ -179,6 +184,16 @@ export function useEstablishment() {
 
             if (!serviceExists) {
                 missing.push("Au moins une prestation (onglet Offres)");
+            }
+
+            const { count: hoursCount } = await supabase
+                .from("opening_hours")
+                .select("*", { count: "exact", head: true })
+                .eq("establishment_id", establishmentId)
+                .eq("is_open", true);
+
+            if ((hoursCount || 0) === 0) {
+                missing.push("Horaires d'ouverture (onglet Horaires)");
             }
 
             const isComplete = missing.length === 0;

@@ -26,12 +26,15 @@ export default function BusinessPage() {
     refresh
   } = useEstablishment();
 
+  // Tabs accessible même avant complétion du profil
+  const ALWAYS_ACCESSIBLE = ["general", "offres", "horaires"];
+
   const handleTabClick = (tabId: string) => {
-    if (tabId !== "general" && tabId !== "offres" && !isProfileComplete) return;
+    if (!ALWAYS_ACCESSIBLE.includes(tabId) && !isProfileComplete) return;
     setActiveTab(tabId);
   };
 
-  const canAccessTab = (tabId: string) => tabId === "general" || tabId === "offres" || isProfileComplete;
+  const canAccessTab = (tabId: string) => ALWAYS_ACCESSIBLE.includes(tabId) || isProfileComplete;
 
   if (loading) {
     return (
@@ -53,7 +56,7 @@ export default function BusinessPage() {
             <div className="flex-1">
               <h3 className="text-amber-800 font-bold text-sm">Complétez votre profil professionnel</h3>
               <p className="text-amber-700 text-xs mt-1">
-                Pour débloquer toutes les fonctionnalités, veuillez renseigner les informations suivantes :
+                Pour apparaître dans les recherches et accepter des réservations, veuillez compléter les éléments suivants :
               </p>
               {missingFields.length > 0 && (
                 <ul className="mt-2 flex flex-wrap gap-2">
