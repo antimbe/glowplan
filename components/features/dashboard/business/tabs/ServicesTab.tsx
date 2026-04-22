@@ -10,9 +10,10 @@ import SectionCard from "../SectionCard";
 
 interface ServicesTabProps {
   establishmentId: string;
+  onSaved?: () => void;
 }
 
-export default function ServicesTab({ establishmentId }: ServicesTabProps) {
+export default function ServicesTab({ establishmentId, onSaved }: ServicesTabProps) {
   const [services, setServices] = useState<ServiceData[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -53,6 +54,7 @@ export default function ServicesTab({ establishmentId }: ServicesTabProps) {
     }
     setShowForm(false);
     setEditingService(null);
+    onSaved?.();
   };
 
   const handleEdit = (service: ServiceData) => {
@@ -94,6 +96,7 @@ export default function ServicesTab({ establishmentId }: ServicesTabProps) {
           .update({ is_profile_complete: false })
           .eq("id", establishmentId);
       }
+      onSaved?.();
     } catch (error) {
       console.error("Erreur suppression:", error);
     } finally {

@@ -9,6 +9,7 @@ import SectionCard from "../SectionCard";
 
 interface OpeningHoursTabProps {
   establishmentId: string;
+  onSaved?: () => void;
 }
 
 const TIME_OPTIONS = Array.from({ length: 27 }, (_, i) => {
@@ -26,7 +27,7 @@ const DEFAULT_HOURS: Omit<OpeningHoursData, "id" | "establishment_id">[] = DAYS_
   break_end: null,
 }));
 
-export default function OpeningHoursTab({ establishmentId }: OpeningHoursTabProps) {
+export default function OpeningHoursTab({ establishmentId, onSaved }: OpeningHoursTabProps) {
   const [hours, setHours] = useState<OpeningHoursData[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -111,6 +112,7 @@ export default function OpeningHoursTab({ establishmentId }: OpeningHoursTabProp
 
       if (error) throw error;
       setHasChanges(false);
+      onSaved?.();
     } catch (error) {
       console.error("Erreur sauvegarde:", error);
     } finally {

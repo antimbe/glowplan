@@ -127,13 +127,13 @@ export default function BusinessPage() {
           />
         ) : null
       ) : activeTab === "offres" && establishmentId ? (
-        <ServicesTab establishmentId={establishmentId} />
+        <ServicesTab establishmentId={establishmentId} onSaved={refresh} />
       ) : activeTab === "sections" && establishmentId ? (
         <AppointmentsTab establishmentId={establishmentId} />
       ) : activeTab === "rappels" && establishmentId ? (
         <RemindersTab establishmentId={establishmentId} />
       ) : activeTab === "horaires" && establishmentId ? (
-        <OpeningHoursTab establishmentId={establishmentId} />
+        <OpeningHoursTab establishmentId={establishmentId} onSaved={refresh} />
       ) : activeTab === "paiement" ? (
         <PaymentTab 
           formData={formData} 

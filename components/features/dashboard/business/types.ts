@@ -35,9 +35,9 @@ export { ACTIVITY_SECTORS } from "@/lib/constants/sectors";
 export const TABS = [
   { id: "general", label: "Informations générales" },
   { id: "offres", label: "Offres et prestations" },
+  { id: "horaires", label: "Horaires d'ouverture" },
   { id: "sections", label: "Sections de rendez-vous" },
   { id: "rappels", label: "Rappels et RDV" },
-  { id: "horaires", label: "Horaires d'ouverture" },
   { id: "paiement", label: "Paiement et acompte" },
   { id: "avis", label: "Vos avis" },
 ];
