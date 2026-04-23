@@ -75,12 +75,13 @@ function ClientAuthForm() {
         });
         if (error) throw error;
 
-        // Vérifier si c'est un compte client
+        // Vérifier si c'est un compte client (.limit(1).maybeSingle() évite l'erreur si doublons)
         const { data: clientProfile } = await supabase
           .from("client_profiles")
           .select("id")
           .eq("user_id", data.user.id)
-          .single();
+          .limit(1)
+          .maybeSingle();
 
         if (!clientProfile) {
           // Vérifier si c'est un compte pro
@@ -88,7 +89,8 @@ function ClientAuthForm() {
             .from("establishments")
             .select("id")
             .eq("user_id", data.user.id)
-            .single();
+            .limit(1)
+            .maybeSingle();
 
           if (establishment) {
             await supabase.auth.signOut();
@@ -128,14 +130,18 @@ function ClientAuthForm() {
         if (error) throw error;
 
         if (data.session && data.user) {
-          // Email confirmation OFF → auto-connected, create profile then sign out
-          await supabase.from("client_profiles").insert({
-            user_id: data.user.id,
-            first_name: firstName,
-            last_name: lastName,
-            phone: phone || null,
-            user_type: "client",
-          });
+          // Email confirmation OFF → auto-connected, upsert profile then sign out
+          // upsert évite les doublons si le callback email s'est déjà déclenché
+          await supabase.from("client_profiles").upsert(
+            {
+              user_id: data.user.id,
+              first_name: firstName,
+              last_name: lastName,
+              phone: phone || null,
+              user_type: "client",
+            },
+            { onConflict: "user_id", ignoreDuplicates: true }
+          );
           // Sign out to force email confirmation
           await supabase.auth.signOut();
         }
