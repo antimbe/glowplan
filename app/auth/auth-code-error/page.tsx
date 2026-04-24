@@ -122,9 +122,9 @@ export default function AuthCodeErrorPage() {
                 Email envoyé !
               </h1>
               <p className="text-white/50 text-[14px] font-medium leading-relaxed mb-8">
-                Un nouveau lien de confirmation a été envoyé à{" "}
-                <span className="text-white font-bold">{email}</span>.<br />
-                Vérifiez vos spams si vous ne le recevez pas.
+                Si un compte existe pour{" "}
+                <span className="text-white font-bold">{email}</span>,
+                un email vient d'être envoyé. Vérifiez vos spams si vous ne le recevez pas dans quelques minutes.
               </p>
               <div className="flex flex-col gap-3">
                 <button

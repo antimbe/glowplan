@@ -3,17 +3,35 @@ import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
-  const code = searchParams.get("code");
-  const type = searchParams.get("type");
-  // if "next" is in param, use it as the redirect URL
-  const next = searchParams.get("next") ?? "/dashboard";
+  const code       = searchParams.get("code");
+  const token_hash = searchParams.get("token_hash");
+  const type       = searchParams.get("type");
+  const next       = searchParams.get("next") ?? "/dashboard";
 
-  if (code) {
+  if (code || token_hash) {
     const supabase = await createClient();
-    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
-    if (!error && data.user) {
-      // Flux de réinitialisation de mot de passe — rediriger vers la page de reset correspondante
+    let user: any = null;
+    let authError: any = null;
+
+    if (code) {
+      // PKCE flow (même navigateur que l'inscription)
+      const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+      user = data?.user;
+      authError = error;
+    } else if (token_hash) {
+      // Token-hash flow — fonctionne cross-browser (pas besoin du cookie PKCE)
+      // Supabase envoie type="email" pour confirmation, "recovery" pour reset
+      const { data, error } = await supabase.auth.verifyOtp({
+        token_hash,
+        type: (type ?? "email") as any,
+      });
+      user = data?.user;
+      authError = error;
+    }
+
+    if (!authError && user) {
+      // ── Flux reset mot de passe ──────────────────────────────
       if (type === "recovery") {
         const resetTarget = next.startsWith("/auth/pro")
           ? "/auth/pro/reset-password"
@@ -21,32 +39,28 @@ export async function GET(request: Request) {
         return NextResponse.redirect(`${origin}${resetTarget}`);
       }
 
-      // Récupérer les métadonnées de l'utilisateur
-      const userMetadata = data.user.user_metadata;
-      const userType = userMetadata?.user_type;
+      // ── Flux client (type URL ou metadata) ──────────────────
+      const userMetadata = user.user_metadata ?? {};
+      const userType     = userMetadata.user_type;
 
-      // Si c'est un client (type dans URL ou dans métadonnées)
       if (type === "client" || userType === "client") {
-        // Upsert du profil client — évite les doublons en cas de double callback (mobile/réseau lent)
-        // ignoreDuplicates: false → met à jour si la ligne existe déjà (INSERT ... ON CONFLICT UPDATE)
         await supabase.from("client_profiles").upsert(
           {
-            user_id: data.user.id,
-            first_name: userMetadata?.first_name || userMetadata?.name || "",
-            last_name: userMetadata?.last_name || "",
-            phone: userMetadata?.phone || null,
-            user_type: "client",
+            user_id:    user.id,
+            first_name: userMetadata.first_name || userMetadata.name || "",
+            last_name:  userMetadata.last_name  || "",
+            phone:      userMetadata.phone      || null,
+            user_type:  "client",
           },
           { onConflict: "user_id", ignoreDuplicates: false }
         );
-
-        return NextResponse.redirect(`${origin}/search`);
+        return NextResponse.redirect(`${origin}/auth/confirmed?type=client`);
       }
 
-      return NextResponse.redirect(`${origin}${next}`);
+      // ── Flux pro ────────────────────────────────────────────
+      return NextResponse.redirect(`${origin}/auth/confirmed?type=pro`);
     }
   }
 
-  // return the user to an error page with instructions
   return NextResponse.redirect(`${origin}/auth/auth-code-error`);
 }
