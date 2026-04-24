@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { MapPin, Clock, Phone, Instagram, Globe, ExternalLink, AlertTriangle } from "lucide-react";
+import { useModal } from "@/contexts/ModalContext";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils/cn";
 import { DAYS_DB } from "@/lib/utils/formatters";
@@ -33,6 +34,7 @@ export function EstablishmentSidebar({
 }: EstablishmentSidebarProps) {
     const [step, setStep] = useState<BookingStep>("info");
     const [isBlocked, setIsBlocked] = useState(blockedError || false);
+    const { showError } = useModal();
 
     const {
         selectedService,
@@ -110,7 +112,7 @@ export function EstablishmentSidebar({
         } else if (result.error === "BLOCKED") {
             setIsBlocked(true);
         } else {
-            alert(`Erreur lors de la réservation : ${result.error}`);
+            showError("Erreur de réservation", result.error || "Une erreur est survenue. Veuillez réessayer.");
         }
     };
 

@@ -6,6 +6,7 @@ import { Calendar, Clock, User, Mail, Phone, Instagram, Check, X, Loader2, Alert
 import { Button } from "@/components/ui";
 import { cn } from "@/lib/utils/cn";
 import { MONTHS_LOWER } from "@/lib/utils/formatters";
+import { useModal } from "@/contexts/ModalContext";
 
 interface Appointment {
   id: string;
@@ -36,6 +37,7 @@ interface AppointmentsTabProps {
 
 
 export default function AppointmentsTab({ establishmentId }: AppointmentsTabProps) {
+  const { showError } = useModal();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [guestNoShows, setGuestNoShows] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
@@ -171,7 +173,7 @@ export default function AppointmentsTab({ establishmentId }: AppointmentsTabProp
       setCancelReason("");
     } catch (error) {
       console.error("Error cancelling appointment:", error);
-      alert("Erreur lors de l'annulation du rendez-vous");
+      showError("Annulation impossible", "Une erreur est survenue lors de l'annulation du rendez-vous.");
     } finally {
       setUpdating(null);
     }

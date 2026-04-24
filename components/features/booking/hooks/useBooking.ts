@@ -4,6 +4,7 @@ import { jsDayToDbDay } from "@/lib/utils/formatters";
 import { fetchOccupationData } from "@/lib/utils/booking-fetcher";
 import { getAvailableSlots } from "@/lib/utils/booking-utils";
 import { startOfDay, endOfDay, parseISO } from "date-fns";
+import { useModal } from "@/contexts/ModalContext";
 
 import { Service, OpeningHour, AvailableSlot, CartItem, ClientInfo } from "../types";
 
@@ -17,13 +18,18 @@ export function useBooking(establishmentId: string, openingHours: OpeningHour[])
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
     const [isConfirming, setIsConfirming] = useState(false);
 
-    // TTL pour le panier (vage de 20 min d'inactivité)
+    const { showError } = useModal();
+
+    // TTL panier — 20 min d'inactivité
     useEffect(() => {
         if (cart.length === 0) return;
 
         const timer = setTimeout(() => {
             setCart([]);
-            alert("Votre panier a expiré après 20 minutes d'inactivité.");
+            showError(
+                "Panier expiré",
+                "Votre panier a expiré après 20 minutes d'inactivité. Veuillez recommencer votre sélection."
+            );
         }, 20 * 60 * 1000);
 
         return () => clearTimeout(timer);

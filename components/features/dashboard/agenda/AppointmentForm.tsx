@@ -7,6 +7,7 @@ import { AppointmentData } from "./types";
 import { checkAppointmentConflicts, ConflictResult } from "./hooks";
 import { ServiceData } from "../business/types";
 import { createClient } from "@/lib/supabase/client";
+import { useModal } from "@/contexts/ModalContext";
 
 interface AppointmentFormProps {
   appointment?: AppointmentData | null;
@@ -32,6 +33,8 @@ export default function AppointmentForm({
   onCancel,
   onDelete
 }: AppointmentFormProps) {
+  const { showError } = useModal();
+
   const [formData, setFormData] = useState<Partial<AppointmentData>>({
     client_name: appointment?.client_name || "",
     client_email: appointment?.client_email || "",
@@ -381,7 +384,7 @@ export default function AppointmentForm({
       onSave(appointment as AppointmentData); // Rafraîchir le calendrier et fermer
     } catch (error) {
       console.error("Error cancelling appointment:", error);
-      alert("Erreur lors de l'annulation du rendez-vous");
+      showError("Annulation impossible", "Une erreur est survenue lors de l'annulation du rendez-vous.");
     } finally {
       setCancelling(false);
     }

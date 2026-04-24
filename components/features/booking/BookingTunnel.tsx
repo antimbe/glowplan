@@ -465,72 +465,116 @@ export function BookingTunnel({
                     )}
 
                     <h2 className="text-lg font-bold text-gray-900 mb-4">Vos informations</h2>
-                    <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Prénom <span className="text-red-500">*</span></label>
-                                <div className="relative">
-                                    <User size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                                    <input
-                                        type="text"
-                                        value={clientInfo.firstName}
-                                        onChange={(e) => setClientInfo({ ...clientInfo, firstName: e.target.value })}
-                                        className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:border-primary outline-none transition-all"
-                                        placeholder="Jean"
-                                    />
+
+                    {clientProfileId ? (
+                        /* ── Utilisateur connecté : affichage lecture seule ── */
+                        <div className="space-y-3">
+                            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-primary/5 border border-primary/15 mb-4">
+                                <UserPlus size={14} className="text-primary flex-shrink-0" />
+                                <p className="text-xs font-semibold text-primary/80">
+                                    Informations issues de votre profil
+                                </p>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-50 border border-gray-100">
+                                    <User size={15} className="text-gray-400 flex-shrink-0" />
+                                    <div className="min-w-0">
+                                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Prénom</p>
+                                        <p className="text-sm font-semibold text-gray-800 truncate">{clientInfo.firstName || "—"}</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-50 border border-gray-100">
+                                    <User size={15} className="text-gray-400 flex-shrink-0" />
+                                    <div className="min-w-0">
+                                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Nom</p>
+                                        <p className="text-sm font-semibold text-gray-800 truncate">{clientInfo.lastName || "—"}</p>
+                                    </div>
                                 </div>
                             </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Nom <span className="text-red-500">*</span></label>
-                                <div className="relative">
-                                    <User size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                                    <input
-                                        type="text"
-                                        value={clientInfo.lastName}
-                                        onChange={(e) => setClientInfo({ ...clientInfo, lastName: e.target.value })}
-                                        className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:border-primary outline-none transition-all"
-                                        placeholder="Dupont"
-                                    />
+                            <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-50 border border-gray-100">
+                                <Mail size={15} className="text-gray-400 flex-shrink-0" />
+                                <div className="min-w-0">
+                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Email</p>
+                                    <p className="text-sm font-semibold text-gray-800 truncate">{clientInfo.email || "—"}</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-50 border border-gray-100">
+                                <Phone size={15} className="text-gray-400 flex-shrink-0" />
+                                <div className="min-w-0">
+                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Téléphone</p>
+                                    <p className="text-sm font-semibold text-gray-800">{clientInfo.phone || "—"}</p>
                                 </div>
                             </div>
                         </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Email <span className="text-red-500">*</span></label>
-                            <div className="relative">
-                                <Mail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                                <input
-                                    type="email"
-                                    value={clientInfo.email}
-                                    onChange={(e) => setClientInfo({ ...clientInfo, email: e.target.value })}
-                                    className={cn(
-                                        "w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:border-primary outline-none transition-all",
-                                        emailError && "border-red-500 focus:ring-red-200"
-                                    )}
-                                    placeholder="jean.dupont@email.com"
-                                />
+                    ) : (
+                        /* ── Visiteur non connecté : formulaire éditable ── */
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Prénom <span className="text-red-500">*</span></label>
+                                    <div className="relative">
+                                        <User size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                        <input
+                                            type="text"
+                                            value={clientInfo.firstName}
+                                            onChange={(e) => setClientInfo({ ...clientInfo, firstName: e.target.value })}
+                                            className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:border-primary outline-none transition-all"
+                                            placeholder="Jean"
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Nom <span className="text-red-500">*</span></label>
+                                    <div className="relative">
+                                        <User size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                        <input
+                                            type="text"
+                                            value={clientInfo.lastName}
+                                            onChange={(e) => setClientInfo({ ...clientInfo, lastName: e.target.value })}
+                                            className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:border-primary outline-none transition-all"
+                                            placeholder="Dupont"
+                                        />
+                                    </div>
+                                </div>
                             </div>
-                            {emailError && <span className="text-[10px] font-bold text-red-500 uppercase mt-1 ml-1">{emailError}</span>}
-                        </div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Téléphone <span className="text-red-500">*</span></label>
-                            <div className="relative">
-                                <Phone size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                                <input
-                                    type="tel"
-                                    value={clientInfo.phone}
-                                    onChange={(e) => setClientInfo({ ...clientInfo, phone: e.target.value })}
-                                    className={cn(
-                                        "w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:border-primary outline-none transition-all",
-                                        phoneError && "border-red-500 focus:ring-red-200"
-                                    )}
-                                    placeholder="06 12 34 56 78"
-                                />
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Email <span className="text-red-500">*</span></label>
+                                <div className="relative">
+                                    <Mail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                    <input
+                                        type="email"
+                                        value={clientInfo.email}
+                                        onChange={(e) => setClientInfo({ ...clientInfo, email: e.target.value })}
+                                        className={cn(
+                                            "w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:border-primary outline-none transition-all",
+                                            emailError && "border-red-500 focus:ring-red-200"
+                                        )}
+                                        placeholder="jean.dupont@email.com"
+                                    />
+                                </div>
+                                {emailError && <span className="text-[10px] font-bold text-red-500 uppercase mt-1 ml-1">{emailError}</span>}
                             </div>
-                            {phoneError && <span className="text-[10px] font-bold text-red-500 uppercase mt-1 ml-1">{phoneError}</span>}
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Téléphone <span className="text-red-500">*</span></label>
+                                <div className="relative">
+                                    <Phone size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                    <input
+                                        type="tel"
+                                        value={clientInfo.phone}
+                                        onChange={(e) => setClientInfo({ ...clientInfo, phone: e.target.value })}
+                                        className={cn(
+                                            "w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:border-primary outline-none transition-all",
+                                            phoneError && "border-red-500 focus:ring-red-200"
+                                        )}
+                                        placeholder="06 12 34 56 78"
+                                    />
+                                </div>
+                                {phoneError && <span className="text-[10px] font-bold text-red-500 uppercase mt-1 ml-1">{phoneError}</span>}
+                            </div>
                         </div>
-                    </div>
+                    )}
 
                     <Button
                         type="button"
