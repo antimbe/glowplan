@@ -3,24 +3,29 @@
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { CheckCircle2, ArrowRight, Sparkles } from "lucide-react";
+import { CheckCircle2, ArrowRight, Sparkles, LogIn } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
 const ease: [number, number, number, number] = [0.16, 1, 0.3, 1];
 
 function ConfirmedContent() {
-  const router = useRouter();
+  const router       = useRouter();
   const searchParams = useSearchParams();
-  const type = searchParams.get("type") ?? "client";
+  const type          = searchParams.get("type") ?? "client";
+  const loginRequired = searchParams.get("login_required") === "true";
 
-  const isPro = type === "pro";
-  const destination = isPro ? "/dashboard" : "/search";
+  const isPro        = type === "pro";
+  const destination  = isPro ? "/dashboard" : "/search";
+  const loginUrl     = isPro ? "/auth/pro/login" : "/auth/client/login";
   const destinationLabel = isPro ? "Accéder au dashboard" : "Découvrir les établissements";
 
   const [countdown, setCountdown] = useState(5);
 
+  // Auto-redirect uniquement quand la session est bien établie (pas de login requis)
   useEffect(() => {
+    if (loginRequired) return;
+
     const interval = setInterval(() => {
       setCountdown((c) => {
         if (c <= 1) {
@@ -32,7 +37,7 @@ function ConfirmedContent() {
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [destination, router]);
+  }, [destination, router, loginRequired]);
 
   return (
     <section className="min-h-screen relative overflow-hidden bg-[#0d1208] flex items-center justify-center">
@@ -79,7 +84,6 @@ function ConfirmedContent() {
             <CheckCircle2 size={40} className="text-emerald-400" />
           </motion.div>
 
-          {/* Confetti-like sparkle */}
           <motion.div
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -88,7 +92,7 @@ function ConfirmedContent() {
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#c0a062]/15 border border-[#c0a062]/25 mb-5">
               <Sparkles size={12} className="text-[#c0a062]" />
               <span className="text-[#c0a062] text-[11px] font-bold uppercase tracking-[0.18em]">
-                Compte activé
+                Email confirmé
               </span>
             </div>
           </motion.div>
@@ -99,7 +103,7 @@ function ConfirmedContent() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4, duration: 0.5, ease }}
           >
-            Bienvenue sur GlowPlan !
+            {loginRequired ? "Votre compte est activé !" : "Bienvenue sur GlowPlan !"}
           </motion.h1>
 
           <motion.p
@@ -108,36 +112,52 @@ function ConfirmedContent() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5, duration: 0.5 }}
           >
-            {isPro
-              ? "Votre compte professionnel est confirmé. Vous allez être redirigé vers votre dashboard."
-              : "Votre adresse email est confirmée. Vous pouvez maintenant réserver vos prestations préférées."}
+            {loginRequired
+              ? "Votre adresse email est bien confirmée. Le lien a été ouvert dans un navigateur différent, connectez-vous simplement avec votre email et mot de passe."
+              : isPro
+                ? "Votre compte professionnel est confirmé. Vous allez être redirigé vers votre dashboard."
+                : "Votre adresse email est confirmée. Vous pouvez maintenant réserver vos prestations préférées."}
           </motion.p>
 
-          {/* CTA */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6, duration: 0.5, ease }}
+            className="flex flex-col gap-3"
           >
-            <Link
-              href={destination}
-              className="flex items-center justify-center gap-2 w-full py-4 rounded-2xl bg-gradient-to-br from-[#d4b070] via-[#c0a062] to-[#a8854e] hover:from-[#e0bc78] hover:via-[#cca96e] hover:to-[#b8945a] text-white font-bold text-[15px] transition-all duration-300 shadow-[0_4px_24px_rgba(192,160,98,0.4)] hover:shadow-[0_6px_32px_rgba(192,160,98,0.55)]"
-            >
-              <span>{destinationLabel}</span>
-              <ArrowRight size={18} />
-            </Link>
+            {loginRequired ? (
+              /* Cas cross-browser : inviter à se connecter */
+              <Link
+                href={loginUrl}
+                className="flex items-center justify-center gap-2 w-full py-4 rounded-2xl bg-gradient-to-br from-[#d4b070] via-[#c0a062] to-[#a8854e] hover:from-[#e0bc78] hover:via-[#cca96e] hover:to-[#b8945a] text-white font-bold text-[15px] transition-all duration-300 shadow-[0_4px_24px_rgba(192,160,98,0.4)] hover:shadow-[0_6px_32px_rgba(192,160,98,0.55)]"
+              >
+                <LogIn size={18} />
+                <span>Se connecter</span>
+              </Link>
+            ) : (
+              /* Cas normal : accès direct */
+              <Link
+                href={destination}
+                className="flex items-center justify-center gap-2 w-full py-4 rounded-2xl bg-gradient-to-br from-[#d4b070] via-[#c0a062] to-[#a8854e] hover:from-[#e0bc78] hover:via-[#cca96e] hover:to-[#b8945a] text-white font-bold text-[15px] transition-all duration-300 shadow-[0_4px_24px_rgba(192,160,98,0.4)] hover:shadow-[0_6px_32px_rgba(192,160,98,0.55)]"
+              >
+                <span>{destinationLabel}</span>
+                <ArrowRight size={18} />
+              </Link>
+            )}
           </motion.div>
 
-          {/* Countdown */}
-          <motion.p
-            className="text-white/25 text-[12px] font-medium mt-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.8 }}
-          >
-            Redirection automatique dans{" "}
-            <span className="text-white/50 font-bold tabular-nums">{countdown}s</span>
-          </motion.p>
+          {/* Countdown — uniquement si session établie */}
+          {!loginRequired && (
+            <motion.p
+              className="text-white/25 text-[12px] font-medium mt-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.8 }}
+            >
+              Redirection automatique dans{" "}
+              <span className="text-white/50 font-bold tabular-nums">{countdown}s</span>
+            </motion.p>
+          )}
 
         </div>
       </motion.div>

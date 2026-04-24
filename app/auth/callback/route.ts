@@ -11,27 +11,26 @@ export async function GET(request: Request) {
   if (code || token_hash) {
     const supabase = await createClient();
 
-    let user: any = null;
+    let user: any   = null;
     let authError: any = null;
 
     if (code) {
-      // PKCE flow (même navigateur que l'inscription)
+      // PKCE flow — nécessite le cookie verifier du même navigateur
       const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-      user = data?.user;
+      user      = data?.user;
       authError = error;
     } else if (token_hash) {
-      // Token-hash flow — fonctionne cross-browser (pas besoin du cookie PKCE)
-      // Supabase envoie type="email" pour confirmation, "recovery" pour reset
+      // Token-hash flow — fonctionne cross-browser (pas de cookie PKCE requis)
       const { data, error } = await supabase.auth.verifyOtp({
         token_hash,
         type: (type ?? "email") as any,
       });
-      user = data?.user;
+      user      = data?.user;
       authError = error;
     }
 
+    // ── Cas 1 : succès complet ──────────────────────────────────
     if (!authError && user) {
-      // ── Flux reset mot de passe ──────────────────────────────
       if (type === "recovery") {
         const resetTarget = next.startsWith("/auth/pro")
           ? "/auth/pro/reset-password"
@@ -39,7 +38,6 @@ export async function GET(request: Request) {
         return NextResponse.redirect(`${origin}${resetTarget}`);
       }
 
-      // ── Flux client (type URL ou metadata) ──────────────────
       const userMetadata = user.user_metadata ?? {};
       const userType     = userMetadata.user_type;
 
@@ -57,10 +55,22 @@ export async function GET(request: Request) {
         return NextResponse.redirect(`${origin}/auth/confirmed?type=client`);
       }
 
-      // ── Flux pro ────────────────────────────────────────────
       return NextResponse.redirect(`${origin}/auth/confirmed?type=pro`);
+    }
+
+    // ── Cas 2 : échange échoué mais un code était présent ──────
+    // Supabase confirme l'email côté serveur AVANT de rediriger vers notre callback.
+    // Si le code existe mais l'échange échoue (ex. PKCE cross-browser — lien ouvert
+    // dans un navigateur différent de celui de l'inscription), l'email est quand même
+    // confirmé. On redirige vers une page "confirmé" avec instruction de se connecter.
+    if (authError && code) {
+      const accountType = type === "client" ? "client" : "pro";
+      return NextResponse.redirect(
+        `${origin}/auth/confirmed?type=${accountType}&login_required=true`
+      );
     }
   }
 
+  // Aucun code du tout → lien vraiment invalide
   return NextResponse.redirect(`${origin}/auth/auth-code-error`);
 }
