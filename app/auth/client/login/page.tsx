@@ -97,11 +97,13 @@ function ClientAuthForm() {
             throw new Error("Ce compte est un compte professionnel. Veuillez utiliser la connexion pro.");
           }
 
-          // Créer le profil client s'il n'existe pas (migration d'ancien compte)
+          // Créer le profil client s'il n'existe pas — on récupère les métadonnées de l'inscription
+          const meta = data.user.user_metadata ?? {};
           await supabase.from("client_profiles").insert({
             user_id: data.user.id,
-            first_name: "Client",
-            last_name: "",
+            first_name: meta.first_name || meta.name || "",
+            last_name: meta.last_name || "",
+            phone: meta.phone || null,
             user_type: "client",
           });
         }
@@ -119,6 +121,7 @@ function ClientAuthForm() {
           email,
           password,
           options: {
+            emailRedirectTo: `${window.location.origin}/auth/callback?type=client`,
             data: {
               user_type: "client",
               first_name: firstName,
