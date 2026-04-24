@@ -35,7 +35,13 @@ function ClientAuthForm() {
   const handleResendConfirmation = async () => {
     setResendLoading(true);
     try {
-      const { error } = await supabase.auth.resend({ type: "signup", email });
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback?type=client`,
+        },
+      });
       if (error) throw error;
       showSuccess(
         "Email renvoyé ✉️",
