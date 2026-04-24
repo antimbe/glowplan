@@ -44,9 +44,37 @@
   .text-balance {
     text-wrap: balance;
   }
-  
+
   .glass {
     @apply backdrop-blur-md bg-white/10 border border-white/20;
+  }
+}
+
+@layer base {
+  /*
+   * Shine sweep global — s'applique à tous les <button> natifs
+   * sauf ceux du composant Button (qui ont déjà leur propre effet via group/shine + .has-shine)
+   */
+  button:not(:disabled):not(.has-shine) {
+    position: relative;
+    overflow: hidden;
+  }
+
+  button:not(:disabled):not(.has-shine)::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transform: translateX(-120%) skewX(-20deg);
+    transition: transform 700ms ease-in-out;
+    pointer-events: none;
+  }
+
+  button:not(:disabled):not(.has-shine):hover::after {
+    transform: translateX(250%) skewX(-20deg);
   }
 }
 
