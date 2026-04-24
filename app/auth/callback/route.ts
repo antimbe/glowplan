@@ -27,45 +27,18 @@ export async function GET(request: Request) {
 
       // Si c'est un client (type dans URL ou dans métadonnées)
       if (type === "client" || userType === "client") {
-<<<<<<< Updated upstream
         // Upsert du profil client — évite les doublons en cas de double callback (mobile/réseau lent)
+        // ignoreDuplicates: false → met à jour si la ligne existe déjà (INSERT ... ON CONFLICT UPDATE)
         await supabase.from("client_profiles").upsert(
           {
-=======
-        // Vérifier si le profil existe déjà
-        const { data: existingProfile } = await supabase
-          .from("client_profiles")
-          .select("id, first_name")
-          .eq("user_id", data.user.id)
-          .single();
-
-        if (!existingProfile) {
-          // Créer le profil client avec les métadonnées de l'inscription
-          await supabase.from("client_profiles").insert({
->>>>>>> Stashed changes
             user_id: data.user.id,
             first_name: userMetadata?.first_name || userMetadata?.name || "",
             last_name: userMetadata?.last_name || "",
             phone: userMetadata?.phone || null,
             user_type: "client",
-<<<<<<< Updated upstream
           },
           { onConflict: "user_id", ignoreDuplicates: false }
         );
-=======
-          });
-        } else if (userMetadata?.first_name && (!existingProfile.first_name || existingProfile.first_name === "Client")) {
-          // Mettre à jour si les métadonnées sont plus complètes que ce qui est en base
-          await supabase
-            .from("client_profiles")
-            .update({
-              first_name: userMetadata.first_name,
-              last_name: userMetadata.last_name || "",
-              phone: userMetadata.phone || null,
-            })
-            .eq("id", existingProfile.id);
-        }
->>>>>>> Stashed changes
 
         return NextResponse.redirect(`${origin}/search`);
       }
