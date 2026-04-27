@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, Suspense } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { MONTHS, DAYS_JS_SHORT, jsDayToDbDay } from "@/lib/utils/formatters";
+import { MONTHS, jsDayToDbDay } from "@/lib/utils/formatters";
 import { Calendar, MapPin, ArrowRight, Clock, Loader2 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -27,6 +27,7 @@ interface Establishment {
   city: string;
   description: string | null;
   main_photo_url: string | null;
+  dashboard_color: string | null;
 }
 
 const PERIOD_LABELS: Record<string, string> = {
@@ -34,6 +35,26 @@ const PERIOD_LABELS: Record<string, string> = {
   "this_month": "Ce mois-ci",
   "next_month": "Mois prochain",
 };
+
+const DEFAULT_COLOR = "#32422c";
+
+/** Converts "#rrggbb" + 0-1 alpha to "rgba(r,g,b,a)" */
+function hexAlpha(hex: string, alpha: number): string {
+  const h = hex.replace("#", "");
+  const r = parseInt(h.substring(0, 2), 16);
+  const g = parseInt(h.substring(2, 4), 16);
+  const b = parseInt(h.substring(4, 6), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+/** Derives a slightly lighter/brighter tint from the brand color for accent elements */
+function accentFromColor(hex: string): string {
+  const h = hex.replace("#", "");
+  const r = Math.min(255, parseInt(h.substring(0, 2), 16) + 60);
+  const g = Math.min(255, parseInt(h.substring(2, 4), 16) + 60);
+  const b = Math.min(255, parseInt(h.substring(4, 6), 16) + 60);
+  return `rgb(${r},${g},${b})`;
+}
 
 function calculateAvailabilities(
   hours: OpeningHour[],
@@ -57,12 +78,12 @@ function calculateAvailabilities(
       continue;
     }
 
-    const openH = parseInt(dayHours.open_time.split(":")[0]);
+    const openH  = parseInt(dayHours.open_time.split(":")[0]);
     const closeH = parseInt(dayHours.close_time.split(":")[0]);
     const breakS = dayHours.break_start ? parseInt(dayHours.break_start.split(":")[0]) : null;
-    const breakE = dayHours.break_end ? parseInt(dayHours.break_end.split(":")[0]) : null;
+    const breakE = dayHours.break_end   ? parseInt(dayHours.break_end.split(":")[0])   : null;
 
-    const dayStart = new Date(date); dayStart.setHours(openH, 0, 0, 0);
+    const dayStart = new Date(date); dayStart.setHours(openH,  0, 0, 0);
     const dayEnd   = new Date(date); dayEnd.setHours(closeH, 0, 0, 0);
 
     const fullDayBlocked = unavailabilities.some(u =>
@@ -74,12 +95,12 @@ function calculateAvailabilities(
     let segStart: number | null = null;
 
     for (let h = openH; h < closeH; h++) {
-      const sStart = new Date(date); sStart.setHours(h, 0, 0, 0);
+      const sStart = new Date(date); sStart.setHours(h,     0, 0, 0);
       const sEnd   = new Date(date); sEnd.setHours(h + 1, 0, 0, 0);
 
       const duringBreak = breakS !== null && breakE !== null && h >= breakS && h < breakE;
       const blocked = unavailabilities.some(u => sStart < new Date(u.end_time) && sEnd > new Date(u.start_time));
-      const booked  = appointments.some(a => sStart < new Date(a.end_time) && sEnd > new Date(a.start_time));
+      const booked  = appointments.some(a  => sStart < new Date(a.end_time)   && sEnd > new Date(a.start_time));
 
       if (!duringBreak && !blocked && !booked) {
         if (segStart === null) segStart = h;
@@ -97,14 +118,14 @@ function calculateAvailabilities(
 }
 
 function AvailabilityContent() {
-  const params = useParams();
-  const searchParams = useSearchParams();
+  const params        = useParams();
+  const searchParams  = useSearchParams();
   const establishmentId = params.establishmentId as string;
-  const period = searchParams.get("period") || "7";
+  const period        = searchParams.get("period") || "7";
 
-  const [establishment, setEstablishment] = useState<Establishment | null>(null);
+  const [establishment,  setEstablishment]  = useState<Establishment | null>(null);
   const [availabilities, setAvailabilities] = useState<AvailabilitySlot[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading,        setLoading]        = useState(true);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -112,7 +133,7 @@ function AvailabilityContent() {
 
     const { data: est } = await supabase
       .from("establishments")
-      .select("name, city, description, main_photo_url")
+      .select("name, city, description, main_photo_url, dashboard_color")
       .eq("id", establishmentId)
       .single();
 
@@ -150,7 +171,7 @@ function AvailabilityContent() {
         .select("start_time, end_time")
         .eq("establishment_id", establishmentId)
         .lte("start_time", endDate.toISOString())
-        .gte("end_time", startDate.toISOString()),
+        .gte("end_time",   startDate.toISOString()),
       supabase.from("appointments")
         .select("start_time, end_time")
         .eq("establishment_id", establishmentId)
@@ -161,7 +182,9 @@ function AvailabilityContent() {
     ]);
 
     if (normalizedHours.length > 0) {
-      setAvailabilities(calculateAvailabilities(normalizedHours, unavs || [], apts || [], startDate, endDate));
+      setAvailabilities(
+        calculateAvailabilities(normalizedHours, unavs || [], apts || [], startDate, endDate)
+      );
     }
 
     setLoading(false);
@@ -169,12 +192,19 @@ function AvailabilityContent() {
 
   useEffect(() => { load(); }, [load]);
 
-  const DAY_NAMES = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
+  // ── Couleur de marque ─────────────────────────────────────────
+  const brandColor  = establishment?.dashboard_color || DEFAULT_COLOR;
+  const accentColor = accentFromColor(brandColor);
+
   const periodLabel = PERIOD_LABELS[period] || "Prochains créneaux";
+  const DAY_NAMES   = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
 
   return (
-    <div className="min-h-screen bg-primary relative overflow-x-hidden">
-      {/* Background */}
+    <div
+      className="min-h-screen relative overflow-x-hidden"
+      style={{ backgroundColor: brandColor }}
+    >
+      {/* Photo de fond */}
       {establishment?.main_photo_url && (
         <div className="absolute inset-0 z-0">
           <Image
@@ -186,11 +216,18 @@ function AvailabilityContent() {
           />
         </div>
       )}
-      <div className="absolute inset-0 z-0 bg-gradient-to-b from-primary/95 via-primary/90 to-[#1a2618]" />
 
-      {/* Blur décoratif */}
-      <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] bg-white/5 rounded-full blur-[120px] z-0 pointer-events-none" />
-      <div className="absolute bottom-0 left-[-10%] w-[50%] h-[40%] bg-accent/10 rounded-full blur-[100px] z-0 pointer-events-none" />
+      {/* Gradient overlay teinté de la couleur de marque */}
+      <div
+        className="absolute inset-0 z-0"
+        style={{
+          background: `linear-gradient(to bottom, ${hexAlpha(brandColor, 0.95)}, ${hexAlpha(brandColor, 0.88)}, #111)`,
+        }}
+      />
+
+      {/* Blobs décoratifs */}
+      <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full blur-[120px] z-0 pointer-events-none" style={{ backgroundColor: "rgba(255,255,255,0.05)" }} />
+      <div className="absolute bottom-0 left-[-10%] w-[50%] h-[40%] rounded-full blur-[100px] z-0 pointer-events-none" style={{ backgroundColor: hexAlpha(accentColor, 0.12) }} />
 
       <div className="relative z-10 max-w-lg mx-auto px-4 py-10 pb-24">
 
@@ -208,7 +245,7 @@ function AvailabilityContent() {
           </h1>
           {establishment?.city && (
             <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-4 py-2">
-              <MapPin size={14} className="text-accent" />
+              <MapPin size={14} style={{ color: accentColor }} />
               <span className="text-white/80 text-sm font-semibold">{establishment.city}</span>
             </div>
           )}
@@ -216,8 +253,10 @@ function AvailabilityContent() {
 
         {/* Période */}
         <div className="flex items-center justify-center gap-2 mb-6">
-          <Calendar size={16} className="text-accent" />
-          <span className="text-accent text-sm font-bold uppercase tracking-widest">{periodLabel}</span>
+          <Calendar size={16} style={{ color: accentColor }} />
+          <span className="text-sm font-bold uppercase tracking-widest" style={{ color: accentColor }}>
+            {periodLabel}
+          </span>
         </div>
 
         {/* Disponibilités */}
@@ -236,11 +275,23 @@ function AvailabilityContent() {
             {availabilities.map((slot, i) => (
               <div
                 key={i}
-                className="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-4 flex items-start gap-4 hover:bg-white/15 transition-colors"
+                className="backdrop-blur-md rounded-2xl p-4 flex items-start gap-4 transition-colors"
+                style={{
+                  backgroundColor: hexAlpha(brandColor, 0.4),
+                  border: `1px solid ${hexAlpha("#ffffff", 0.15)}`,
+                }}
+                onMouseEnter={e => (e.currentTarget.style.backgroundColor = hexAlpha(brandColor, 0.55))}
+                onMouseLeave={e => (e.currentTarget.style.backgroundColor = hexAlpha(brandColor, 0.4))}
               >
                 {/* Date badge */}
-                <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-accent/20 border border-accent/30 flex flex-col items-center justify-center">
-                  <span className="text-accent text-[10px] font-bold uppercase">
+                <div
+                  className="flex-shrink-0 w-12 h-12 rounded-xl flex flex-col items-center justify-center"
+                  style={{
+                    backgroundColor: hexAlpha(accentColor, 0.2),
+                    border: `1px solid ${hexAlpha(accentColor, 0.35)}`,
+                  }}
+                >
+                  <span className="text-[10px] font-bold uppercase" style={{ color: accentColor }}>
                     {DAY_NAMES[slot.date.getDay()]}
                   </span>
                   <span className="text-white text-lg font-black leading-none">
@@ -257,7 +308,11 @@ function AvailabilityContent() {
                     {slot.slots.map((s, j) => (
                       <span
                         key={j}
-                        className="bg-white/15 border border-white/20 text-white text-xs font-semibold px-2.5 py-1 rounded-lg"
+                        className="text-white text-xs font-semibold px-2.5 py-1 rounded-lg"
+                        style={{
+                          backgroundColor: hexAlpha("#ffffff", 0.15),
+                          border: `1px solid ${hexAlpha("#ffffff", 0.2)}`,
+                        }}
                       >
                         {s}
                       </span>
@@ -278,8 +333,11 @@ function AvailabilityContent() {
 
         {/* CTA */}
         <div className="mt-10">
-          <Link href={`/book/${establishmentId}`}>
-            <button className="w-full bg-white text-primary font-black text-base py-4 rounded-2xl flex items-center justify-center gap-3 shadow-[0_20px_60px_rgba(0,0,0,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-transform duration-200">
+          <Link href={`/establishment/${establishmentId}`}>
+            <button
+              className="w-full font-black text-base py-4 rounded-2xl flex items-center justify-center gap-3 shadow-[0_20px_60px_rgba(0,0,0,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-transform duration-200"
+              style={{ backgroundColor: "#ffffff", color: brandColor }}
+            >
               <span>Réserver maintenant</span>
               <ArrowRight size={20} />
             </button>
@@ -296,7 +354,7 @@ function AvailabilityContent() {
 export default function AvailabilityPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-primary flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: DEFAULT_COLOR }}>
         <Loader2 size={36} className="text-white/50 animate-spin" />
       </div>
     }>
