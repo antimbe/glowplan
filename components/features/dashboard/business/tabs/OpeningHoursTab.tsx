@@ -50,17 +50,21 @@ export default function OpeningHoursTab({ establishmentId, onSaved }: OpeningHou
       if (error) throw error;
 
       if (data && data.length > 0) {
-        // Normaliser les heures (enlever les secondes si présentes)
-        // Si un jour est ouvert mais que les heures sont null (sauvegardé en fermé avant),
-        // on les remplace par les valeurs par défaut pour éviter de sauvegarder null
-        const normalizedData = data.map(h => ({
-          ...h,
-          open_time:   h.open_time   ? h.open_time.substring(0, 5)   : (h.is_open ? "09:00" : null),
-          close_time:  h.close_time  ? h.close_time.substring(0, 5)  : (h.is_open ? "18:00" : null),
-          break_start: h.break_start ? h.break_start.substring(0, 5) : null,
-          break_end:   h.break_end   ? h.break_end.substring(0, 5)   : null,
-        }));
+        // Normaliser les heures (enlever les secondes si présentes).
+        // Si un jour est ouvert mais que les heures sont null (données corrompues d'une
+        // sauvegarde précédente), on les remplace par les valeurs par défaut ET on force
+        // hasChanges = true pour que le bouton Enregistrer s'affiche automatiquement.
+        let needsCorrection = false;
+        const normalizedData = data.map(h => {
+          const open_time   = h.open_time   ? h.open_time.substring(0, 5)   : (h.is_open ? "09:00" : null);
+          const close_time  = h.close_time  ? h.close_time.substring(0, 5)  : (h.is_open ? "18:00" : null);
+          const break_start = h.break_start ? h.break_start.substring(0, 5) : null;
+          const break_end   = h.break_end   ? h.break_end.substring(0, 5)   : null;
+          if (h.is_open && (!h.open_time || !h.close_time)) needsCorrection = true;
+          return { ...h, open_time, close_time, break_start, break_end };
+        });
         setHours(normalizedData);
+        if (needsCorrection) setHasChanges(true);
       } else {
         // Initialiser avec les horaires par défaut et marquer comme modifié
         // pour que le bouton Enregistrer soit visible dès le premier accès
@@ -116,10 +120,11 @@ export default function OpeningHoursTab({ establishmentId, onSaved }: OpeningHou
           establishment_id: establishmentId,
           day_of_week: h.day_of_week,
           is_open: h.is_open,
-          open_time: h.is_open ? h.open_time : null,
-          close_time: h.is_open ? h.close_time : null,
+          // Filet de sécurité absolu : jamais de null pour open_time/close_time quand is_open=true
+          open_time:   h.is_open ? (h.open_time   || "09:00") : null,
+          close_time:  h.is_open ? (h.close_time  || "18:00") : null,
           break_start: h.is_open ? h.break_start : null,
-          break_end: h.is_open ? h.break_end : null,
+          break_end:   h.is_open ? h.break_end   : null,
         })));
 
       if (error) throw error;
