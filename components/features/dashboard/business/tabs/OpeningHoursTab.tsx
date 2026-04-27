@@ -51,17 +51,21 @@ export default function OpeningHoursTab({ establishmentId, onSaved }: OpeningHou
 
       if (data && data.length > 0) {
         // Normaliser les heures (enlever les secondes si présentes)
+        // Si un jour est ouvert mais que les heures sont null (sauvegardé en fermé avant),
+        // on les remplace par les valeurs par défaut pour éviter de sauvegarder null
         const normalizedData = data.map(h => ({
           ...h,
-          open_time: h.open_time ? h.open_time.substring(0, 5) : null,
-          close_time: h.close_time ? h.close_time.substring(0, 5) : null,
+          open_time:   h.open_time   ? h.open_time.substring(0, 5)   : (h.is_open ? "09:00" : null),
+          close_time:  h.close_time  ? h.close_time.substring(0, 5)  : (h.is_open ? "18:00" : null),
           break_start: h.break_start ? h.break_start.substring(0, 5) : null,
-          break_end: h.break_end ? h.break_end.substring(0, 5) : null,
+          break_end:   h.break_end   ? h.break_end.substring(0, 5)   : null,
         }));
         setHours(normalizedData);
       } else {
-        // Initialiser avec les horaires par défaut
+        // Initialiser avec les horaires par défaut et marquer comme modifié
+        // pour que le bouton Enregistrer soit visible dès le premier accès
         setHours(DEFAULT_HOURS.map(h => ({ ...h, establishment_id: establishmentId })));
+        setHasChanges(true);
       }
     } catch (error) {
       console.error("Erreur chargement horaires:", error);
@@ -71,9 +75,17 @@ export default function OpeningHoursTab({ establishmentId, onSaved }: OpeningHou
   };
 
   const updateDay = (dayIndex: number, field: keyof OpeningHoursData, value: any) => {
-    setHours(prev => prev.map((h, i) => 
-      i === dayIndex ? { ...h, [field]: value } : h
-    ));
+    setHours(prev => prev.map((h, i) => {
+      if (i !== dayIndex) return h;
+      const updated = { ...h, [field]: value };
+      // Quand on réactive un jour, s'assurer que les heures ont une valeur par défaut
+      // pour ne pas sauvegarder null alors que le select affiche un fallback
+      if (field === "is_open" && value === true) {
+        if (!updated.open_time)  updated.open_time  = "09:00";
+        if (!updated.close_time) updated.close_time = "18:00";
+      }
+      return updated;
+    }));
     setHasChanges(true);
   };
 
