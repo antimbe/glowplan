@@ -78,17 +78,80 @@ export default function OpeningHoursTab({ establishmentId, onSaved }: OpeningHou
     }
   };
 
+  // ── Helpers pour filtrer les options valides ──────────────────────────────
+  const optionsAfter  = (min: string)                   => TIME_OPTIONS.filter(t => t > min);
+  const optionsBefore = (max: string)                   => TIME_OPTIONS.filter(t => t < max);
+  const optionsBetween = (min: string, max: string)     => TIME_OPTIONS.filter(t => t > min && t < max);
+  const optionsUpTo   = (max: string)                   => TIME_OPTIONS.filter(t => t <= max);
+
   const updateDay = (dayIndex: number, field: keyof OpeningHoursData, value: any) => {
     setHours(prev => prev.map((h, i) => {
       if (i !== dayIndex) return h;
-      const updated = { ...h, [field]: value };
-      // Quand on réactive un jour, s'assurer que les heures ont une valeur par défaut
-      // pour ne pas sauvegarder null alors que le select affiche un fallback
+      const u = { ...h, [field]: value };
+
+      // ── Activation du jour : garantir des heures par défaut ──────────────
       if (field === "is_open" && value === true) {
-        if (!updated.open_time)  updated.open_time  = "09:00";
-        if (!updated.close_time) updated.close_time = "18:00";
+        if (!u.open_time)  u.open_time  = "09:00";
+        if (!u.close_time) u.close_time = "18:00";
       }
-      return updated;
+
+      // ── Changement de l'heure d'ouverture ────────────────────────────────
+      if (field === "open_time") {
+        // close_time doit rester strictement après open_time
+        if (u.close_time && u.close_time <= value) {
+          u.close_time = TIME_OPTIONS.find(t => t > value) ?? value;
+        }
+        // La pause doit rester dans [open_time, close_time]
+        if (u.break_start && u.break_start <= value) {
+          const nextBs = TIME_OPTIONS.find(t => t > value && t < (u.close_time ?? "18:00"));
+          if (nextBs) {
+            u.break_start = nextBs;
+            if (u.break_end && u.break_end <= nextBs) {
+              u.break_end = TIME_OPTIONS.find(t => t > nextBs && t <= (u.close_time ?? "18:00")) ?? null;
+            }
+          } else {
+            u.break_start = null;
+            u.break_end   = null;
+          }
+        }
+      }
+
+      // ── Changement de l'heure de fermeture ───────────────────────────────
+      if (field === "close_time") {
+        // open_time doit rester strictement avant close_time
+        if (u.open_time && u.open_time >= value) {
+          u.open_time = TIME_OPTIONS.slice().reverse().find(t => t < value) ?? value;
+        }
+        // La fin de pause doit rester ≤ close_time
+        if (u.break_end && u.break_end > value) {
+          u.break_end = value;
+          if (u.break_start && u.break_start >= u.break_end) {
+            u.break_start = TIME_OPTIONS.slice().reverse().find(t => t < u.break_end! && t > (u.open_time ?? "07:00")) ?? null;
+            if (!u.break_start) u.break_end = null;
+          }
+        }
+        // Le début de pause doit rester < close_time
+        if (u.break_start && u.break_start >= value) {
+          u.break_start = null;
+          u.break_end   = null;
+        }
+      }
+
+      // ── Changement du début de pause ─────────────────────────────────────
+      if (field === "break_start") {
+        if (u.break_end && u.break_end <= value) {
+          u.break_end = TIME_OPTIONS.find(t => t > value && t <= (u.close_time ?? "18:00")) ?? null;
+        }
+      }
+
+      // ── Changement de la fin de pause ────────────────────────────────────
+      if (field === "break_end") {
+        if (u.break_start && u.break_start >= value) {
+          u.break_start = TIME_OPTIONS.slice().reverse().find(t => t < value && t > (u.open_time ?? "07:00")) ?? null;
+        }
+      }
+
+      return u;
     }));
     setHasChanges(true);
   };
@@ -96,11 +159,20 @@ export default function OpeningHoursTab({ establishmentId, onSaved }: OpeningHou
   const toggleBreak = (dayIndex: number) => {
     const day = hours[dayIndex];
     if (day.break_start) {
-      updateDay(dayIndex, "break_start", null);
-      updateDay(dayIndex, "break_end", null);
+      setHours(prev => prev.map((h, i) =>
+        i === dayIndex ? { ...h, break_start: null, break_end: null } : h
+      ));
+      setHasChanges(true);
     } else {
-      updateDay(dayIndex, "break_start", "12:00");
-      updateDay(dayIndex, "break_end", "14:00");
+      // Choisir des valeurs de pause par défaut valides par rapport aux horaires du jour
+      const open  = day.open_time  || "09:00";
+      const close = day.close_time || "18:00";
+      const bs = TIME_OPTIONS.find(t => t > open  && t < close) ?? null;
+      const be = bs ? (TIME_OPTIONS.find(t => t > bs && t <= close) ?? null) : null;
+      setHours(prev => prev.map((h, i) =>
+        i === dayIndex ? { ...h, break_start: bs, break_end: be } : h
+      ));
+      setHasChanges(true);
     }
   };
 
@@ -180,22 +252,24 @@ export default function OpeningHoursTab({ establishmentId, onSaved }: OpeningHou
                     {/* Horaires principaux */}
                     <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
                       <div className="flex items-center gap-2">
+                        {/* Ouverture : toutes les options sauf la dernière (doit rester < close) */}
                         <select
                           value={day.open_time || "09:00"}
                           onChange={(e) => updateDay(index, "open_time", e.target.value)}
                           className="h-10 px-2 sm:px-3 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/10 text-xs sm:text-sm font-medium bg-white cursor-pointer"
                         >
-                          {TIME_OPTIONS.map((time) => (
+                          {optionsBefore(day.close_time || "18:00").map((time) => (
                             <option key={time} value={time}>{time}</option>
                           ))}
                         </select>
                         <span className="text-gray-400 text-xs">à</span>
+                        {/* Fermeture : seulement les heures strictement après l'ouverture */}
                         <select
                           value={day.close_time || "18:00"}
                           onChange={(e) => updateDay(index, "close_time", e.target.value)}
                           className="h-10 px-2 sm:px-3 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/10 text-xs sm:text-sm font-medium bg-white cursor-pointer"
                         >
-                          {TIME_OPTIONS.map((time) => (
+                          {optionsAfter(day.open_time || "09:00").map((time) => (
                             <option key={time} value={time}>{time}</option>
                           ))}
                         </select>
@@ -218,22 +292,24 @@ export default function OpeningHoursTab({ establishmentId, onSaved }: OpeningHou
 
                       {day.break_start && (
                         <div className="flex items-center gap-2">
+                          {/* Début pause : entre open_time et close_time (exclu) */}
                           <select
                             value={day.break_start}
                             onChange={(e) => updateDay(index, "break_start", e.target.value)}
                             className="h-10 px-2 sm:px-3 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/10 text-xs sm:text-sm font-medium bg-white cursor-pointer"
                           >
-                            {TIME_OPTIONS.map((time) => (
+                            {optionsBetween(day.open_time || "09:00", day.close_time || "18:00").map((time) => (
                               <option key={time} value={time}>{time}</option>
                             ))}
                           </select>
                           <span className="text-gray-400">-</span>
+                          {/* Fin pause : strictement après break_start et ≤ close_time */}
                           <select
                             value={day.break_end || "14:00"}
                             onChange={(e) => updateDay(index, "break_end", e.target.value)}
                             className="h-10 px-2 sm:px-3 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/10 text-xs sm:text-sm font-medium bg-white cursor-pointer"
                           >
-                            {TIME_OPTIONS.map((time) => (
+                            {optionsAfter(day.break_start).filter(t => t <= (day.close_time || "18:00")).map((time) => (
                               <option key={time} value={time}>{time}</option>
                             ))}
                           </select>
