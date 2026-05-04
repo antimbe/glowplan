@@ -124,9 +124,10 @@ export default function OpeningHoursTab({ establishmentId, onSaved }: OpeningHou
         }
         // La fin de pause doit rester ≤ close_time
         if (u.break_end && u.break_end > value) {
-          u.break_end = value;
-          if (u.break_start && u.break_start >= u.break_end) {
-            u.break_start = TIME_OPTIONS.slice().reverse().find(t => t < u.break_end! && t > (u.open_time ?? "07:00")) ?? null;
+          const newBreakEnd: string = value;
+          u.break_end = newBreakEnd;
+          if (u.break_start && u.break_start >= newBreakEnd) {
+            u.break_start = TIME_OPTIONS.slice().reverse().find(t => t < newBreakEnd && t > (u.open_time ?? "07:00")) ?? null;
             if (!u.break_start) u.break_end = null;
           }
         }
