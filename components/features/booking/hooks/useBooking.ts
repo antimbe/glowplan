@@ -94,11 +94,15 @@ export function useBooking(establishmentId: string, openingHours: OpeningHour[])
             // Calcul des créneaux via l'intervalleur
             const calculatedSlots = getAvailableSlots(dayStart, dayEnd, service.duration, occupied as any);
 
-            const formattedSlots: AvailableSlot[] = calculatedSlots.map(s => ({
-                date: s.start,
-                time: `${s.start.getHours().toString().padStart(2, "0")}:${s.start.getMinutes().toString().padStart(2, "0")}`,
-                endTime: `${s.end.getHours().toString().padStart(2, "0")}:${s.end.getMinutes().toString().padStart(2, "0")}`,
-            }));
+            const now = new Date();
+            const formattedSlots: AvailableSlot[] = calculatedSlots
+                // Exclure les créneaux dont le début est déjà passé (pertinent pour aujourd'hui)
+                .filter(s => s.start > now)
+                .map(s => ({
+                    date: s.start,
+                    time: `${s.start.getHours().toString().padStart(2, "0")}:${s.start.getMinutes().toString().padStart(2, "0")}`,
+                    endTime: `${s.end.getHours().toString().padStart(2, "0")}:${s.end.getMinutes().toString().padStart(2, "0")}`,
+                }));
 
             setAvailableSlots(formattedSlots);
         } catch (error) {
@@ -169,6 +173,16 @@ export function useBooking(establishmentId: string, openingHours: OpeningHour[])
     const confirmBooking = useCallback(async (clientInfo: ClientInfo, requireDeposit = false, autoConfirm = false) => {
         setIsConfirming(true);
         try {
+            // Vérifier que tous les créneaux du panier sont encore dans le futur
+            const now = new Date();
+            const expiredItem = cart.find(item => item.slot.date <= now);
+            if (expiredItem) {
+                return {
+                    success: false,
+                    error: `Le créneau de ${expiredItem.slot.time} est déjà passé. Veuillez retourner au calendrier et choisir un autre créneau.`,
+                };
+            }
+
             const { data: { user } } = await supabase.auth.getUser();
             let profileId = null;
 
