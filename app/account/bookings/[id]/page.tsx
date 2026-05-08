@@ -345,6 +345,16 @@ export default function BookingDetailsPage() {
                       </div>
                     )}
 
+                    {/* Payment instructions */}
+                    {appointment.establishments?.payment_instructions && (
+                      <div className="bg-amber-100/60 rounded-xl px-4 py-3.5 space-y-1">
+                        <p className="text-[10px] font-black text-amber-700/70 uppercase tracking-[0.15em]">Instructions de paiement</p>
+                        <p className="text-[13px] text-amber-800 font-medium leading-relaxed whitespace-pre-line">
+                          {appointment.establishments.payment_instructions}
+                        </p>
+                      </div>
+                    )}
+
                     {/* Payment links */}
                     {appointment.establishments?.payment_links && appointment.establishments.payment_links.length > 0 && (
                       <div className="space-y-2.5">
@@ -352,7 +362,7 @@ export default function BookingDetailsPage() {
                         <div className="flex flex-col gap-2">
                           {appointment.establishments.payment_links.map((link: any, i: number) => {
                             const url = typeof link === "string" ? link : link.url;
-                            const label = typeof link === "string" ? null : link.label;
+                            const label = typeof link === "string" ? null : (link.provider || link.label);
                             if (!url) return null;
                             return (
                               <a
@@ -365,7 +375,7 @@ export default function BookingDetailsPage() {
                                 <div className="flex items-center gap-2.5 min-w-0">
                                   <CreditCard size={14} className="text-amber-500 flex-shrink-0" />
                                   <span className="text-[13px] font-bold text-amber-800 truncate">
-                                    {label || "Payer l'acompte"}
+                                    {label ? `Payer via ${label}` : "Payer l'acompte"}
                                   </span>
                                 </div>
                                 <ExternalLink size={13} className="text-amber-400 group-hover:text-amber-600 flex-shrink-0 transition-colors" />

@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     // Get establishment details
     const { data: establishment, error: estError } = await supabase
       .from("establishments")
-      .select("name, email, phone, user_id, address, city, postal_code, address_complement, show_conditions_online, general_conditions, deposit_amount, payment_links, hide_exact_address")
+      .select("name, email, phone, user_id, address, city, postal_code, address_complement, show_conditions_online, general_conditions, deposit_amount, payment_instructions, payment_links, hide_exact_address")
       .eq("id", establishmentId)
       .single() as { data: any, error: any };
 
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     // Build payment links array for the pro email
     const rawPaymentLinks = establishment.payment_links;
     const parsedPaymentLinks: { label?: string; url: string }[] = Array.isArray(rawPaymentLinks)
-      ? rawPaymentLinks.map((l: any) => typeof l === "string" ? { url: l } : { label: l.label, url: l.url }).filter((l: any) => l.url)
+      ? rawPaymentLinks.map((l: any) => typeof l === "string" ? { url: l } : { label: l.provider || l.label, url: l.url }).filter((l: any) => l.url)
       : [];
 
     // Professional Notification
@@ -60,6 +60,7 @@ export async function POST(request: NextRequest) {
       ...(appointment.status === "pending_deposit" && establishment.deposit_amount ? {
         deposit_amount: establishment.deposit_amount,
         payment_links: parsedPaymentLinks,
+        payment_instructions: establishment.payment_instructions || undefined,
       } : {}),
     });
 
@@ -90,7 +91,9 @@ export async function POST(request: NextRequest) {
         appointment_time: `${formatTime(startDate)} - ${formatTime(endDate)}`,
         deposit_amount: depositAmount,
         deposit_deadline: `${formatTime(deadlineDate)} ce jour`,
-        payment_link: paymentLink
+        payment_link: paymentLink,
+        payment_instructions: establishment.payment_instructions || undefined,
+        all_payment_links: parsedPaymentLinks.length > 0 ? parsedPaymentLinks : undefined,
       });
     } else if (autoConfirm) {
       clientEmailData = EmailTemplates.bookingConfirmedUser({

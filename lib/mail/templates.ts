@@ -13,11 +13,16 @@ export const EmailTemplates = {
     isManualValidation: boolean;
     deposit_amount?: string | number;
     payment_links?: { label?: string; url: string }[];
+    payment_instructions?: string;
   }) => {
     const depositBlock = data.deposit_amount ? `
       <div style="background-color: #fff8ed; border-left: 4px solid ${MAIL_PALETTE.accent}; padding: 16px 20px; border-radius: 8px; margin: 20px 0;">
         <p style="margin: 0 0 8px 0; color: #92400e; font-weight: 700; font-size: 15px;">💳 Acompte demandé au client</p>
         <p style="margin: 0 0 6px 0; color: #92400e; font-size: 14px;">Montant : <strong>${data.deposit_amount}€</strong></p>
+        ${data.payment_instructions ? `
+          <p style="margin: 8px 0 4px 0; color: #92400e; font-size: 13px; font-weight: 600;">Instructions envoyées au client :</p>
+          <p style="margin: 0 0 8px 0; color: #92400e; font-size: 13px; white-space: pre-line;">${data.payment_instructions}</p>
+        ` : ""}
         ${data.payment_links && data.payment_links.length > 0 ? `
           <p style="margin: 8px 0 4px 0; color: #92400e; font-size: 13px; font-weight: 600;">Liens de paiement configurés :</p>
           <ul style="margin: 0; padding-left: 18px;">
@@ -575,26 +580,43 @@ export const EmailTemplates = {
     deposit_amount: string;
     deposit_deadline: string;
     payment_link: string;
+    payment_instructions?: string;
+    all_payment_links?: { label?: string; url: string }[];
   }) => {
+    // Build payment links buttons block
+    const paymentLinksBlock = data.all_payment_links && data.all_payment_links.length > 0
+      ? data.all_payment_links.map(l =>
+          getButton(l.label ? `Payer via ${l.label}` : "Payer mon acompte", l.url)
+        ).join("")
+      : getButton("Payer mon acompte", data.payment_link);
+
     const content = `
-      <h2 style="color: ${MAIL_PALETTE.primary}; font-size: 22px; font-weight: 700; margin-top: 0;">Acompte requis</h2>
+      <h2 style="color: ${MAIL_PALETTE.primary}; font-size: 22px; font-weight: 700; margin-top: 0;">Acompte requis pour confirmer votre réservation</h2>
       <p>Bonjour ${data.first_name},</p>
       <p>Pour confirmer votre rendez-vous avec <strong>${data.provider_name}</strong>, un acompte de <strong>${data.deposit_amount}</strong> est demandé.</p>
-      
+
       ${getInfoBox("Rendez-vous concerné", [
         { label: "Prestation", value: data.service_name },
         { label: "Date", value: data.appointment_date },
         { label: "Heure", value: data.appointment_time },
-        { label: "Acompte", value: data.deposit_amount },
+        { label: "Acompte à régler", value: data.deposit_amount },
         { label: "À régler avant le", value: data.deposit_deadline }
       ])}
-      
-      ${getButton("Payer mon acompte", data.payment_link)}
-      <p style="font-size: 14px; color: ${MAIL_PALETTE.textLight}; margin-top: 20px;">Sans règlement avant cette échéance, votre réservation pourra ne pas être maintenue.</p>
+
+      ${data.payment_instructions ? `
+        <div style="background-color: #fff8ed; border-left: 4px solid ${MAIL_PALETTE.accent}; padding: 16px 20px; border-radius: 8px; margin: 20px 0;">
+          <p style="margin: 0 0 6px 0; font-weight: 700; color: #92400e; font-size: 14px;">📋 Instructions de paiement</p>
+          <p style="margin: 0; color: #92400e; font-size: 14px; white-space: pre-line;">${data.payment_instructions}</p>
+        </div>
+      ` : ""}
+
+      <p style="font-weight: 600; color: ${MAIL_PALETTE.text};">Utilisez le(s) lien(s) ci-dessous pour régler votre acompte :</p>
+      ${paymentLinksBlock}
+      <p style="font-size: 13px; color: ${MAIL_PALETTE.textLight}; margin-top: 20px;">Sans règlement avant cette échéance, votre réservation pourra ne pas être maintenue.</p>
       <p>L'équipe Glowplan</p>
     `;
     return {
-      subject: "Votre acompte est requis pour confirmer le rendez-vous",
+      subject: "Action requise — Réglez votre acompte pour confirmer votre rendez-vous",
       html: getBaseLayout("Acompte requis", content),
     };
   },
