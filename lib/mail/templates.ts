@@ -11,27 +11,45 @@ export const EmailTemplates = {
     client_note?: string;
     dashboard_link: string;
     isManualValidation: boolean;
+    deposit_amount?: string | number;
+    payment_links?: { label?: string; url: string }[];
   }) => {
+    const depositBlock = data.deposit_amount ? `
+      <div style="background-color: #fff8ed; border-left: 4px solid ${MAIL_PALETTE.accent}; padding: 16px 20px; border-radius: 8px; margin: 20px 0;">
+        <p style="margin: 0 0 8px 0; color: #92400e; font-weight: 700; font-size: 15px;">💳 Acompte demandé au client</p>
+        <p style="margin: 0 0 6px 0; color: #92400e; font-size: 14px;">Montant : <strong>${data.deposit_amount}€</strong></p>
+        ${data.payment_links && data.payment_links.length > 0 ? `
+          <p style="margin: 8px 0 4px 0; color: #92400e; font-size: 13px; font-weight: 600;">Liens de paiement configurés :</p>
+          <ul style="margin: 0; padding-left: 18px;">
+            ${data.payment_links.map(l => `<li style="color: #92400e; font-size: 13px;"><a href="${l.url}" style="color: #92400e;">${l.label || l.url}</a></li>`).join("")}
+          </ul>
+        ` : ""}
+        <p style="margin: 8px 0 0 0; font-size: 12px; color: #b45309;">Le client a reçu un email avec les instructions de paiement. Le rendez-vous sera confirmé dès réception de l'acompte.</p>
+      </div>
+    ` : "";
+
     const content = `
       <h2 style="color: ${MAIL_PALETTE.primary}; font-size: 22px; font-weight: 700; margin-top: 0;">Nouvelle demande de réservation reçue</h2>
       <p>Bonjour ${data.provider_name},</p>
       <p>Vous avez reçu une nouvelle demande de réservation sur Glowplan.</p>
-      
+
       ${getInfoBox("Détails de la demande", [
         { label: "Cliente", value: data.client_name },
         { label: "Prestation", value: data.service_name },
         { label: "Date", value: data.appointment_date },
         { label: "Heure", value: data.appointment_time },
         ...(data.client_note ? [{ label: "Notes", value: data.client_note }] : []),
-        { label: "Statut", value: data.isManualValidation ? "En attente de validation" : "Confirmée automatiquement" }
+        { label: "Statut", value: data.deposit_amount ? "En attente d'acompte" : (data.isManualValidation ? "En attente de validation" : "Confirmée automatiquement") }
       ])}
-      
+
+      ${depositBlock}
+
       <p>Vous pouvez consulter cette demande et la gérer depuis votre espace prestataire.</p>
       ${getButton("Voir la demande", data.dashboard_link)}
       <p>L'équipe Glowplan</p>
     `;
     return {
-      subject: "Nouvelle demande de réservation reçue",
+      subject: data.deposit_amount ? "Nouvelle réservation — acompte en attente" : "Nouvelle demande de réservation reçue",
       html: getBaseLayout("Nouvelle demande de réservation", content),
     };
   },

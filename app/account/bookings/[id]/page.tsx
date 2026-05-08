@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import {
   Loader2, ArrowLeft, Calendar, Clock, MapPin,
   CheckCircle2, XCircle, AlertCircle, CalendarClock,
-  Sparkles, ExternalLink
+  Sparkles, ExternalLink, CreditCard, AlertTriangle
 } from "lucide-react";
 import { Button, Badge, Separator } from "@/components/ui";
 import { formatDateFull, formatTime } from "@/lib/utils/formatters";
@@ -313,6 +313,79 @@ export default function BookingDetailsPage() {
 
               <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
 
+              {/* ── Acompte à régler (pending_deposit) ── */}
+              {appointment.status === "pending_deposit" && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                  className="rounded-2xl overflow-hidden border border-amber-200 bg-amber-50"
+                >
+                  {/* Header */}
+                  <div className="flex items-center gap-3 bg-amber-100/70 px-5 py-3.5 border-b border-amber-200">
+                    <div className="w-9 h-9 rounded-xl bg-amber-400/20 flex items-center justify-center flex-shrink-0">
+                      <AlertTriangle size={18} className="text-amber-600" />
+                    </div>
+                    <div>
+                      <p className="font-black text-amber-800 text-[14px] leading-tight">Action requise — Acompte à régler</p>
+                      <p className="text-[11px] text-amber-600 font-medium">Votre rendez-vous sera confirmé après réception du paiement</p>
+                    </div>
+                  </div>
+
+                  {/* Body */}
+                  <div className="px-5 py-4 space-y-4">
+                    {/* Amount */}
+                    {appointment.establishments?.deposit_amount && (
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
+                          <CreditCard size={16} className="text-amber-500 flex-shrink-0" />
+                          <span className="text-[13px] font-bold text-amber-800">Montant de l'acompte</span>
+                        </div>
+                        <span className="text-xl font-black text-amber-700">{appointment.establishments.deposit_amount}€</span>
+                      </div>
+                    )}
+
+                    {/* Payment links */}
+                    {appointment.establishments?.payment_links && appointment.establishments.payment_links.length > 0 && (
+                      <div className="space-y-2.5">
+                        <p className="text-[11px] font-black text-amber-700/70 uppercase tracking-[0.15em]">Liens de paiement</p>
+                        <div className="flex flex-col gap-2">
+                          {appointment.establishments.payment_links.map((link: any, i: number) => {
+                            const url = typeof link === "string" ? link : link.url;
+                            const label = typeof link === "string" ? null : link.label;
+                            if (!url) return null;
+                            return (
+                              <a
+                                key={i}
+                                href={url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center justify-between gap-3 px-4 py-3 bg-white border border-amber-200 hover:border-amber-400 hover:bg-amber-50/50 rounded-xl transition-all group"
+                              >
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                  <CreditCard size={14} className="text-amber-500 flex-shrink-0" />
+                                  <span className="text-[13px] font-bold text-amber-800 truncate">
+                                    {label || "Payer l'acompte"}
+                                  </span>
+                                </div>
+                                <ExternalLink size={13} className="text-amber-400 group-hover:text-amber-600 flex-shrink-0 transition-colors" />
+                              </a>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* No links configured */}
+                    {(!appointment.establishments?.payment_links || appointment.establishments.payment_links.length === 0) && (
+                      <p className="text-[12px] text-amber-600 font-medium bg-amber-100/60 rounded-xl px-4 py-3">
+                        Le prestataire vous communiquera les instructions de paiement directement.
+                      </p>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+
               {/* ── Prestation ── */}
               <div>
                 <SectionTitle>Prestation</SectionTitle>
@@ -388,7 +461,34 @@ export default function BookingDetailsPage() {
                         </span>
                       </div>
 
-                      {appointment.deposit_amount && (
+                      {/* Pending deposit — not yet paid */}
+                      {appointment.status === "pending_deposit" && appointment.establishments?.deposit_amount && (
+                        <>
+                          <div className="h-px bg-white/[0.06]" />
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <span className="text-[10px] font-black text-amber-400/90 uppercase tracking-[0.2em]">Acompte requis</span>
+                              <p className="text-[10px] text-white/30 mt-0.5">En attente de paiement</p>
+                            </div>
+                            <span className="text-amber-400 font-black text-base">{appointment.establishments.deposit_amount}€</span>
+                          </div>
+                          <div className="h-px border-t border-dashed border-white/10" />
+                          <div className="flex justify-between items-end">
+                            <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">Reste à payer sur place</span>
+                            <div className="text-right">
+                              <span className="text-3xl font-black text-white tracking-tight">
+                                {appointment.services?.price
+                                  ? `${appointment.services.price - (Number(appointment.establishments.deposit_amount) || 0)}€`
+                                  : "—"}
+                              </span>
+                              <p className="text-[9px] text-white/30 font-bold uppercase tracking-wider">Après acompte</p>
+                            </div>
+                          </div>
+                        </>
+                      )}
+
+                      {/* Deposit already paid */}
+                      {appointment.deposit_amount && appointment.status !== "pending_deposit" && (
                         <>
                           <div className="h-px bg-white/[0.06]" />
                           <div className="flex justify-between items-center">
@@ -413,7 +513,8 @@ export default function BookingDetailsPage() {
                         </>
                       )}
 
-                      {!appointment.deposit_amount && (
+                      {/* No deposit required */}
+                      {!appointment.deposit_amount && appointment.status !== "pending_deposit" && (
                         <>
                           <div className="h-px bg-white/[0.06]" />
                           <div className="flex justify-between items-end">

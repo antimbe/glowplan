@@ -39,6 +39,12 @@ export async function POST(request: NextRequest) {
     const endDate = new Date(appointment.end_time);
     const baseUrl = getBaseUrl();
 
+    // Build payment links array for the pro email
+    const rawPaymentLinks = establishment.payment_links;
+    const parsedPaymentLinks: { label?: string; url: string }[] = Array.isArray(rawPaymentLinks)
+      ? rawPaymentLinks.map((l: any) => typeof l === "string" ? { url: l } : { label: l.label, url: l.url }).filter((l: any) => l.url)
+      : [];
+
     // Professional Notification
     const proTemplate = EmailTemplates.bookingRequestPro({
       provider_name: establishment.name,
@@ -50,7 +56,11 @@ export async function POST(request: NextRequest) {
       appointment_time: `${formatTime(startDate)} - ${formatTime(endDate)}`,
       client_note: appointment.notes || "",
       dashboard_link: `${baseUrl}/dashboard/agenda?date=${startDate.toISOString().split('T')[0]}`,
-      isManualValidation: !autoConfirm
+      isManualValidation: !autoConfirm,
+      ...(appointment.status === "pending_deposit" && establishment.deposit_amount ? {
+        deposit_amount: establishment.deposit_amount,
+        payment_links: parsedPaymentLinks,
+      } : {}),
     });
 
     // Client Notification
