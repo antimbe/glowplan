@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import {
   Loader2, ArrowLeft, Calendar, Clock, MapPin,
-  CheckCircle2, XCircle, AlertCircle, CalendarClock,
+  CheckCircle2, XCircle, AlertCircle,
   Sparkles, ExternalLink, CreditCard, AlertTriangle
 } from "lucide-react";
 import { Button, Badge, Separator } from "@/components/ui";
@@ -14,7 +14,6 @@ import Image from "next/image";
 import Link from "next/link";
 import Header from "@/components/features/Header";
 import { CancelModal } from "@/components/features/account/CancelModal";
-import { RescheduleModal } from "@/components/features/account/RescheduleModal";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils/cn";
 
@@ -93,7 +92,6 @@ export default function BookingDetailsPage() {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
   const [cancelling, setCancelling] = useState(false);
-  const [showRescheduleModal, setShowRescheduleModal] = useState(false);
 
   const supabase = createClient();
 
@@ -291,14 +289,6 @@ export default function BookingDetailsPage() {
                 {/* Action buttons */}
                 {canCancel && (
                   <div className="flex flex-col sm:flex-row gap-2.5 flex-shrink-0">
-                    <Button
-                      variant="outline"
-                      className="border-gray-200 text-gray-600 hover:border-primary/30 hover:text-primary rounded-xl font-bold gap-2 cursor-pointer"
-                      onClick={() => setShowRescheduleModal(true)}
-                    >
-                      <CalendarClock size={16} />
-                      Modifier
-                    </Button>
                     <Button
                       variant="outline"
                       className="border-red-100 text-red-500 hover:bg-red-50 hover:border-red-200 rounded-xl font-bold gap-2 cursor-pointer"
@@ -652,16 +642,6 @@ export default function BookingDetailsPage() {
         />
       )}
 
-      {showRescheduleModal && appointment && (
-        <RescheduleModal
-          appointment={appointment}
-          onClose={() => setShowRescheduleModal(false)}
-          onSuccess={(newStart, newEnd) => {
-            setAppointment((prev: any) => ({ ...prev, start_time: newStart, end_time: newEnd }));
-            setShowRescheduleModal(false);
-          }}
-        />
-      )}
     </div>
   );
 }
